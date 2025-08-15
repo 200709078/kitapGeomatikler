@@ -586,6 +586,7 @@ function classify(inputRaw) {
   '2x-3=y',       // slope
   '-x+4=y',       // slope
   'y=5',          // horizontal
+  'y=0',          // horizontal
   '5=y',          // horizontal
   'x=5',          // vertical
   'y=-3x',        // slope n=0
