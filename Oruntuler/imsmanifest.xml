@@ -1,0 +1,44 @@
+<?xml version="1.0" standalone="no"?>
+<manifest identifier="com.scorm.golfsamples.contentpackaging.singlesco.12" version="1"
+  xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2"
+  xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_rootv1p2"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.imsproject.org/xsd/imscp_rootv1p1p2 imscp_rootv1p1p2.xsd
+                      http://www.imsglobal.org/xsd/imsmd_rootv1p2p1 imsmd_rootv1p2p1.xsd
+                      http://www.adlnet.org/xsd/adlcp_rootv1p2 adlcp_rootv1p2.xsd">
+  <metadata>
+    <schema>ADL SCORM</schema>
+    <schemaversion>1.2</schemaversion>
+  </metadata>
+
+  <contentObject>
+    <title>1. TEMA - NİCELİKLER ve DEĞİŞİMLER (1. KISIM) - ÖRÜNTÜLER</title>
+    <description>1. TEMA - NİCELİKLER ve DEĞİŞİMLER (1. KISIM) - ÖRÜNTÜLER</description>
+    <width>0</width>
+    <height>0</height>
+    <language>en</language>
+    <referenceImage>oruntuler.png</referenceImage>
+  </contentObject>
+
+  <organizations default="GEOMATIK">
+    <organization identifier="GEOMATIK">
+      <title>1. TEMA - NİCELİKLER ve DEĞİŞİMLER (1. KISIM) - ÖRÜNTÜLER</title>
+      <item identifier="item_geomatik" identifierref="resource_geomatik">
+        <title>1. TEMA - NİCELİKLER ve DEĞİŞİMLER (1. KISIM) - ÖRÜNTÜLER</title>
+      </item>
+    </organization>
+  </organizations>
+  <resources>
+    <resource identifier="resource_geomatik" type="webcontent" adlcp:scormtype="sco"
+      href="renderer/index.html">
+      <file href="renderer/index.html" />
+
+      <file href="renderer/css/style.css" />
+
+      <file href="renderer/img/favicon.svg" />
+
+      <file href="renderer/js/app.js" />
+
+    </resource>
+  </resources>
+</manifest>

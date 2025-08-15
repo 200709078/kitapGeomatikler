@@ -1,0 +1,28 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!--     <meta http-equiv="Content-Security-Policy" content="script-src 'self'"> -->
+    <link rel="stylesheet" href="./css/style.css">
+    <title>GEODRAW</title>
+</head>
+
+<body>
+    <section class="container">
+        <div id="toolbar">
+            <h5>GEODRAW</h5>
+            <label for="stroke">Stroke</label>
+            <input id="stroke" name="stroke" type="color">
+            <label for="lineWidth">Line Width</label>
+            <input id="lineWidth" name="lineWidth" type="number" value="5">
+            <button id="clear">Clear</button>
+        </div>
+        <div class="drawingBoard">
+            <canvas id="drawingBoard"></canvas>
+        </div>
+    </section>
+    <script src="./js/app.js"></script>
+</body>
+
+</html>
