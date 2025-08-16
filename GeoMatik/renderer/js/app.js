@@ -303,6 +303,21 @@ function drawPoint(point) {
 function drawLine(line) {
 	labelCreator(line)
 	if (!line.visibility) return
+	if (classify(line.inputView).subtype == 'vertical') { // Drawing Vertical Lines
+		let verticalNumber = classify(line.inputView).x
+
+		ctx.beginPath()
+		ctx.strokeStyle = ctx.fill.style = line.color
+		ctx.lineWidth = line.size
+		ctx.moveTo((-minX + verticalNumber / unitY) * scaleY, canvas.height + 100)
+		ctx.lineTo((-minX + verticalNumber / unitY) * scaleY, -canvas.height - 100)
+		text((-minX + verticalNumber / unitY) * scaleY + 10, 15, line.color, 'center', 'bold 15px arial', line.name)
+		ctx.fill()
+		ctx.stroke()
+		ctx.closePath()
+		return
+	}
+
 	let x, y
 	ctx.beginPath()
 	ctx.strokeStyle = ctx.fill.style = line.color
@@ -521,28 +536,30 @@ function inputClick(evt, id) {
 	}
 }
 
-
-
 /* CLASSIFY METHOD PROCESS */
 function classify(inputRaw) {
 	const norm = inputRaw.trim();
-	// ---- NOKTA: A(2,3) ----
-	const pointRe = /^\s*(?:([A-Za-zÇĞİÖŞÜçğıöşü][\wÇĞİÖŞÜçğıöşü]*)\s*)?\(\s*([+-]?\d+(?:\.\d+)?)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*\)\s*$/;
+	// ---- NOKTA: (x,y) ----
+	const pointRe = /^\s*\(\s*([+-]?\d+(?:\.\d+)?)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*\)\s*$/;
 	const pMatch = norm.match(pointRe);
+
 	if (pMatch) {
-		const [, name, xStr, yStr] = pMatch;
+		const [, xStr, yStr] = pMatch;
 		return {
 			type: 'point',
-			name: name || null, // isim yoksa null döner
 			x: Number(xStr),
 			y: Number(yStr)
 		};
 	}
 
-	// ---- DİKEY DOĞRU: x = sabit ----
-	const lineXConstRe = /^\s*x\s*=\s*([+-]?\d+(?:\.\d+)?)\s*$/i;
+	// ---- DİKEY DOĞRU: x = sabit veya sabit = x ----
+	const lineXConstRe = /^\s*(?:x\s*=\s*([+-]?\d+(?:\.\d+)?)|([+-]?\d+(?:\.\d+)?)\s*=\s*x)\s*$/i;
 	const xcMatch = norm.match(lineXConstRe);
-	if (xcMatch) return { type: 'line', subtype: 'vertical', x: Number(xcMatch[1]) };
+	if (xcMatch) {
+		// hangi grup dolu ise onu al
+		const val = xcMatch[1] !== undefined ? xcMatch[1] : xcMatch[2];
+		return { type: 'line', subtype: 'vertical', x: Number(val) };
+	}
 
 	// ---- YATAY DOĞRU: y = sabit veya sabit = y ----
 	const lineYConstRe1 = /^\s*y\s*=\s*([+-]?\d+(?:\.\d+)?)\s*$/i;
@@ -581,6 +598,7 @@ function classify(inputRaw) {
 	const arrayMatch = norm.match(arrayRe);
 	if (arrayMatch) {
 		let [, expr, startStr, endStr] = arrayMatch;
+
 		expr = expr.trim();
 		// Sadece x ve izin verilen matematik fonksiyon/sabitleri kontrol et
 		const allowedFunctions = ['sin', 'cos', 'tan', 'log', 'exp', 'sqrt', 'pi', 'e'];
@@ -622,7 +640,11 @@ function classify(inputRaw) {
 	'Dizi(a+b,1,5)',
 	'Dizi(sin(2x+1),1,10)',
 ].forEach(s => console.log(s, '→', classify(s)));*/
-
+function capitalizeDizi(str) {
+	return str.replace(/dizi/gi, match => {
+		return match.charAt(0).toUpperCase() + match.slice(1).toLowerCase();
+	});
+}
 /* CLASIFY PROCESS END */
 function inputKeyDown(evt, id) {
 	resetSliders()
@@ -642,7 +664,9 @@ function inputKeyDown(evt, id) {
 	}
 	if (evt.key === 'Enter') {
 		let come = document.getElementById(id).value
-
+		if (!come.includes('y') && classify(come).type != 'sequence' && classify(come).type != 'point' && classify(come).subtype != 'vertical') {
+			come = 'y=' + come
+		}
 		if (id == -1) { //Giriş input
 			if (classify(come).type == 'point') {
 				let point = new mPoint(classify(come).x, classify(come).y, come)
@@ -653,7 +677,12 @@ function inputKeyDown(evt, id) {
 				delCount = 0
 				objectsContainer.innerHTML = null
 			} else if (classify(come).type == 'line') {
-				let line = new mLine(classify(come).m, classify(come).n, come)
+				let line
+				if (classify(come).subtype == 'vertical') {
+					line = new mLine(classify(come).m, classify(come).n, 'x=' + classify(come).x)
+				} else {
+					line = new mLine(classify(come).m, classify(come).n, come)
+				}
 				arrObjects.push(line)
 				activeElementID = line.id
 				setSlider(line)
@@ -665,7 +694,7 @@ function inputKeyDown(evt, id) {
 				if (!newCome) {
 					showToast('GİRİŞ', 'Hatalı giriş yaptınız.')
 				} else {
-					let seq = new mSequence(newCome, classify(come).start, classify(come).end, come)
+					let seq = new mSequence(newCome, classify(come).start, classify(come).end, capitalizeDizi(come))
 					arrObjects.push(seq)
 					activeElementID = seq.id
 					undoObjects = []
@@ -688,9 +717,6 @@ function inputKeyDown(evt, id) {
 		} else {
 			alert('Giriş inputunda değilsin...')
 		}
-
-
-
 
 
 
