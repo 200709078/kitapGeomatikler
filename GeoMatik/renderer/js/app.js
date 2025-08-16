@@ -238,7 +238,6 @@ drawCoordinates = function () {
 	input.title = 'Giriş'
 	input.setAttribute('onclick', 'inputClick(event,id)')
 	input.setAttribute('onkeydown', 'inputKeyDown(event,id)')
-	//input.setAttribute('oninput', 'addParanthesis(event)')
 	label.appendChild(input)
 	objectsContainer.appendChild(label)
 	arrObjects.sort(function (a, b) { return a.id - b.id })
@@ -315,6 +314,7 @@ function drawLine(line) {
 		ctx.fill()
 		ctx.stroke()
 		ctx.closePath()
+		resetSliders()
 		return
 	}
 
@@ -538,13 +538,13 @@ function inputClick(evt, id) {
 
 /* CLASSIFY METHOD PROCESS */
 function classify(inputRaw) {
-	const norm = inputRaw.trim();
+	const norm = inputRaw.trim()
 	// ---- NOKTA: (x,y) ----
-	const pointRe = /^\s*\(\s*([+-]?\d+(?:\.\d+)?)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*\)\s*$/;
-	const pMatch = norm.match(pointRe);
+	const pointRe = /^\s*\(\s*([+-]?\d+(?:\.\d+)?)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*\)\s*$/
+	const pMatch = norm.match(pointRe)
 
 	if (pMatch) {
-		const [, xStr, yStr] = pMatch;
+		const [, xStr, yStr] = pMatch
 		return {
 			type: 'point',
 			x: Number(xStr),
@@ -553,56 +553,56 @@ function classify(inputRaw) {
 	}
 
 	// ---- DİKEY DOĞRU: x = sabit veya sabit = x ----
-	const lineXConstRe = /^\s*(?:x\s*=\s*([+-]?\d+(?:\.\d+)?)|([+-]?\d+(?:\.\d+)?)\s*=\s*x)\s*$/i;
-	const xcMatch = norm.match(lineXConstRe);
+	const lineXConstRe = /^\s*(?:x\s*=\s*([+-]?\d+(?:\.\d+)?)|([+-]?\d+(?:\.\d+)?)\s*=\s*x)\s*$/i
+	const xcMatch = norm.match(lineXConstRe)
 	if (xcMatch) {
 		// hangi grup dolu ise onu al
-		const val = xcMatch[1] !== undefined ? xcMatch[1] : xcMatch[2];
-		return { type: 'line', subtype: 'vertical', x: Number(val) };
+		const val = xcMatch[1] !== undefined ? xcMatch[1] : xcMatch[2]
+		return { type: 'line', subtype: 'vertical', x: Number(val) }
 	}
 
 	// ---- YATAY DOĞRU: y = sabit veya sabit = y ----
-	const lineYConstRe1 = /^\s*y\s*=\s*([+-]?\d+(?:\.\d+)?)\s*$/i;
-	const lc1Match = norm.match(lineYConstRe1);
-	if (lc1Match) return { type: 'line', subtype: 'horizontal', m: 0, n: Number(lc1Match[1]) };
+	const lineYConstRe1 = /^\s*y\s*=\s*([+-]?\d+(?:\.\d+)?)\s*$/i
+	const lc1Match = norm.match(lineYConstRe1)
+	if (lc1Match) return { type: 'line', subtype: 'horizontal', m: 0, n: Number(lc1Match[1]) }
 
-	const lineYConstRe2 = /^\s*([+-]?\d+(?:\.\d+)?)\s*=\s*y\s*$/i;
-	const lc2Match = norm.match(lineYConstRe2);
-	if (lc2Match) return { type: 'line', subtype: 'horizontal', m: 0, n: Number(lc2Match[1]) };
+	const lineYConstRe2 = /^\s*([+-]?\d+(?:\.\d+)?)\s*=\s*y\s*$/i
+	const lc2Match = norm.match(lineYConstRe2)
+	if (lc2Match) return { type: 'line', subtype: 'horizontal', m: 0, n: Number(lc2Match[1]) }
 
 	// ---- EĞİMLİ DOĞRULAR: y = mx + n veya mx + n = y ----
-	const slopeReYLeft = /^\s*y\s*=\s*([+-]?(?:\d+(?:\.\d+)?|)?)x(?:\s*([+-]\s*\d+(?:\.\d+)?))?\s*$/i;
-	const slopeReYRight = /^\s*([+-]?(?:\d+(?:\.\d+)?|)?)x(?:\s*([+-]\s*\d+(?:\.\d+)?))?\s*=\s*y\s*$/i;
+	const slopeReYLeft = /^\s*y\s*=\s*([+-]?(?:\d+(?:\.\d+)?|)?)x(?:\s*([+-]\s*\d+(?:\.\d+)?))?\s*$/i
+	const slopeReYRight = /^\s*([+-]?(?:\d+(?:\.\d+)?|)?)x(?:\s*([+-]\s*\d+(?:\.\d+)?))?\s*=\s*y\s*$/i
 
-	let m, n;
+	let m, n
 	// y = ...
-	let mMatch = norm.match(slopeReYLeft);
+	let mMatch = norm.match(slopeReYLeft)
 	if (mMatch) {
-		const mPart = mMatch[1];
-		m = mPart === '' || mPart === '+' ? 1 : (mPart === '-' ? -1 : Number(mPart));
-		n = mMatch[2] ? Number(mMatch[2].replace(/\s+/g, '')) : 0;
-		return { type: 'line', subtype: 'slope', m, n };
+		const mPart = mMatch[1]
+		m = mPart === '' || mPart === '+' ? 1 : (mPart === '-' ? -1 : Number(mPart))
+		n = mMatch[2] ? Number(mMatch[2].replace(/\s+/g, '')) : 0
+		return { type: 'line', subtype: 'slope', m, n }
 	}
 
 	// ... = y
-	mMatch = norm.match(slopeReYRight);
+	mMatch = norm.match(slopeReYRight)
 	if (mMatch) {
-		const mPart = mMatch[1];
-		m = mPart === '' || mPart === '+' ? 1 : (mPart === '-' ? -1 : Number(mPart));
-		n = mMatch[2] ? Number(mMatch[2].replace(/\s+/g, '')) : 0;
-		return { type: 'line', subtype: 'slope', m, n };
+		const mPart = mMatch[1]
+		m = mPart === '' || mPart === '+' ? 1 : (mPart === '-' ? -1 : Number(mPart))
+		n = mMatch[2] ? Number(mMatch[2].replace(/\s+/g, '')) : 0
+		return { type: 'line', subtype: 'slope', m, n }
 	}
 
 	// ---- DİZİ: Dizi(expr, start, end) ----
-	const arrayRe = /^\s*Dizi\s*\(\s*([^,]+)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*\)\s*$/i;
-	const arrayMatch = norm.match(arrayRe);
+	const arrayRe = /^\s*Dizi\s*\(\s*([^,]+)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*\)\s*$/i
+	const arrayMatch = norm.match(arrayRe)
 	if (arrayMatch) {
-		let [, expr, startStr, endStr] = arrayMatch;
+		let [, expr, startStr, endStr] = arrayMatch
 
-		expr = expr.trim();
+		expr = expr.trim()
 		// Sadece x ve izin verilen matematik fonksiyon/sabitleri kontrol et
-		const allowedFunctions = ['sin', 'cos', 'tan', 'log', 'exp', 'sqrt', 'pi', 'e'];
-		const letters = expr.match(/[a-zA-Z]+/g) || [];
+		const allowedFunctions = ['sin', 'cos', 'tan', 'log', 'exp', 'sqrt', 'pi', 'e']
+		const letters = expr.match(/[a-zA-Z]+/g) || []
 		for (let l of letters) {
 			if (l.toLowerCase() !== 'x' && !allowedFunctions.includes(l.toLowerCase())) {
 				return { type: 'unknown' };
@@ -615,31 +615,8 @@ function classify(inputRaw) {
 			end: Number(endStr)
 		};
 	}
-	return { type: 'unknown' };
+	return { type: 'unknown' }
 }
-
-/* // ---- Test ----
-[
-	'A(2,3)',
-	'A(2,3.5)',
-	'A(a,b)',
-	'y=2x+3',
-	'y=-x+4',
-	'2x-3=y',
-	'-x+4=y',
-	'y=5',
-	'y=0',
-	'5=y',
-	'x=5',
-	'y=-3x',
-	'-3x=y',
-	'y=x',
-	'y=-x',
-	'Dizi(x^2+3,2,8)',
-	'Dizi(sin(x),0,3.14)',
-	'Dizi(a+b,1,5)',
-	'Dizi(sin(2x+1),1,10)',
-].forEach(s => console.log(s, '→', classify(s)));*/
 function capitalizeDizi(str) {
 	return str.replace(/dizi/gi, match => {
 		return match.charAt(0).toUpperCase() + match.slice(1).toLowerCase();
@@ -663,7 +640,7 @@ function inputKeyDown(evt, id) {
 		evt.preventDefault()
 	}
 	if (evt.key === 'Enter') {
-		let come = document.getElementById(id).value
+		let come = document.getElementById(id).value.toLowerCase()
 		if (!come.includes('y') && classify(come).type != 'sequence' && classify(come).type != 'point' && classify(come).subtype != 'vertical') {
 			come = 'y=' + come
 		}
