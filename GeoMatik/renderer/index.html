@@ -144,12 +144,14 @@
 
 		<div class="set-popup" id="set-popup">
 			<div class="setTitle">
+				<span>Ayarlar</span>
 				<button type="button" class="btn-close" onclick="closeSetClick()">&times;</button>
 			</div>
 			<div class="setContainer">
 				<label for="name">Ad: </label>
-				<input type="text" id="name" autocomplete="off" title="Ad" onfocusout="nameFocusOut(event)"
-					onkeydown="nameKeyDown(event)">
+				<!-- 				<input type="text" id="name" autocomplete="off" title="Ad" onfocusout="nameFocusOut(event)"
+					onkeydown="nameKeyDown(event)"> -->
+				<input type="text" id="name" autocomplete="off" title="Ad" onkeydown="inputKeyDown(event,id)">
 				<label for="defination">Tanım: </label>
 				<input type="text" id="defination" autocomplete="off" title="Tanım" onkeydown="inputKeyDown(event,id)">
 				<label for="color">Renk: </label>

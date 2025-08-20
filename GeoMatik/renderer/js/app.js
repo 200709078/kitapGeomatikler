@@ -13,7 +13,8 @@ let scaleX = 100
 let scaleY = 100
 let minX = -8
 let minY = -3
-let units = [1 / 10, 1 / 5, 1 / 2, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000]
+//let units = [1 / 10, 1 / 5, 1 / 2, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000]
+let units = [1 / 10, 1 / 5, 1 / 2, 1, 2, 5, 10, 20]
 let tickX = 3
 let unitX = units[tickX]
 let tickY = 3
@@ -23,7 +24,7 @@ let arrObjects = []
 let undoObjects = []
 let pointNames = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 let sequenceNames = "abcdefghijklmopqrstuvwxyz"
-let lineNames = "fghijklmnpqrstuvwz"
+let lineNames = "fghpqr"
 class mPoint {
 	constructor(xpoint, ypoint, come = null) {
 		if (come == null) come = '(' + xpoint + ',' + ypoint + ')'
@@ -250,12 +251,12 @@ drawCoordinates = function () {
 		} else if (item.type === 'sequence') {
 			drawSequence(item)
 		} else {
-			drawFunction(item)
+			//drawFunction(item)
 		}
 	})
 
 	if (activeElementID != null) {
-		document.getElementById(activeElementID).style.background = 'lightgreen'
+		//document.getElementById(activeElementID).style.background = 'lightgreen'
 	}
 }
 fillSetWindow = function () {
@@ -342,23 +343,48 @@ function drawLine(line) {
 function drawFunction(func) {
 	labelCreator(func)
 	if (!func.visibility) return
-	let y
+
+	let f;
+	try {
+		f = new Function("x", "return " + func.graph + ";");
+	} catch (e) {
+		console.error("Fonksiyon hatalı:", func.graph);
+		return;
+	}
+
 	ctx.beginPath()
 	ctx.strokeStyle = func.color
 	ctx.lineWidth = func.size
 
-	for (let x = minX * unitY; x < (minX + Math.round(canvas.width / scaleY) + 1) * unitY; x += .01) {
-		y = eval(func.graph)
-		if (x === minX * unitY) {
-			ctx.moveTo(-minX * scaleY + (x * scaleY) / unitY, -minY * scaleX - (y * scaleX) / unitX)
-		} else {
-			ctx.lineTo(-minX * scaleY + (x * scaleY) / unitY, -minY * scaleX - (y * scaleX) / unitX)
+	let step = 0.01;
+
+	let firstPoint = true;
+	let x = minX * unitY
+
+	while (x < (minX + Math.round(canvas.width / scaleY) + 1) * unitY) {
+		let y = f(x);
+		if (!isFinite(y)) {
+			firstPoint = true;
+			x += step;
+			continue;
 		}
+
+		let canvasX = -minX * scaleY + (x * scaleY) / unitY;
+		let canvasY = -minY * scaleX - (y * scaleX) / unitX;
+
+		if (firstPoint) {
+			ctx.moveTo(canvasX, canvasY);
+			firstPoint = false;
+		} else {
+			ctx.lineTo(canvasX, canvasY);
+		}
+		x += step
 	}
 
 	ctx.stroke()
 	ctx.closePath()
 }
+
 function drawSequence(seq) {
 	labelCreator(seq)
 	if (!seq.visibility) return
@@ -571,7 +597,7 @@ function classify(inputRaw) {
 	if (lc2Match) return { type: 'line', subtype: 'horizontal', m: 0, n: Number(lc2Match[1]) }
 
 	// ---- EĞİMLİ DOĞRULAR: y = mx + n veya mx + n = y ----
-	const slopeReYLeft = /^\s*y\s*=\s*([+-]?(?:\d+(?:\.\d+)?|)?)x(?:\s*([+-]\s*\d+(?:\.\d+)?))?\s*$/i
+	const slopeReYLeft = /^\s*(?:y\s*=\s*)?([+-]?(?:\d+(?:\.\d+)?|)?)x(?:\s*([+-]\s*\d+(?:\.\d+)?))?\s*$/i;
 	const slopeReYRight = /^\s*([+-]?(?:\d+(?:\.\d+)?|)?)x(?:\s*([+-]\s*\d+(?:\.\d+)?))?\s*=\s*y\s*$/i
 
 	let m, n
@@ -615,6 +641,61 @@ function classify(inputRaw) {
 			end: Number(endStr)
 		};
 	}
+
+	// ---- FONKSİYON BİLEŞKE (Bileşke(...)) ----
+	const funcCompRe = /^\s*Bileşke\s*\((.+)\)\s*$/i;
+	const compMatch = norm.match(funcCompRe);
+	if (compMatch) {
+		const inside = compMatch[1];
+		const parts = inside.split(/\s*,\s*/);
+
+		const functions = [];
+		const coefficients = [];
+
+		for (let part of parts) {
+			const m = part.match(/^([+-]?\d*)([a-z]\d*)$/i);
+			if (m) {
+				let coeffStr = m[1];
+				let funcName = m[2];
+
+				if (coeffStr === "" || coeffStr === "+") coeffStr = "+1";
+				else if (coeffStr === "-") coeffStr = "-1";
+				else if (!coeffStr.startsWith("+") && !coeffStr.startsWith("-")) {
+					coeffStr = "+" + coeffStr;
+				}
+
+				functions.push(funcName);
+				coefficients.push(coeffStr); // işaretli string
+			}
+		}
+
+		return { type: "functionCompositions", functions, coefficients };
+	}
+
+	// ---- FONKSİYON İŞLEMLERİ (f+g, 2f-3g, -f, -3g+1) ----
+	const funcOpRe = /([+-]?\d*)([a-z]\d*)/gi;
+	const opMatches = [...norm.matchAll(funcOpRe)];
+	if (opMatches.length > 0) {
+		const functions = [];
+		const coefficients = [];
+
+		for (let m of opMatches) {
+			let coeffStr = m[1];
+			let funcName = m[2];
+
+			if (coeffStr === "" || coeffStr === "+") coeffStr = "+1";
+			else if (coeffStr === "-") coeffStr = "-1";
+			else if (!coeffStr.startsWith("+") && !coeffStr.startsWith("-")) {
+				coeffStr = "+" + coeffStr;
+			}
+
+			functions.push(funcName);
+			coefficients.push(coeffStr); // işaretli string
+		}
+
+		return { type: "functionOperations", functions, coefficients };
+	}
+
 	return { type: 'unknown' }
 }
 function capitalizeDizi(str) {
@@ -623,6 +704,7 @@ function capitalizeDizi(str) {
 	});
 }
 /* CLASIFY PROCESS END */
+
 function inputKeyDown(evt, id) {
 	resetSliders()
 	addParanthesis(evt)
@@ -635,17 +717,19 @@ function inputKeyDown(evt, id) {
 			come = document.getElementById(id).value
 		} */
 
-	let allowKeys = '(){}[],=-+.*^/bdjmnquvxyzCEFGHIJKMNOPQTUVWXYZBackspaceArrowLeftArrowRightShiftDelete'
+	let allowKeys = '(){}[],=-+.*^/bdjmnşquvxyzCEFGHIJKMNOPQTUVWXYZBackspaceArrowLeftArrowRightShiftDelete'
 	if (isNaN(evt.key) && !allowKeys.includes(evt.key)) {
 		evt.preventDefault()
 	}
 	if (evt.key === 'Enter') {
 		let come = document.getElementById(id).value.toLowerCase()
-		if (!come.includes('y') && classify(come).type != 'sequence' && classify(come).type != 'point' && classify(come).subtype != 'vertical') {
-			come = 'y=' + come
-		}
+		/* 		console.log(classify(come))
+				if (!come.includes('y') && classify(come).type == 'line') {
+					come = 'y=' + come
+				} */
 		if (id == -1) { //Giriş input
 			if (classify(come).type == 'point') {
+				console.log('point çalıştı')
 				let point = new mPoint(classify(come).x, classify(come).y, come)
 				arrObjects.push(point)
 				activeElementID = point.id
@@ -654,6 +738,8 @@ function inputKeyDown(evt, id) {
 				delCount = 0
 				objectsContainer.innerHTML = null
 			} else if (classify(come).type == 'line') {
+				if (!come.includes('y')) come = 'y=' + come
+				console.log('line çalıştı')
 				let line
 				if (classify(come).subtype == 'vertical') {
 					line = new mLine(classify(come).m, classify(come).n, 'x=' + classify(come).x)
@@ -667,6 +753,7 @@ function inputKeyDown(evt, id) {
 				delCount = 0
 				objectsContainer.innerHTML = null
 			} else if (classify(come).type == 'sequence') {
+				console.log('sequence çalıştı')
 				let newCome = convertFunction(classify(come).expr)
 				if (!newCome) {
 					showToast('GİRİŞ', 'Hatalı giriş yaptınız.')
@@ -678,7 +765,66 @@ function inputKeyDown(evt, id) {
 					delCount = 0
 					objectsContainer.innerHTML = null
 				}
+			} else if (classify(come).type == 'functionOperations') {
+				const hepsiVarMi = classify(come).functions.every(name =>
+					arrObjects.some(f => f.name === name)
+				);
+				if (hepsiVarMi) {
+
+					let newCome = ''
+					for (let i = 0; i < classify(come).functions.length; i++) {
+						newCome += classify(come).coefficients[i] + '*' + classify(come).functions[i]
+					}
+
+					let comeWithFuncs = ''
+					for (let i = 0; i < newCome.length; i++) {
+						comeWithFuncs += newCome[i]
+						arrObjects.forEach(arr => {
+							if (newCome[i] == arr.name) {
+								comeWithFuncs = comeWithFuncs.replace(newCome[i], '(' + arr.graph + ')')
+							}
+						})
+					}
+					console.log(come)
+					console.log(newCome)
+					console.log(comeWithFuncs)
+
+				} else {
+					showToast('GİRİŞ', 'Hatalı giriş yaptınız. Fonksiyon bulunamadı.')
+				}
+
+
+
+
+				/* 				classify(come).functions.forEach(item => {
+									const func = arrObjects.find(f => f.name === item);
+									if (func) {
+										console.log("Bulundu:", func);
+									} else {
+										console.log("Bulunamadı.");
+									}
+								}); */
+
+				/* 				come = come.replace('y=', '')
+								let comeWithFuncs = ''
+								for (let i = 0; i < come.length; i++) {
+									comeWithFuncs += come[i]
+									arrObjects.forEach(arr => {
+										if (come[i] == arr.name) {
+											comeWithFuncs = comeWithFuncs.replace(come[i], '(' + arr.graph + ')')
+										}
+									})
+								}
+				
+								console.log(come)
+								console.log(comeWithFuncs) */
+
+			} else if (classify(come).type == 'functionCompositions') {
+				console.log('functionCompositions çalıştı')
+				console.log(classify(come))
+
 			} else if (classify(come).type == 'unknown') {
+				console.log('unknown çalıştı')
 				let newCome = convertFunction(come)
 				if (!newCome) {
 					showToast('GİRİŞ', 'Hatalı giriş yaptınız.')
@@ -692,7 +838,7 @@ function inputKeyDown(evt, id) {
 				}
 			}
 		} else {
-			alert('Giriş inputunda değilsin...')
+			showToast('GİRİŞ', 'Giriş inputunda değilsin...')
 		}
 
 
@@ -912,18 +1058,18 @@ function convertFunction(func) {
 	func = func.replaceAll('}', ')')
 	func = func.replaceAll('[', '(')
 	func = func.replaceAll(']', ')')
-	let x = 8 //Math.random()
-	let y
-	try {
-		y = eval(func)
-		if (y === undefined || isNaN(y)) return false
-	} catch (error) {
-		return false
-	}
+	/* 	let x = 8 //or Math.random()
+		let y
+		try {
+			y = eval(func)
+			if (y === undefined || isNaN(y)) return false
+		} catch (error) {
+			return false
+		} */
 	return func
 }
 
-function isPoint(come) {
+/* function isPoint(come) {
 	let m, n
 	if (!isNaN(come.substring(come.indexOf('(') + 1, come.indexOf(',')))) {
 		m = Number(come.substring(come.indexOf('(') + 1, come.indexOf(',')))
@@ -932,8 +1078,8 @@ function isPoint(come) {
 		n = Number(come.substring(come.indexOf(',') + 1, come.indexOf(')')))
 	}
 	return { m: m, n: n }
-}
-function isLine(come) {
+} */
+/* function isLine(come) {
 	let a, b, x, y, m1, m2, x1, y1, x2, y2, x3, y3
 	x = 2
 	y = eval(come)
@@ -957,8 +1103,8 @@ function isLine(come) {
 		return false
 	}
 	return { a: a, b: b }
-}
-function isSequence(come) {
+} */
+/* function isSequence(come) {
 	if (come.includes('=')) {
 		come = come.substring(come.indexOf('=') + 1, come.length)
 	}
@@ -973,7 +1119,7 @@ function isSequence(come) {
 		n = txt[2]
 	}
 	return { seqFunc: seq, m: m, n: n }
-}
+} */
 
 let delCount = 0
 function delClick(evt) {

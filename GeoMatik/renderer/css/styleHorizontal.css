@@ -272,10 +272,17 @@ canvas {
 }
 
 .setTitle {
-	display: block;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
 	width: 100%;
 	text-align: end;
 	background-color: cadetblue;
+	padding: 8px 12px;
+}
+#set-popup .setTitle span {
+    color: white;
+    font-weight: bold;
 }
 
 .setTitle .btn-close:hover {
