@@ -113,16 +113,16 @@ createName = function (type) {
 		if (arrObjects.length == 0) return pointNames[0]
 		let names = arrObjects.map((item) => item.name)
 		while (!iFound) {
-			if (i < 26) {
+			if (i < pointNames.length) {
 				if (!names.includes(pointNames[i])) {
 					iFound = true
 					nm = pointNames[i]
 				}
 			}
-			if (i >= 26) {
-				if (!(names.includes(pointNames[i % 26] + ((i / 26) - ((i / 26) % 1))))) {
+			if (i >= pointNames.length) {
+				if (!(names.includes(pointNames[i % pointNames.length] + ((i / pointNames.length) - ((i / pointNames.length) % 1))))) {
 					iFound = true
-					nm = pointNames[i % 26] + ((i / 26) - ((i / 26) % 1))
+					nm = pointNames[i % pointNames.length] + ((i / pointNames.length) - ((i / pointNames.length) % 1))
 				}
 			}
 			i++
@@ -131,16 +131,16 @@ createName = function (type) {
 		if (arrObjects.length == 0) return sequenceNames[0]
 		let names = arrObjects.map((item) => item.name)
 		while (!iFound) {
-			if (i < 25) {
+			if (i < sequenceNames.length) {
 				if (!names.includes(sequenceNames[i])) {
 					iFound = true
 					nm = sequenceNames[i]
 				}
 			}
-			if (i >= 25) {
-				if (!(names.includes(sequenceNames[i % 25] + ((i / 25) - ((i / 25) % 1))))) {
+			if (i >= sequenceNames.length) {
+				if (!(names.includes(sequenceNames[i % sequenceNames.length] + ((i / sequenceNames.length) - ((i / sequenceNames.length) % 1))))) {
 					iFound = true
-					nm = sequenceNames[i % 25] + ((i / 25) - ((i / 25) % 1))
+					nm = sequenceNames[i % sequenceNames.length] + ((i / sequenceNames.length) - ((i / sequenceNames.length) % 1))
 				}
 			}
 			i++
@@ -149,16 +149,16 @@ createName = function (type) {
 		if (arrObjects.length == 0) return lineNames[0]
 		let names = arrObjects.map((item) => item.name)
 		while (!iFound) {
-			if (i < 18) {
+			if (i < lineNames.length) {
 				if (!names.includes(lineNames[i])) {
 					iFound = true
 					nm = lineNames[i]
 				}
 			}
-			if (i >= 18) {
-				if (!(names.includes(lineNames[i % 18] + ((i / 18) - ((i / 18) % 1))))) {
+			if (i >= lineNames.length) {
+				if (!(names.includes(lineNames[i % lineNames.length] + ((i / lineNames.length) - ((i / lineNames.length) % 1))))) {
 					iFound = true
-					nm = lineNames[i % 18] + ((i / 18) - ((i / 18) % 1))
+					nm = lineNames[i % lineNames.length] + ((i / lineNames.length) - ((i / lineNames.length) % 1))
 				}
 			}
 			i++
@@ -251,7 +251,7 @@ drawCoordinates = function () {
 		} else if (item.type === 'sequence') {
 			drawSequence(item)
 		} else {
-			//drawFunction(item)
+			drawFunction(item)
 		}
 	})
 
@@ -579,44 +579,38 @@ function classify(inputRaw) {
 	}
 
 	// ---- DİKEY DOĞRU: x = sabit veya sabit = x ----
-	const lineXConstRe = /^\s*(?:x\s*=\s*([+-]?\d+(?:\.\d+)?)|([+-]?\d+(?:\.\d+)?)\s*=\s*x)\s*$/i
-	const xcMatch = norm.match(lineXConstRe)
+	const lineXConstRe = /^\s*(?:x\s*=\s*([+-]?\d+(?:\.\d+)?)|([+-]?\d+(?:\.\d+)?)\s*=\s*x)\s*$/i;
+	const xcMatch = norm.match(lineXConstRe);
 	if (xcMatch) {
-		// hangi grup dolu ise onu al
-		const val = xcMatch[1] !== undefined ? xcMatch[1] : xcMatch[2]
-		return { type: 'line', subtype: 'vertical', x: Number(val) }
+		const val = xcMatch[1] !== undefined ? xcMatch[1] : xcMatch[2];
+		return { type: 'line', subtype: 'vertical', x: Number(val) };
 	}
 
-	// ---- YATAY DOĞRU: y = sabit veya sabit = y ----
-	const lineYConstRe1 = /^\s*y\s*=\s*([+-]?\d+(?:\.\d+)?)\s*$/i
-	const lc1Match = norm.match(lineYConstRe1)
-	if (lc1Match) return { type: 'line', subtype: 'horizontal', m: 0, n: Number(lc1Match[1]) }
+	// ---- EĞİMLİ DOĞRULAR ----
+	// ---- YATAY DOĞRU: sadece sayı (x eksenine paralel) ----
+	const horizRe = /^\s*([+-]?\d+(?:\.\d+)?)\s*$/;
+	const hMatch = norm.match(horizRe);
+	if (hMatch) return { type: 'line', subtype: 'horizontal', m: 0, n: Number(hMatch[1]) };
+	
+	// Normalize: -x => -1*x, +x => 1*x, x => 1*x
+	let expr = norm.replace(/(^|\s)-\s*([a-z])/gi, "$1-1*$2");
+	expr = expr.replace(/(^|\s)\+\s*([a-z])/gi, "$11*$2");
+	expr = expr.replace(/(^|\s)([a-z])/gi, "$11*$2");
 
-	const lineYConstRe2 = /^\s*([+-]?\d+(?:\.\d+)?)\s*=\s*y\s*$/i
-	const lc2Match = norm.match(lineYConstRe2)
-	if (lc2Match) return { type: 'line', subtype: 'horizontal', m: 0, n: Number(lc2Match[1]) }
-
-	// ---- EĞİMLİ DOĞRULAR: y = mx + n veya mx + n = y ----
-	const slopeReYLeft = /^\s*(?:y\s*=\s*)?([+-]?(?:\d+(?:\.\d+)?|)?)x(?:\s*([+-]\s*\d+(?:\.\d+)?))?\s*$/i;
-	const slopeReYRight = /^\s*([+-]?(?:\d+(?:\.\d+)?|)?)x(?:\s*([+-]\s*\d+(?:\.\d+)?))?\s*=\s*y\s*$/i
-
-	let m, n
-	// y = ...
-	let mMatch = norm.match(slopeReYLeft)
-	if (mMatch) {
-		const mPart = mMatch[1]
-		m = mPart === '' || mPart === '+' ? 1 : (mPart === '-' ? -1 : Number(mPart))
-		n = mMatch[2] ? Number(mMatch[2].replace(/\s+/g, '')) : 0
-		return { type: 'line', subtype: 'slope', m, n }
+	// mx + n
+	let slopeMatch = expr.match(/^\s*([+-]?\d*\.?\d*)\*?([a-z])([+-]\d+(?:\.\d+)?)?\s*$/i);
+	if (slopeMatch) {
+		const m = Number(slopeMatch[1] || 1);
+		const n = slopeMatch[3] ? Number(slopeMatch[3].replace(/\s+/g, "")) : 0;
+		return { type: 'line', subtype: 'slope', m, n };
 	}
 
-	// ... = y
-	mMatch = norm.match(slopeReYRight)
-	if (mMatch) {
-		const mPart = mMatch[1]
-		m = mPart === '' || mPart === '+' ? 1 : (mPart === '-' ? -1 : Number(mPart))
-		n = mMatch[2] ? Number(mMatch[2].replace(/\s+/g, '')) : 0
-		return { type: 'line', subtype: 'slope', m, n }
+	// n + mx
+	slopeMatch = expr.match(/^\s*([+-]?\d+(?:\.\d+)?)?([+-]?\d*\.?\d*)\*?([a-z])\s*$/i);
+	if (slopeMatch) {
+		const n = slopeMatch[1] ? Number(slopeMatch[1]) : 0;
+		const m = Number(slopeMatch[2] || 1);
+		return { type: 'line', subtype: 'slope', m, n };
 	}
 
 	// ---- DİZİ: Dizi(expr, start, end) ----
@@ -668,7 +662,6 @@ function classify(inputRaw) {
 				coefficients.push(coeffStr); // işaretli string
 			}
 		}
-
 		return { type: "functionCompositions", functions, coefficients };
 	}
 
@@ -695,9 +688,10 @@ function classify(inputRaw) {
 
 		return { type: "functionOperations", functions, coefficients };
 	}
-
 	return { type: 'unknown' }
 }
+/* CLASSIFY METHOD END */
+
 function capitalizeDizi(str) {
 	return str.replace(/dizi/gi, match => {
 		return match.charAt(0).toUpperCase() + match.slice(1).toLowerCase();
@@ -723,10 +717,9 @@ function inputKeyDown(evt, id) {
 	}
 	if (evt.key === 'Enter') {
 		let come = document.getElementById(id).value.toLowerCase()
-		/* 		console.log(classify(come))
-				if (!come.includes('y') && classify(come).type == 'line') {
-					come = 'y=' + come
-				} */
+		come = come.replaceAll('y=', '')
+		come = come.replaceAll('=y', '')
+		console.log(come)
 		if (id == -1) { //Giriş input
 			if (classify(come).type == 'point') {
 				console.log('point çalıştı')
@@ -738,14 +731,14 @@ function inputKeyDown(evt, id) {
 				delCount = 0
 				objectsContainer.innerHTML = null
 			} else if (classify(come).type == 'line') {
-				if (!come.includes('y')) come = 'y=' + come
 				console.log('line çalıştı')
 				let line
 				if (classify(come).subtype == 'vertical') {
 					line = new mLine(classify(come).m, classify(come).n, 'x=' + classify(come).x)
 				} else {
-					line = new mLine(classify(come).m, classify(come).n, come)
+					line = new mLine(classify(come).m, classify(come).n, 'y=' + come)
 				}
+
 				arrObjects.push(line)
 				activeElementID = line.id
 				setSlider(line)
@@ -766,59 +759,27 @@ function inputKeyDown(evt, id) {
 					objectsContainer.innerHTML = null
 				}
 			} else if (classify(come).type == 'functionOperations') {
+				console.log('functionOperations çalıştı')
 				const hepsiVarMi = classify(come).functions.every(name =>
 					arrObjects.some(f => f.name === name)
 				);
 				if (hepsiVarMi) {
+					let newCome = come
+					classify(come).functions.forEach(f => {
+						newCome = newCome.replaceAll(f, '(' + arrObjects.find(o => o.name === f).graph + ')')
+					});
 
-					let newCome = ''
-					for (let i = 0; i < classify(come).functions.length; i++) {
-						newCome += classify(come).coefficients[i] + '*' + classify(come).functions[i]
-					}
-
-					let comeWithFuncs = ''
-					for (let i = 0; i < newCome.length; i++) {
-						comeWithFuncs += newCome[i]
-						arrObjects.forEach(arr => {
-							if (newCome[i] == arr.name) {
-								comeWithFuncs = comeWithFuncs.replace(newCome[i], '(' + arr.graph + ')')
-							}
-						})
-					}
-					console.log(come)
-					console.log(newCome)
-					console.log(comeWithFuncs)
+					newCome = normalizeExpr(newCome)
+					let func = new mFunction(newCome, come + '=' + newCome)
+					arrObjects.push(func)
+					activeElementID = func.id
+					undoObjects = []
+					delCount = 0
+					objectsContainer.innerHTML = null
 
 				} else {
 					showToast('GİRİŞ', 'Hatalı giriş yaptınız. Fonksiyon bulunamadı.')
 				}
-
-
-
-
-				/* 				classify(come).functions.forEach(item => {
-									const func = arrObjects.find(f => f.name === item);
-									if (func) {
-										console.log("Bulundu:", func);
-									} else {
-										console.log("Bulunamadı.");
-									}
-								}); */
-
-				/* 				come = come.replace('y=', '')
-								let comeWithFuncs = ''
-								for (let i = 0; i < come.length; i++) {
-									comeWithFuncs += come[i]
-									arrObjects.forEach(arr => {
-										if (come[i] == arr.name) {
-											comeWithFuncs = comeWithFuncs.replace(come[i], '(' + arr.graph + ')')
-										}
-									})
-								}
-				
-								console.log(come)
-								console.log(comeWithFuncs) */
-
 			} else if (classify(come).type == 'functionCompositions') {
 				console.log('functionCompositions çalıştı')
 				console.log(classify(come))
@@ -840,156 +801,18 @@ function inputKeyDown(evt, id) {
 		} else {
 			showToast('GİRİŞ', 'Giriş inputunda değilsin...')
 		}
-
-
-
-		/*		const commasCount = [...come].filter(c => c === ',').length
-				//POINT CHECK
-				if (come.indexOf('(') == 0 && come.includes('(') && come.includes(')') && commasCount == 1) {
-					let nName = come.substring(0, come.indexOf('('))
-					come = come.substring(come.indexOf('('))
-					let m = isPoint(come).m
-					let n = isPoint(come).n
-					if (m === undefined || n === undefined || isNaN(m) || isNaN(n)) {
-						showToast('NOKTA GİRİŞ', 'Hatalı nokta girişi yaptınız.')
-						return
-					} else {
-						document.getElementById(id).style.background = 'aquamarine'
-						if (id == -1) {
-							let point = new mPoint(m, n, come)
-							arrObjects.push(point)
-							activeElementID = point.id
-							setSlider(point)
-							undoObjects = []
-							delCount = 0
-							objectsContainer.innerHTML = null
-						} else {
-							activeElementID = id
-							arrObjects[id].xpoint = m
-							arrObjects[id].ypoint = n
-							arrObjects[id].inputView = come
-							if (changeName) nameChange(nName)
-							setSlider(arrObjects[id])
-						}
-					}
-					//SEQUENCE CHECK
-				} else if (come.indexOf('(') == 0 && come.includes('(') && come.includes(')') && commasCount == 2) {
-					let nName = come.substring(0, come.indexOf('=') - 1)
-					come = come.substring(come.indexOf('('))
-					let seqFunc = isSequence(come).seqFunc
-					let m = isSequence(come).m
-					let n = isSequence(come).n
-		
-					if (m === undefined || n === undefined || isNaN(m) || isNaN(n) || !seqFunc) {
-						showToast('DİZİ GİRİŞ', 'Hatalı dizi girişi yaptınız.')
-						return
-					} else {
-						document.getElementById(id).style.background = 'aquamarine'
-						if (id == -1) {
-							let seq = new mSequence(seqFunc, m, n, come)
-							arrObjects.push(seq)
-							activeElementID = seq.id
-							undoObjects = []
-							delCount = 0
-							objectsContainer.innerHTML = null
-						} else {
-							activeElementID = id
-							arrObjects[id].graph = seqFunc
-							arrObjects[id].start = m
-							arrObjects[id].end = n
-							if (changeName) nameChange(nName)
-							arrObjects[id].inputView = come
-						}
-					}
-				} else {
-					if (activeElementID == null) activeElementID = -1
-					let nName = come.substring(0, come.indexOf(':'))
-					come = come.substring(come.indexOf('=') + 1)
-					let newCome = convertFunction(come)
-					if (newCome != false) {
-						console.log(isLine(newCome))
-						//LINE CHECK
-						if (isLine(newCome) != false) {
-							let m, n
-							m = isLine(newCome).a
-							n = isLine(newCome).b
-							if (id == -1) {
-								let line = new mLine(m, n, come)
-								arrObjects.push(line)
-								activeElementID = line.id
-								undoObjects = []
-								delCount = 0
-								objectsContainer.innerHTML = null
-								setSlider(line)
-							} else {
-								activeElementID = id
-								arrObjects[id].a = m
-								arrObjects[id].b = n
-								if (Math.sign(n) < 0) {
-									arrObjects[id].graph = m + '*x-' + Math.abs(n)
-								} else {
-									arrObjects[id].graph = m + '*x+' + n
-								}
-								if (changeName) nameChange(nName)
-								arrObjects[id].inputView = come
-								setSlider(arrObjects[id])
-							}
-							//OTHER FUNCTION CHECK
-						} else {
-							if (id == -1) {
-								let func = new mFunction(newCome, come)
-								let nCome = come.replace('=', '')
-								nCome = nCome.replace('y', '')
-								arrObjects.push(func)
-								activeElementID = func.id
-								undoObjects = []
-								delCount = 0
-								objectsContainer.innerHTML = null
-							} else {
-								activeElementID = id
-								arrObjects[id].graph = newCome
-								if (changeName) nameChange(nName)
-								arrObjects[id].inputView = come
-							}
-						}
-						drawCoordinates()
-						fillSetWindow()
-						return
-					}
-					//FUNCTION OPERATIONS CHECK
-					if (!newCome.includes('x')) {
-						let newComeWithFuncs = ''
-						for (let i = 0; i < come.length; i++) {
-							newComeWithFuncs += come[i]
-							arrObjects.forEach(arr => {
-								if (come[i] == arr.name) {
-									newComeWithFuncs = newComeWithFuncs.replace(come[i], '(' + arr.graph + ')')
-								}
-							})
-						}
-						if (come.includes('o') && !come.includes('x')) {
-							let funcs = newComeWithFuncs.split('o')
-							for (let i = funcs.length - 1; i > 0; i--) {
-								funcs[i - 1] = funcs[i - 1].replaceAll('x', funcs[i])
-							}
-							newComeWithFuncs = funcs[0]
-						}
-						newComeWithFuncs = newComeWithFuncs.substring(1, newComeWithFuncs.length - 1)
-						let func = new mFunction(newComeWithFuncs, convertView(newComeWithFuncs))
-						func.name = come
-						arrObjects.push(func)
-						activeElementID = func.id
-						undoObjects = []
-						delCount = 0
-						objectsContainer.innerHTML = null
-		
-						//showToast('FONKSİYON GİRİŞİ', 'Hatalı fonksiyon girişi yaptınız.')
-						//return
-					}
-				}*/
 		drawCoordinates()
 		fillSetWindow()
 	}
+}
+
+function normalizeExpr(expr) {
+	let result = expr;
+	result = result.replace(/-\s*\(/g, "-1*("); // 1) -(...) → -1*(...)
+	result = result.replace(/(\d)\s*\(/g, "$1*("); // 2) sayı + ( → sayı*( 
+	result = result.replace(/\)(\d)/g, ")*$1"); // 3) )sayı → )*sayı
+	result = result.replace(/(\d)([a-zA-Z])/g, "$1*$2"); // 4) sayıharf (ör: 2x → 2*x)
+	return result;
 }
 
 function addParanthesis(e) {
@@ -1068,58 +891,6 @@ function convertFunction(func) {
 		} */
 	return func
 }
-
-/* function isPoint(come) {
-	let m, n
-	if (!isNaN(come.substring(come.indexOf('(') + 1, come.indexOf(',')))) {
-		m = Number(come.substring(come.indexOf('(') + 1, come.indexOf(',')))
-	}
-	if (!isNaN(come.substring(come.indexOf(',') + 1, come.indexOf(')')))) {
-		n = Number(come.substring(come.indexOf(',') + 1, come.indexOf(')')))
-	}
-	return { m: m, n: n }
-} */
-/* function isLine(come) {
-	let a, b, x, y, m1, m2, x1, y1, x2, y2, x3, y3
-	x = 2
-	y = eval(come)
-	x1 = x
-	y1 = y
-	x = 3
-	y = eval(come)
-	x2 = x
-	y2 = y
-	x = 4
-	y = eval(come)
-	x3 = x
-	y3 = y
-
-	if ((y2 - y1) / (x2 - x1) == (y3 - y2) / (x3 - x2)) {
-		x = 0
-		b = eval(come)
-		x = 1
-		a = eval(come) - b
-	} else {
-		return false
-	}
-	return { a: a, b: b }
-} */
-/* function isSequence(come) {
-	if (come.includes('=')) {
-		come = come.substring(come.indexOf('=') + 1, come.length)
-	}
-	let txt = come.substring(1, come.length - 1)
-	txt = txt.split(',')
-	let seq, m, n
-	seq = convertFunction(txt[0])
-	if (!isNaN(txt[1])) {
-		m = txt[1]
-	}
-	if (!isNaN(txt[2])) {
-		n = txt[2]
-	}
-	return { seqFunc: seq, m: m, n: n }
-} */
 
 let delCount = 0
 function delClick(evt) {
