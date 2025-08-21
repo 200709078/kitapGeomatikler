@@ -46,7 +46,12 @@ class mLine {
 		come = come.replace('0x+', '')
 		come = come.replace('+0', '')
 		come = come.replace('+-', '-')
-		this.name = createName('line')
+		if (classify(come).subtype == 'vertical') {
+			const denkCount = arrObjects.filter(f => f.name.includes("denk")).length + 1;
+			this.name = 'denk' + denkCount
+		} else {
+			this.name = createName('line')
+		}
 		this.id = arrObjects.length
 		this.a = a
 		this.b = b
@@ -591,7 +596,7 @@ function classify(inputRaw) {
 	const horizRe = /^\s*([+-]?\d+(?:\.\d+)?)\s*$/;
 	const hMatch = norm.match(horizRe);
 	if (hMatch) return { type: 'line', subtype: 'horizontal', m: 0, n: Number(hMatch[1]) };
-	
+
 	// Normalize: -x => -1*x, +x => 1*x, x => 1*x
 	let expr = norm.replace(/(^|\s)-\s*([a-z])/gi, "$1-1*$2");
 	expr = expr.replace(/(^|\s)\+\s*([a-z])/gi, "$11*$2");
@@ -637,57 +642,57 @@ function classify(inputRaw) {
 	}
 
 	// ---- FONKSİYON BİLEŞKE (Bileşke(...)) ----
-	const funcCompRe = /^\s*Bileşke\s*\((.+)\)\s*$/i;
+	const funcCompRe = /^\s*Bileşke\s*\((.+)\)\s*$/i;  // <-- i flag var
 	const compMatch = norm.match(funcCompRe);
 	if (compMatch) {
 		const inside = compMatch[1];
-		const parts = inside.split(/\s*,\s*/);
 
-		const functions = [];
-		const coefficients = [];
+		// virgül ile ayır, boşlukları kırp
+		const functions = inside.split(/\s*,\s*/).map(p => p.trim());
 
-		for (let part of parts) {
-			const m = part.match(/^([+-]?\d*)([a-z]\d*)$/i);
-			if (m) {
+		return {
+			type: "functionCompositions",
+			functions
+		};
+	}
+	// ---- FONKSİYON OPERASYONLARI 2----
+	// Özel fonksiyonlar: f, g, h
+	// Ama sin, cos, tan, log, exp, sqrt, ln, pi, e gibi bilinenler HARİÇ
+	/* 	const funcOpRe = /([+-]?\d*)(?!sin|cos|tan|log|exp|sqrt|ln|pi|e)([a-z])(?![a-z])/gi;
+		const funcOps = [...expr.matchAll(funcOpRe)];
+	
+		if (funcOps.length > 0) {
+			return {
+				type: "functionOperations",
+				functions: funcOps.map(m => m[2]),
+				coefficients: funcOps.map(m => m[1] === "" ? "+1" : (m[1] === "+" ? "+1" : m[1]))
+			};
+		} */
+
+
+	/* 	// ---- FONKSİYON İŞLEMLERİ (f+g, 2f-3g, -f, -3g+1) 1----
+		const funcOpRe = /([+-]?\d*)([a-z]\d*)/gi;
+		const opMatches = [...norm.matchAll(funcOpRe)];
+		if (opMatches.length > 0) {
+			const functions = [];
+			const coefficients = [];
+	
+			for (let m of opMatches) {
 				let coeffStr = m[1];
 				let funcName = m[2];
-
+	
 				if (coeffStr === "" || coeffStr === "+") coeffStr = "+1";
 				else if (coeffStr === "-") coeffStr = "-1";
 				else if (!coeffStr.startsWith("+") && !coeffStr.startsWith("-")) {
 					coeffStr = "+" + coeffStr;
 				}
-
+	
 				functions.push(funcName);
 				coefficients.push(coeffStr); // işaretli string
 			}
-		}
-		return { type: "functionCompositions", functions, coefficients };
-	}
-
-	// ---- FONKSİYON İŞLEMLERİ (f+g, 2f-3g, -f, -3g+1) ----
-	const funcOpRe = /([+-]?\d*)([a-z]\d*)/gi;
-	const opMatches = [...norm.matchAll(funcOpRe)];
-	if (opMatches.length > 0) {
-		const functions = [];
-		const coefficients = [];
-
-		for (let m of opMatches) {
-			let coeffStr = m[1];
-			let funcName = m[2];
-
-			if (coeffStr === "" || coeffStr === "+") coeffStr = "+1";
-			else if (coeffStr === "-") coeffStr = "-1";
-			else if (!coeffStr.startsWith("+") && !coeffStr.startsWith("-")) {
-				coeffStr = "+" + coeffStr;
-			}
-
-			functions.push(funcName);
-			coefficients.push(coeffStr); // işaretli string
-		}
-
-		return { type: "functionOperations", functions, coefficients };
-	}
+	
+			return { type: "functionOperations", functions, coefficients };
+		} */
 	return { type: 'unknown' }
 }
 /* CLASSIFY METHOD END */
@@ -697,11 +702,20 @@ function capitalizeDizi(str) {
 		return match.charAt(0).toUpperCase() + match.slice(1).toLowerCase();
 	});
 }
-/* CLASIFY PROCESS END */
+function capitalizeBileske(str) {
+	return str.replace(/bileşke/gi, match => {
+		return match.charAt(0).toUpperCase() + match.slice(1).toLowerCase();
+	});
+}
+function bileskeProcess(funcs) {
+	return funcs.reduceRight((acc, f) => {
+		return f.replace(/x/g, `(${acc})`);
+	}, "x");
+}
 
 function inputKeyDown(evt, id) {
 	resetSliders()
-	addParanthesis(evt)
+	handleParanthesis(evt)
 	/* 	let changeName = true
 		if (id == 'defination') {
 			come = document.getElementById(id).value
@@ -719,7 +733,6 @@ function inputKeyDown(evt, id) {
 		let come = document.getElementById(id).value.toLowerCase()
 		come = come.replaceAll('y=', '')
 		come = come.replaceAll('=y', '')
-		console.log(come)
 		if (id == -1) { //Giriş input
 			if (classify(come).type == 'point') {
 				console.log('point çalıştı')
@@ -738,7 +751,6 @@ function inputKeyDown(evt, id) {
 				} else {
 					line = new mLine(classify(come).m, classify(come).n, 'y=' + come)
 				}
-
 				arrObjects.push(line)
 				activeElementID = line.id
 				setSlider(line)
@@ -770,7 +782,7 @@ function inputKeyDown(evt, id) {
 					});
 
 					newCome = normalizeExpr(newCome)
-					let func = new mFunction(newCome, come + '=' + newCome)
+					let func = new mFunction(newCome, come + '=y=' + newCome)
 					arrObjects.push(func)
 					activeElementID = func.id
 					undoObjects = []
@@ -782,7 +794,17 @@ function inputKeyDown(evt, id) {
 				}
 			} else if (classify(come).type == 'functionCompositions') {
 				console.log('functionCompositions çalıştı')
-				console.log(classify(come))
+				come = capitalizeBileske(come)
+				let newCome = bileskeProcess(classify(come).functions)
+				newCome = normalizeExpr(newCome)
+				newCome = convertFunction(newCome)
+
+				let func = new mFunction(newCome, come)
+				arrObjects.push(func)
+				activeElementID = func.id
+				undoObjects = []
+				delCount = 0
+				objectsContainer.innerHTML = null
 
 			} else if (classify(come).type == 'unknown') {
 				console.log('unknown çalıştı')
@@ -790,7 +812,7 @@ function inputKeyDown(evt, id) {
 				if (!newCome) {
 					showToast('GİRİŞ', 'Hatalı giriş yaptınız.')
 				} else {
-					let func = new mFunction(newCome, come)
+					let func = new mFunction(newCome, 'y=' + come)
 					arrObjects.push(func)
 					activeElementID = func.id
 					undoObjects = []
@@ -815,14 +837,16 @@ function normalizeExpr(expr) {
 	return result;
 }
 
-function addParanthesis(e) {
+function handleParanthesis(e) {
 	const el = e.target;
 	const pairs = {
 		'(': ')',
 		'[': ']',
 		'{': '}'
 	};
+	const closePairs = Object.fromEntries(Object.entries(pairs).map(([o, c]) => [c, o]));
 
+	// --- Açılış parantezi yazma ---
 	if (pairs[e.key]) {
 		e.preventDefault();
 		const start = el.selectionStart;
@@ -831,6 +855,7 @@ function addParanthesis(e) {
 		const open = e.key;
 		const close = pairs[e.key];
 		const selectedText = value.slice(start, end);
+
 		el.value = value.slice(0, start) + open + selectedText + close + value.slice(end);
 
 		if (selectedText) {
@@ -840,7 +865,28 @@ function addParanthesis(e) {
 			el.selectionStart = el.selectionEnd = start + 1;
 		}
 	}
+
+	// --- Backspace ile silme kontrolü ---
+	if (e.key === "Backspace") {
+		const start = el.selectionStart;
+		const end = el.selectionEnd;
+		const value = el.value;
+
+		// Seçim varsa normal silmeye izin ver
+		if (start !== end) return;
+
+		// Sol karakter bir açılış parantezi mi?
+		const prevChar = value[start - 1];
+		const nextChar = value[start];
+
+		if (pairs[prevChar] && nextChar === pairs[prevChar]) {
+			e.preventDefault();
+			el.value = value.slice(0, start - 1) + value.slice(start + 1);
+			el.selectionStart = el.selectionEnd = start - 1;
+		}
+	}
 }
+
 
 function baseL(a, b) {
 	return Math.log10(b) / Math.log10(a)
