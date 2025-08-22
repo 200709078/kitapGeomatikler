@@ -60,6 +60,7 @@ class mLine {
 		} else {
 			this.graph = a + '*x+' + b
 		}
+		this.graphParse = null
 		this.color = getRandomColor()
 		this.visibility = true
 		this.size = 2
@@ -72,6 +73,7 @@ class mFunction {
 		this.name = createName('other')
 		this.id = arrObjects.length
 		this.graph = newCome
+		this.graphParse = null
 		this.color = getRandomColor()
 		this.visibility = true
 		this.size = 2
@@ -84,6 +86,7 @@ class mSequence {
 		this.name = createName('sequence')
 		this.id = arrObjects.length
 		this.graph = seq
+		this.graphParse = null
 		this.start = s
 		this.end = e
 		this.color = getRandomColor()
@@ -261,7 +264,7 @@ drawCoordinates = function () {
 	})
 
 	if (activeElementID != null) {
-		//document.getElementById(activeElementID).style.background = 'lightgreen'
+		document.getElementById(activeElementID).style.background = 'lightgreen'
 	}
 }
 fillSetWindow = function () {
@@ -329,16 +332,16 @@ function drawLine(line) {
 	ctx.strokeStyle = ctx.fill.style = line.color
 	ctx.lineWidth = line.size
 	x = minX * unitY
-	y = eval(line.graph)
+	y = line.graphParse(x)
 	ctx.moveTo(-minX * scaleY + (x * scaleY) / unitY, -minY * scaleX - (y * scaleX) / unitX)
 	x = (minX + Math.round(canvas.width / scaleY) + 1) * unitY
-	y = eval(line.graph)
+	y = line.graphParse(x)
 	ctx.lineTo(-minX * scaleY + (x * scaleY) / unitY, -minY * scaleX - (y * scaleX) / unitX)
 	if (line.a != 0) {
 		text((-minX + (-minY - line.b) / line.a) * scaleY + 5, 20, line.color, 'center', 'bold 15px arial', line.name)
 	} else {
 		x = 0
-		text(-minX * scaleY * 2 - 100, (-minY - eval(line.graph)) * scaleX - 10, line.color, 'center', 'bold 15px arial', line.name)
+		text(-minX * scaleY * 2 - 100, (-minY - y) * scaleX - 10, line.color, 'center', 'bold 15px arial', line.name)
 	}
 	ctx.fill()
 	ctx.stroke()
@@ -349,13 +352,7 @@ function drawFunction(func) {
 	labelCreator(func)
 	if (!func.visibility) return
 
-	let f;
-	try {
-		f = new Function("x", "return " + func.graph + ";");
-	} catch (e) {
-		console.error("Fonksiyon hatalı:", func.graph);
-		return;
-	}
+	let f = func.graphParse
 
 	ctx.beginPath()
 	ctx.strokeStyle = func.color
@@ -393,30 +390,48 @@ function drawFunction(func) {
 function drawSequence(seq) {
 	labelCreator(seq)
 	if (!seq.visibility) return
+	let f = seq.graphParse
+
 	ctx.beginPath()
 	ctx.strokeStyle = 'black'
 	ctx.lineWidth = seq.size - 1
 	ctx.setLineDash([2, 5])
-	let y
-	for (let x = minX * unitY; x < (minX + Math.round(canvas.width / scaleY) + 1) * unitY; x += .01) {
-		y = eval(seq.graph)
-		if (x === minX * unitY) {
-			ctx.moveTo(-minX * scaleY + (x * scaleY) / unitY, -minY * scaleX - (y * scaleX) / unitX)
-		} else {
-			ctx.lineTo(-minX * scaleY + (x * scaleY) / unitY, -minY * scaleX - (y * scaleX) / unitX)
+
+	let step = 0.01;
+
+	let firstPoint = true;
+	let x = minX * unitY
+
+	while (x < (minX + Math.round(canvas.width / scaleY) + 1) * unitY) {
+		let y = f(x);
+		if (!isFinite(y)) {
+			firstPoint = true;
+			x += step;
+			continue;
 		}
+
+		let canvasX = -minX * scaleY + (x * scaleY) / unitY;
+		let canvasY = -minY * scaleX - (y * scaleX) / unitX;
+
+		if (firstPoint) {
+			ctx.moveTo(canvasX, canvasY);
+			firstPoint = false;
+		} else {
+			ctx.lineTo(canvasX, canvasY);
+		}
+		x += step
 	}
+
 	ctx.stroke()
 	ctx.setLineDash([])
 	ctx.closePath()
 
-	if (!seq.visibility) return
 	for (let x = seq.start; x <= seq.end; x++) {
 		ctx.beginPath()
 		ctx.strokeStyle = 'black'
 		ctx.fillStyle = seq.color
 		ctx.lineWidth = 1
-		y = eval(seq.graph)
+		y = f(x)
 		ctx.arc((-minX + x / unitY) * scaleY, (-minY - y / unitX) * scaleX, seq.size, 0, 2 * Math.PI)
 		text((-minX + x / unitY) * scaleY - 10, (-minY - y / unitX) * scaleX - 5, seq.color, 'center', 'bold 15px arial', seq.name + x)
 		ctx.fill()
@@ -559,10 +574,12 @@ function inputClick(evt, id) {
 
 		if (arrObjects[activeElementID].type == 'point') {
 			activeObject = 'point'
-		} else {
-			activeObject = 'line'
+			setSlider(item)
 		}
-		if (item.type != 'other') setSlider(item)
+		if (arrObjects[activeElementID].type == 'line') {
+			activeObject = 'line'
+			setSlider(item)
+		}
 		fillSetWindow()
 	}
 }
@@ -646,53 +663,36 @@ function classify(inputRaw) {
 	const compMatch = norm.match(funcCompRe);
 	if (compMatch) {
 		const inside = compMatch[1];
-
-		// virgül ile ayır, boşlukları kırp
 		const functions = inside.split(/\s*,\s*/).map(p => p.trim());
-
 		return {
 			type: "functionCompositions",
 			functions
 		};
 	}
-	// ---- FONKSİYON OPERASYONLARI 2----
-	// Özel fonksiyonlar: f, g, h
-	// Ama sin, cos, tan, log, exp, sqrt, ln, pi, e gibi bilinenler HARİÇ
-	/* 	const funcOpRe = /([+-]?\d*)(?!sin|cos|tan|log|exp|sqrt|ln|pi|e)([a-z])(?![a-z])/gi;
-		const funcOps = [...expr.matchAll(funcOpRe)];
-	
-		if (funcOps.length > 0) {
-			return {
-				type: "functionOperations",
-				functions: funcOps.map(m => m[2]),
-				coefficients: funcOps.map(m => m[1] === "" ? "+1" : (m[1] === "+" ? "+1" : m[1]))
-			};
-		} */
 
+	// ---- FONKSİYON İŞLEMLERİ (f+g, 2f-3g, -f, -3g+1) 1----
+	const funcOpRe = /([+-]?\d*)([a-z]\d*)/gi;
+	const opMatches = [...norm.matchAll(funcOpRe)];
+	if (opMatches.length > 0) {
+		const functions = [];
+		const coefficients = [];
 
-	/* 	// ---- FONKSİYON İŞLEMLERİ (f+g, 2f-3g, -f, -3g+1) 1----
-		const funcOpRe = /([+-]?\d*)([a-z]\d*)/gi;
-		const opMatches = [...norm.matchAll(funcOpRe)];
-		if (opMatches.length > 0) {
-			const functions = [];
-			const coefficients = [];
-	
-			for (let m of opMatches) {
-				let coeffStr = m[1];
-				let funcName = m[2];
-	
-				if (coeffStr === "" || coeffStr === "+") coeffStr = "+1";
-				else if (coeffStr === "-") coeffStr = "-1";
-				else if (!coeffStr.startsWith("+") && !coeffStr.startsWith("-")) {
-					coeffStr = "+" + coeffStr;
-				}
-	
-				functions.push(funcName);
-				coefficients.push(coeffStr); // işaretli string
+		for (let m of opMatches) {
+			let coeffStr = m[1];
+			let funcName = m[2];
+
+			if (coeffStr === "" || coeffStr === "+") coeffStr = "+1";
+			else if (coeffStr === "-") coeffStr = "-1";
+			else if (!coeffStr.startsWith("+") && !coeffStr.startsWith("-")) {
+				coeffStr = "+" + coeffStr;
 			}
-	
-			return { type: "functionOperations", functions, coefficients };
-		} */
+
+			functions.push(funcName);
+			coefficients.push(coeffStr); // işaretli string
+		}
+
+		return { type: "functionOperations", functions, coefficients };
+	}
 	return { type: 'unknown' }
 }
 /* CLASSIFY METHOD END */
@@ -716,15 +716,6 @@ function bileskeProcess(funcs) {
 function inputKeyDown(evt, id) {
 	resetSliders()
 	handleParanthesis(evt)
-	/* 	let changeName = true
-		if (id == 'defination') {
-			come = document.getElementById(id).value
-			id = activeElementID
-			changeName = false
-		} else {
-			come = document.getElementById(id).value
-		} */
-
 	let allowKeys = '(){}[],=-+.*^/bdjmnşquvxyzCEFGHIJKMNOPQTUVWXYZBackspaceArrowLeftArrowRightShiftDelete'
 	if (isNaN(evt.key) && !allowKeys.includes(evt.key)) {
 		evt.preventDefault()
@@ -735,7 +726,8 @@ function inputKeyDown(evt, id) {
 		come = come.replaceAll('=y', '')
 		if (id == -1) { //Giriş input
 			if (classify(come).type == 'point') {
-				console.log('point çalıştı')
+				console.log('point çalıştı', come)
+
 				let point = new mPoint(classify(come).x, classify(come).y, come)
 				arrObjects.push(point)
 				activeElementID = point.id
@@ -744,80 +736,120 @@ function inputKeyDown(evt, id) {
 				delCount = 0
 				objectsContainer.innerHTML = null
 			} else if (classify(come).type == 'line') {
-				console.log('line çalıştı')
+				console.log('line çalıştı', come)
+
+				comeLine = normalizeExpr(come)
 				let line
 				if (classify(come).subtype == 'vertical') {
-					line = new mLine(classify(come).m, classify(come).n, 'x=' + classify(come).x)
+					line = new mLine(classify(comeLine).m, classify(comeLine).n, 'x=' + classify(comeLine).x)
+					line.graph = null
+					line.a = null
+					line.b = null
 				} else {
-					line = new mLine(classify(come).m, classify(come).n, 'y=' + come)
+					line = new mLine(classify(comeLine).m, classify(comeLine).n, 'y=' + come)
 				}
-				arrObjects.push(line)
-				activeElementID = line.id
-				setSlider(line)
-				undoObjects = []
-				delCount = 0
-				objectsContainer.innerHTML = null
-			} else if (classify(come).type == 'sequence') {
-				console.log('sequence çalıştı')
-				let newCome = convertFunction(classify(come).expr)
-				if (!newCome) {
-					showToast('GİRİŞ', 'Hatalı giriş yaptınız.')
+				if (getDrawableFunction(line.graph).status = true) {
+					line.graphParse = getDrawableFunction(line.graph).parsedFunc
+					arrObjects.push(line)
+					activeElementID = line.id
+					setSlider(line)
+					undoObjects = []
+					delCount = 0
+					objectsContainer.innerHTML = null
+					console.log(line)
 				} else {
-					let seq = new mSequence(newCome, classify(come).start, classify(come).end, capitalizeDizi(come))
+					showToast('GİRİŞ', 'Hatalı giriş yaptınız.' + getDrawableFunction(line.graph).reason)
+				}
+			} else if (classify(come).type == 'sequence') {
+				console.log('sequence çalıştı', come)
+
+				come = capitalizeDizi(come)
+				comeFunc = normalizeExpr(classify(come).expr)
+
+				if (getDrawableFunction(comeFunc).status) {
+					let seq = new mSequence(comeFunc, classify(come).start, classify(come).end, come)
+					seq.graphParse = getDrawableFunction(comeFunc).parsedFunc
 					arrObjects.push(seq)
 					activeElementID = seq.id
+					resetSliders()
 					undoObjects = []
 					delCount = 0
 					objectsContainer.innerHTML = null
+				} else {
+					showToast('GİRİŞ', 'Hatalı giriş yaptınız.' + getDrawableFunction(comeFunc).reason)
 				}
 			} else if (classify(come).type == 'functionOperations') {
-				console.log('functionOperations çalıştı')
-				const hepsiVarMi = classify(come).functions.every(name =>
-					arrObjects.some(f => f.name === name)
-				);
+				console.log('functionOperations çalıştı', come)
+
+				come = normalizeExpr(come)
+				const hepsiVarMi = classify(come).functions.every(name => arrObjects.some(f => f.name === name));
 				if (hepsiVarMi) {
-					let newCome = come
+					let comeWithFuncs = come
 					classify(come).functions.forEach(f => {
-						newCome = newCome.replaceAll(f, '(' + arrObjects.find(o => o.name === f).graph + ')')
+						comeWithFuncs = comeWithFuncs.replaceAll(f, '(' + arrObjects.find(o => o.name === f).graph + ')')
 					});
 
-					newCome = normalizeExpr(newCome)
-					let func = new mFunction(newCome, come + '=y=' + newCome)
-					arrObjects.push(func)
-					activeElementID = func.id
-					undoObjects = []
-					delCount = 0
-					objectsContainer.innerHTML = null
+					if (getDrawableFunction(comeWithFuncs).status) {
+						let func = new mFunction(comeWithFuncs, come + '=y=' + comeWithFuncs)
+						func.graphParse = getDrawableFunction(comeWithFuncs).parsedFunc
+						arrObjects.push(func)
+						activeElementID = func.id
+						undoObjects = []
+						delCount = 0
+						objectsContainer.innerHTML = null
+					} else {
+						showToast('GİRİŞ', 'Hatalı giriş yaptınız.' + getDrawableFunction(comeWithFuncs).reason)
+					}
 
 				} else {
 					showToast('GİRİŞ', 'Hatalı giriş yaptınız. Fonksiyon bulunamadı.')
 				}
 			} else if (classify(come).type == 'functionCompositions') {
-				console.log('functionCompositions çalıştı')
+				console.log('functionCompositions çalıştı', come)
+
 				come = capitalizeBileske(come)
-				let newCome = bileskeProcess(classify(come).functions)
-				newCome = normalizeExpr(newCome)
-				newCome = convertFunction(newCome)
-
-				let func = new mFunction(newCome, come)
-				arrObjects.push(func)
-				activeElementID = func.id
-				undoObjects = []
-				delCount = 0
-				objectsContainer.innerHTML = null
-
-			} else if (classify(come).type == 'unknown') {
-				console.log('unknown çalıştı')
-				let newCome = convertFunction(come)
-				if (!newCome) {
-					showToast('GİRİŞ', 'Hatalı giriş yaptınız.')
+				come = normalizeExpr(come)
+				let funcsFound = true
+				let names = arrObjects.map((item) => item.name)
+				classify(come).functions.forEach(f => {
+					if (!f.includes('x') && !Number.isFinite(Number(f))) {
+						if (!names.includes(f)) funcsFound = false
+					}
+				});
+				if (funcsFound) {
+					classify(come).functions.forEach(f => {
+						if (!f.includes('x') && !Number.isFinite(Number(f))) {
+							come = come.replaceAll(f, arrObjects.find(o => o.name === f).graph)
+						}
+					})
+					let cometoBileske = bileskeProcess(classify(come).functions)
+					if (getDrawableFunction(cometoBileske).status) {
+						let func = new mFunction(cometoBileske, come + '=' + cometoBileske)
+						func.graphParse = getDrawableFunction(cometoBileske).parsedFunc
+						arrObjects.push(func)
+						activeElementID = func.id
+						undoObjects = []
+						delCount = 0
+						objectsContainer.innerHTML = null
+					} else {
+						showToast('GİRİŞ', 'Hatalı giriş yaptınız.' + getDrawableFunction(cometoBileske).reason)
+					}
 				} else {
-					let func = new mFunction(newCome, 'y=' + come)
+					showToast('GİRİŞ', 'Hatalı giriş yaptınız. Fonksiyon bulunamadı.')
+				}
+			} else if (classify(come).type == 'unknown') {
+				console.log('unknown çalıştı', come)
+				let comeFunc = normalizeExpr(come)
+				if (getDrawableFunction(comeFunc).status) {
+					let func = new mFunction(comeFunc, 'y=' + come)
+					func.graphParse = getDrawableFunction(comeFunc).parsedFunc
 					arrObjects.push(func)
 					activeElementID = func.id
 					undoObjects = []
 					delCount = 0
 					objectsContainer.innerHTML = null
+				} else {
+					showToast('GİRİŞ', 'Hatalı giriş yaptınız.' + newCome.reason)
 				}
 			}
 		} else {
@@ -829,6 +861,8 @@ function inputKeyDown(evt, id) {
 }
 
 function normalizeExpr(expr) {
+	expr = expr.replaceAll('-x', '-1x')
+	expr = expr.replaceAll('+x', '+1x')
 	let result = expr;
 	result = result.replace(/-\s*\(/g, "-1*("); // 1) -(...) → -1*(...)
 	result = result.replace(/(\d)\s*\(/g, "$1*("); // 2) sayı + ( → sayı*( 
@@ -937,6 +971,55 @@ function convertFunction(func) {
 		} */
 	return func
 }
+
+function getDrawableFunction(expr) {
+	// 1) izin verilen karakterler
+	const validPattern = /^[0-9x+\-*/().,^ \t\nA-Za-z,]*$/;
+	if (!validPattern.test(expr)) {
+		return { status: false, reason: "Geçersiz karakter" };
+	}
+
+	try {
+		// 2) Fonksiyon parse işlemi
+		const parsedFunc = new Function("x", `
+  with (Math) {
+    const ln = Math.log;             // ln(x)
+    const log10 = (y) => Math.log10(y);
+    const exp = Math.exp;            // e^x
+    const E = Math.E;                // sabit e
+    const log = (val, base) => Math.log(val)/Math.log(base); // özel tabanlı log
+    return ${expr};
+      }
+    `);
+
+		// 3) Çeşitli x değerlerinde test
+		const testValues = [-10, -5, -2, -1, 0.1, 1, 2, 5, 10, 20, 50];
+		let validCount = 0;
+
+		for (let v of testValues) {
+			let y = parsedFunc(v);
+			if (typeof y === "number" && isFinite(y)) validCount++;
+		}
+
+		if (validCount >= 3) {
+			// ARTIK parsedFunc döndürüyoruz
+			return { status: true, parsedFunc };
+		} else {
+			return { status: false, reason: "Çoğu noktada tanımsız" };
+		}
+
+	} catch (e) {
+		return { status: false, reason: "Yazım yanlışı var." };
+	}
+}
+
+/* console.log("ln(x)", getDrawableFunction("ln(x)").status)     	// true // ln(x)
+console.log("log10(2*x-3)", getDrawableFunction("log10(2*x-3)").status)   // true // log10(x)
+console.log("exp(x-1)", getDrawableFunction("exp(x-1)").status)    // true // exp(x-1)
+console.log("E**(x-1)", getDrawableFunction("E**(x-1)").status)     // true // e^(x-1)
+const f = getDrawableFunction("ln(2*x-5)") // log_(x+1)(x-20)
+console.log("ln(2*x-5)", f.status)                               // true veya false
+if (f.status) console.log("ln(2*x-5)->f(5)=", f.parsedFunc(3)) */
 
 let delCount = 0
 function delClick(evt) {
