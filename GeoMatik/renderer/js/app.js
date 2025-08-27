@@ -13,7 +13,6 @@ let scaleX = 100
 let scaleY = 100
 let minX = -8
 let minY = -3
-//let units = [1 / 10, 1 / 5, 1 / 2, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000]
 let units = [1 / 10, 1 / 5, 1 / 2, 1, 2, 5, 10, 20]
 let tickX = 3
 let unitX = units[tickX]
@@ -42,10 +41,10 @@ class mPoint {
 class mLine {
 	constructor(a, b, come = null) {
 		if (come == null) come = a + 'x+' + b
-		come = come.replace('1x', 'x')
-		come = come.replace('0x+', '')
-		come = come.replace('+0', '')
-		come = come.replace('+-', '-')
+		/* 		come = come.replace('1x', 'x')
+				come = come.replace('0x+', '')
+				come = come.replace('+0', '')
+				come = come.replace('+-', '-') */
 		if (classify(come).subtype == 'vertical') {
 			const denkCount = arrObjects.filter(f => f.name.includes("denk")).length + 1;
 			this.name = 'denk' + denkCount
@@ -671,27 +670,27 @@ function classify(inputRaw) {
 	}
 
 	// ---- FONKSİYON İŞLEMLERİ (f+g, 2f-3g, -f, -3g+1) 1----
-	const funcOpRe = /([+-]?\d*)([a-z]\d*)/gi;
-	const opMatches = [...norm.matchAll(funcOpRe)];
+	const funcOpRe = /([+-]?\d*)([fghpqr][0-9]*)\b/gi
+	const opMatches = [...norm.matchAll(funcOpRe)]
 	if (opMatches.length > 0) {
-		const functions = [];
-		const coefficients = [];
+		const functions = []
+		const coefficients = []
 
 		for (let m of opMatches) {
-			let coeffStr = m[1];
-			let funcName = m[2];
+			let coeffStr = m[1]
+			let funcName = m[2]
 
-			if (coeffStr === "" || coeffStr === "+") coeffStr = "+1";
-			else if (coeffStr === "-") coeffStr = "-1";
+			if (coeffStr === "" || coeffStr === "+") coeffStr = "+1"
+			else if (coeffStr === "-") coeffStr = "-1"
 			else if (!coeffStr.startsWith("+") && !coeffStr.startsWith("-")) {
-				coeffStr = "+" + coeffStr;
+				coeffStr = "+" + coeffStr
 			}
 
-			functions.push(funcName);
-			coefficients.push(coeffStr); // işaretli string
+			functions.push(funcName)
+			coefficients.push(coeffStr) // işaretli string
 		}
 
-		return { type: "functionOperations", functions, coefficients };
+		return { type: "functionOperations", functions, coefficients }
 	}
 	return { type: 'unknown' }
 }
@@ -756,7 +755,6 @@ function inputKeyDown(evt, id) {
 					undoObjects = []
 					delCount = 0
 					objectsContainer.innerHTML = null
-					console.log(line)
 				} else {
 					showToast('GİRİŞ', 'Hatalı giriş yaptınız.' + getDrawableFunction(line.graph).reason)
 				}
@@ -849,7 +847,7 @@ function inputKeyDown(evt, id) {
 					delCount = 0
 					objectsContainer.innerHTML = null
 				} else {
-					showToast('GİRİŞ', 'Hatalı giriş yaptınız.' + newCome.reason)
+					showToast('GİRİŞ', 'Hatalı giriş yaptınız.' + getDrawableFunction(comeFunc).reason)
 				}
 			}
 		} else {
@@ -861,11 +859,25 @@ function inputKeyDown(evt, id) {
 }
 
 function normalizeExpr(expr) {
+
+	expr = expr.replace(/\s+/g, "") // boşlukları temizleyelim
+	expr = expr.replace(/(^|[^\w])\-x/g, "$1-1*x") // -x → -1*x, +x → +1*x
+	expr = expr.replace(/(^|[^\w])\+x/g, "$1+1*x")
+	expr = expr.replace(/-\(/g, "-1*(") // 2) -(...) → -1*(...)
+	expr = expr.replace(/(\d)\(/g, "$1*(") // sayı + ( → sayı*( 
+	expr = expr.replace(/\)(\d)/g, ")*$1") // )sayı → )*sayı
+	expr = expr.replace(/(\d)([a-zA-Z])/g, "$1*$2") // sayıharf (ör: 2x → 2*x)
+	expr = expr.replace(/\^/g, "**") // üs işareti ^ → **
+	return expr;
+}
+
+
+function normalizeExpr2(expr) { // neredeyse düzgün çalışıyor.
 	expr = expr.replaceAll('-x', '-1x')
 	expr = expr.replaceAll('+x', '+1x')
 	let result = expr;
-	result = result.replace(/-\s*\(/g, "-1*("); // 1) -(...) → -1*(...)
-	result = result.replace(/(\d)\s*\(/g, "$1*("); // 2) sayı + ( → sayı*( 
+	result = result.replace(/-\s*\(/g, "-1*("); // -(...) → -1*(...)
+	result = result.replace(/(\d)\s*\(/g, "$1*("); // sayı( → sayı*( 
 	result = result.replace(/\)(\d)/g, ")*$1"); // 3) )sayı → )*sayı
 	result = result.replace(/(\d)([a-zA-Z])/g, "$1*$2"); // 4) sayıharf (ör: 2x → 2*x)
 	return result;
@@ -921,66 +933,14 @@ function handleParanthesis(e) {
 	}
 }
 
-
-function baseL(a, b) {
-	return Math.log10(b) / Math.log10(a)
-}
-
-function convertView(come) {
-	come = come.replaceAll('**', '^')
-	come = come.replaceAll('1*', '')
-	come = come.replaceAll('*x', 'x')
-	come = come.replaceAll('Math.sin', 'sin')
-	come = come.replaceAll('Math.cos', 'cos')
-	come = come.replaceAll('Math.tan', 'tan')
-	come = come.replaceAll('Math.cot', 'cot')
-	come = come.replaceAll('Math.PI', 'pi')
-	come = come.replaceAll('Math.E', 'e')
-	come = come.replaceAll('baseL(e,', 'ln(')
-	come = come.replaceAll('baseL', 'log')
-	come = come.replaceAll('+0', '')
-	return come
-}
-
-function convertFunction(func) {
-	func = func.replace(/([-+])([a-z])/g, "$11$2")
-	func = func.replace(/(\d+(\.\d+)?)\s*([a-zA-Z])/g, "$1*$3")
-	func = func.replaceAll('^', '**')
-	func = func.replaceAll('sin', 'Math.sin')
-	func = func.replaceAll('cos', 'Math.cos')
-	func = func.replaceAll('tan', 'Math.tan')
-	func = func.replaceAll('cot', 'Math.cot')
-	func = func.replaceAll('pi', 'Math.PI')
-	func = func.replaceAll('E', 'Math.E')
-	func = func.replaceAll('e', 'Math.E')
-	func = func.replaceAll('log', 'baseL')
-	func = func.replaceAll('ln(', 'baseL(Math.E,')
-	func = func.replaceAll('y=', '')
-	func = func.replaceAll('=y', '')
-	func = func.replaceAll('{', '(')
-	func = func.replaceAll('}', ')')
-	func = func.replaceAll('[', '(')
-	func = func.replaceAll(']', ')')
-	/* 	let x = 8 //or Math.random()
-		let y
-		try {
-			y = eval(func)
-			if (y === undefined || isNaN(y)) return false
-		} catch (error) {
-			return false
-		} */
-	return func
-}
-
 function getDrawableFunction(expr) {
-	// 1) izin verilen karakterler
-	const validPattern = /^[0-9x+\-*/().,^ \t\nA-Za-z,]*$/;
-	if (!validPattern.test(expr)) {
-		return { status: false, reason: "Geçersiz karakter" };
-	}
 
+	const validPattern = /^[0-9x+\-*/().,^ \t\nA-Za-z,]*$/ // izin verilen karakterler
+	if (!validPattern.test(expr)) {
+		return { status: false, reason: "Geçersiz karakter" }
+	}
 	try {
-		// 2) Fonksiyon parse işlemi
+		// parse işlemi
 		const parsedFunc = new Function("x", `
   with (Math) {
     const ln = Math.log;             // ln(x)
@@ -990,36 +950,25 @@ function getDrawableFunction(expr) {
     const log = (val, base) => Math.log(val)/Math.log(base); // özel tabanlı log
     return ${expr};
       }
-    `);
-
-		// 3) Çeşitli x değerlerinde test
-		const testValues = [-10, -5, -2, -1, 0.1, 1, 2, 5, 10, 20, 50];
-		let validCount = 0;
+    `)
+		const testValues = [-10, -5, -2, -1, 0.1, 1, 2, 5, 10, 20, 50]
+		let validCount = 0
 
 		for (let v of testValues) {
-			let y = parsedFunc(v);
-			if (typeof y === "number" && isFinite(y)) validCount++;
+			let y = parsedFunc(v)
+			if (typeof y === "number" && isFinite(y)) validCount++
 		}
 
-		if (validCount >= 3) {
-			// ARTIK parsedFunc döndürüyoruz
-			return { status: true, parsedFunc };
+		if (validCount >= 5) {
+			return { status: true, parsedFunc }
 		} else {
-			return { status: false, reason: "Çoğu noktada tanımsız" };
+			return { status: false, reason: "Çoğu noktada tanımsız" }
 		}
 
 	} catch (e) {
-		return { status: false, reason: "Yazım yanlışı var." };
+		return { status: false, reason: "Yazım yanlışı var." }
 	}
 }
-
-/* console.log("ln(x)", getDrawableFunction("ln(x)").status)     	// true // ln(x)
-console.log("log10(2*x-3)", getDrawableFunction("log10(2*x-3)").status)   // true // log10(x)
-console.log("exp(x-1)", getDrawableFunction("exp(x-1)").status)    // true // exp(x-1)
-console.log("E**(x-1)", getDrawableFunction("E**(x-1)").status)     // true // e^(x-1)
-const f = getDrawableFunction("ln(2*x-5)") // log_(x+1)(x-20)
-console.log("ln(2*x-5)", f.status)                               // true veya false
-if (f.status) console.log("ln(2*x-5)->f(5)=", f.parsedFunc(3)) */
 
 let delCount = 0
 function delClick(evt) {
@@ -1442,17 +1391,17 @@ $(document).ready(function () {
 					let m = parseFloat((lineB.y - lineA.y) / (lineB.x - lineA.x)).toFixed(2)
 					let c = parseFloat(lineA.y - m * lineA.x).toFixed(2)
 					line = new mLine(m, c)
-
+					line.graphParse = getDrawableFunction(line.graph).parsedFunc
 					let x, y
 					ctx.beginPath()
 					ctx.strokeStyle = ctx.fill.style = line.color
 					ctx.lineWidth = 2
 					x = minX * unitY
-					y = eval(line.graph)
+					y = line.graphParse(x)
 					ctx.moveTo(-minX * scaleY + (x * scaleY) / unitY, -minY * scaleX - (y * scaleX) / unitX)
 
 					x = (minX + Math.round(canvas.width / scaleX) + 1) * unitY
-					y = eval(line.graph)
+					y = line.graphParse(x)
 					ctx.lineTo(-minX * scaleY + (x * scaleY) / unitY, -minY * scaleX - (y * scaleX) / unitX)
 					ctx.stroke()
 					ctx.fill()
@@ -1529,6 +1478,7 @@ $(document).ready(function () {
 			}
 
 			let line = new mLine(m, c)
+			line.graphParse = getDrawableFunction(line.graph).parsedFunc
 			setSlider(line)
 			arrObjects.push(line)
 			activeElementID = line.id
@@ -1581,5 +1531,4 @@ $(document).ready(function () {
 	}
 
 	initResizerFunction(reSizer, leftWrapper)
-
 })
