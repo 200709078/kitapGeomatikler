@@ -779,11 +779,11 @@ function inputKeyDown(evt, id) {
 			} else if (classify(come).type == 'functionOperations') {
 				console.log('functionOperations çalıştı', come)
 
-				come = normalizeExpr(come)
-				const hepsiVarMi = classify(come).functions.every(name => arrObjects.some(f => f.name === name));
+				newCome = normalizeExpr(come)
+				const hepsiVarMi = classify(newCome).functions.every(name => arrObjects.some(f => f.name === name));
 				if (hepsiVarMi) {
-					let comeWithFuncs = come
-					classify(come).functions.forEach(f => {
+					let comeWithFuncs = newCome
+					classify(newCome).functions.forEach(f => {
 						comeWithFuncs = comeWithFuncs.replaceAll(f, '(' + arrObjects.find(o => o.name === f).graph + ')')
 					});
 
@@ -806,21 +806,21 @@ function inputKeyDown(evt, id) {
 				console.log('functionCompositions çalıştı', come)
 
 				come = capitalizeBileske(come)
-				come = normalizeExpr(come)
+				newCome = normalizeExpr(come)
 				let funcsFound = true
 				let names = arrObjects.map((item) => item.name)
-				classify(come).functions.forEach(f => {
+				classify(newCome).functions.forEach(f => {
 					if (!f.includes('x') && !Number.isFinite(Number(f))) {
 						if (!names.includes(f)) funcsFound = false
 					}
 				});
 				if (funcsFound) {
-					classify(come).functions.forEach(f => {
+					classify(newCome).functions.forEach(f => {
 						if (!f.includes('x') && !Number.isFinite(Number(f))) {
-							come = come.replaceAll(f, arrObjects.find(o => o.name === f).graph)
+							newCome = newCome.replaceAll(f, arrObjects.find(o => o.name === f).graph)
 						}
 					})
-					let cometoBileske = bileskeProcess(classify(come).functions)
+					let cometoBileske = bileskeProcess(classify(newCome).functions)
 					if (getDrawableFunction(cometoBileske).status) {
 						let func = new mFunction(cometoBileske, come + '=' + cometoBileske)
 						func.graphParse = getDrawableFunction(cometoBileske).parsedFunc
