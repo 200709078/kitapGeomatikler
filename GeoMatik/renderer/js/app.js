@@ -22,7 +22,8 @@ let firstMousePos, lastMousePos, findPointPos = null
 let arrObjects = []
 let undoObjects = []
 let pointNames = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-let sequenceNames = "abcdefghijklmopqrstuvwxyz"
+let sequenceNames = "abcdeijklmostuvwxyz"
+let limitNames = "abcdeijklmostuvwxyz"
 let lineNames = "fghpqr"
 class mPoint {
 	constructor(xpoint, ypoint, come = null) {
@@ -41,10 +42,6 @@ class mPoint {
 class mLine {
 	constructor(a, b, come = null) {
 		if (come == null) come = a + 'x+' + b
-		/* 		come = come.replace('1x', 'x')
-				come = come.replace('0x+', '')
-				come = come.replace('+0', '')
-				come = come.replace('+-', '-') */
 		if (classify(come).subtype == 'vertical') {
 			const denkCount = arrObjects.filter(f => f.name.includes("denk")).length + 1;
 			this.name = 'denk' + denkCount
@@ -92,6 +89,21 @@ class mSequence {
 		this.visibility = true
 		this.size = 2
 		this.type = 'sequence'
+		this.inputView = come
+	}
+}
+
+class mLimit {
+	constructor(lim, a, come) {
+		this.name = createName('limit')
+		this.id = arrObjects.length
+		this.graph = lim
+		this.graphParse = null
+		this.approachVal = a
+		this.color = getRandomColor()
+		this.visibility = true
+		this.size = 2
+		this.type = 'limit'
 		this.inputView = come
 	}
 }
@@ -148,6 +160,24 @@ createName = function (type) {
 				if (!(names.includes(sequenceNames[i % sequenceNames.length] + ((i / sequenceNames.length) - ((i / sequenceNames.length) % 1))))) {
 					iFound = true
 					nm = sequenceNames[i % sequenceNames.length] + ((i / sequenceNames.length) - ((i / sequenceNames.length) % 1))
+				}
+			}
+			i++
+		}
+	} else if (type == 'limit') {
+		if (arrObjects.length == 0) return limitNames[0]
+		let names = arrObjects.map((item) => item.name)
+		while (!iFound) {
+			if (i < limitNames.length) {
+				if (!names.includes(limitNames[i])) {
+					iFound = true
+					nm = limitNames[i]
+				}
+			}
+			if (i >= limitNames.length) {
+				if (!(names.includes(limitNames[i % limitNames.length] + ((i / limitNames.length) - ((i / limitNames.length) % 1))))) {
+					iFound = true
+					nm = limitNames[i % limitNames.length] + ((i / limitNames.length) - ((i / limitNames.length) % 1))
 				}
 			}
 			i++
@@ -257,6 +287,8 @@ drawCoordinates = function () {
 			drawLine(item)
 		} else if (item.type === 'sequence') {
 			drawSequence(item)
+		} else if (item.type === 'limit') {
+			drawLimit(item)
 		} else {
 			drawFunction(item)
 		}
@@ -314,7 +346,7 @@ function drawLine(line) {
 		let verticalNumber = classify(line.inputView).x
 
 		ctx.beginPath()
-		ctx.strokeStyle = ctx.fill.style = line.color
+		ctx.strokeStyle = ctx.fillStyle = line.color
 		ctx.lineWidth = line.size
 		ctx.moveTo((-minX + verticalNumber / unitY) * scaleY, canvas.height + 100)
 		ctx.lineTo((-minX + verticalNumber / unitY) * scaleY, -canvas.height - 100)
@@ -328,7 +360,7 @@ function drawLine(line) {
 
 	let x, y
 	ctx.beginPath()
-	ctx.strokeStyle = ctx.fill.style = line.color
+	ctx.strokeStyle = ctx.fillStyle = line.color
 	ctx.lineWidth = line.size
 	x = minX * unitY
 	y = line.graphParse(x)
@@ -439,6 +471,56 @@ function drawSequence(seq) {
 	}
 }
 
+function drawLimit(lim) {
+	labelCreator(lim)
+	if (!lim.visibility) return
+	let f = lim.graphParse
+
+	ctx.beginPath()
+	ctx.strokeStyle = 'black'
+	ctx.lineWidth = lim.size - 1
+	ctx.setLineDash([2, 5])
+
+	let step = 0.01;
+
+	let firstPoint = true;
+	let x = minX * unitY
+
+	while (x < (minX + Math.round(canvas.width / scaleY) + 1) * unitY) {
+		let y = f(x);
+		if (!isFinite(y)) {
+			firstPoint = true;
+			x += step;
+			continue;
+		}
+
+		let canvasX = -minX * scaleY + (x * scaleY) / unitY;
+		let canvasY = -minY * scaleX - (y * scaleX) / unitX;
+
+		if (firstPoint) {
+			ctx.moveTo(canvasX, canvasY);
+			firstPoint = false;
+		} else {
+			ctx.lineTo(canvasX, canvasY);
+		}
+		x += step
+	}
+
+	ctx.stroke()
+	ctx.setLineDash([])
+	ctx.closePath()
+
+	let verticalMNumber = lim.approachVal
+	ctx.beginPath()
+	ctx.strokeStyle = ctx.fillStyle = 'blue'
+	ctx.lineWidth = 1
+	ctx.moveTo((-minX + verticalMNumber / unitY) * scaleY, canvas.height + 100)
+	ctx.lineTo((-minX + verticalMNumber / unitY) * scaleY, -canvas.height - 100)
+	ctx.fill()
+	ctx.stroke()
+	ctx.closePath()
+}
+
 function labelCreator(item) {
 	let label = document.createElement('label')
 	let input = document.createElement('input')
@@ -457,6 +539,8 @@ function labelCreator(item) {
 		input.value = item.name + item.inputView
 	} else if (item.type == 'sequence') {
 		input.value = item.name + 'ₓ=' + item.inputView
+	} else if (item.type == 'limit') {
+		input.value = item.inputView
 	} else {
 		input.value = item.name + ':' + item.inputView
 	}
@@ -574,9 +658,11 @@ function inputClick(evt, id) {
 		if (arrObjects[activeElementID].type == 'point') {
 			activeObject = 'point'
 			setSlider(item)
-		}
-		if (arrObjects[activeElementID].type == 'line') {
+		} else if (arrObjects[activeElementID].type == 'line') {
 			activeObject = 'line'
+			setSlider(item)
+		} else if (arrObjects[activeElementID].type == 'limit') {
+			//activeObject = 'other'
 			setSlider(item)
 		}
 		fillSetWindow()
@@ -586,7 +672,7 @@ function inputClick(evt, id) {
 /* CLASSIFY METHOD PROCESS */
 function classify(inputRaw) {
 	const norm = inputRaw.trim()
-	// ---- NOKTA: (x,y) ----
+	// ---- (x,y) ----
 	const pointRe = /^\s*\(\s*([+-]?\d+(?:\.\d+)?)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*\)\s*$/
 	const pMatch = norm.match(pointRe)
 
@@ -599,7 +685,7 @@ function classify(inputRaw) {
 		};
 	}
 
-	// ---- DİKEY DOĞRU: x = sabit veya sabit = x ----
+	// ---- x = sabit veya sabit = x ----
 	const lineXConstRe = /^\s*(?:x\s*=\s*([+-]?\d+(?:\.\d+)?)|([+-]?\d+(?:\.\d+)?)\s*=\s*x)\s*$/i;
 	const xcMatch = norm.match(lineXConstRe);
 	if (xcMatch) {
@@ -608,7 +694,7 @@ function classify(inputRaw) {
 	}
 
 	// ---- EĞİMLİ DOĞRULAR ----
-	// ---- YATAY DOĞRU: sadece sayı (x eksenine paralel) ----
+	// ---- x eksenine paralel ----
 	const horizRe = /^\s*([+-]?\d+(?:\.\d+)?)\s*$/;
 	const hMatch = norm.match(horizRe);
 	if (hMatch) return { type: 'line', subtype: 'horizontal', m: 0, n: Number(hMatch[1]) };
@@ -634,30 +720,23 @@ function classify(inputRaw) {
 		return { type: 'line', subtype: 'slope', m, n };
 	}
 
-	// ---- DİZİ: Dizi(expr, start, end) ----
-	const arrayRe = /^\s*Dizi\s*\(\s*([^,]+)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*\)\s*$/i
-	const arrayMatch = norm.match(arrayRe)
+	// ---- Dizi(function, start, end) ----
+	const diziRe = /^\s*Dizi\s*\(\s*(.+)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*\)\s*$/i;
+	const arrayMatch = norm.match(diziRe);
 	if (arrayMatch) {
-		let [, expr, startStr, endStr] = arrayMatch
+		const func = arrayMatch[1].trim();
+		const start = Number(arrayMatch[2]);
+		const end = Number(arrayMatch[3]);
 
-		expr = expr.trim()
-		// Sadece x ve izin verilen matematik fonksiyon/sabitleri kontrol et
-		const allowedFunctions = ['sin', 'cos', 'tan', 'log', 'exp', 'sqrt', 'pi', 'e']
-		const letters = expr.match(/[a-zA-Z]+/g) || []
-		for (let l of letters) {
-			if (l.toLowerCase() !== 'x' && !allowedFunctions.includes(l.toLowerCase())) {
-				return { type: 'unknown' };
-			}
-		}
 		return {
-			type: 'sequence',
-			expr,
-			start: Number(startStr),
-			end: Number(endStr)
+			type: "sequence",
+			func,
+			start,
+			end
 		};
 	}
 
-	// ---- FONKSİYON BİLEŞKE (Bileşke(...)) ----
+	// ---- Bileşke(...) ----
 	const funcCompRe = /^\s*Bileşke\s*\((.+)\)\s*$/i;  // <-- i flag var
 	const compMatch = norm.match(funcCompRe);
 	if (compMatch) {
@@ -669,7 +748,21 @@ function classify(inputRaw) {
 		};
 	}
 
-	// ---- FONKSİYON İŞLEMLERİ (f+g, 2f-3g, -f, -3g+1) 1----
+	// ---- Limit(f,2) ----
+	const limitRe = /^\s*Limit\s*\(\s*(.+)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*\)\s*$/i;
+	const limitMatch = norm.match(limitRe);
+	if (limitMatch) {
+		const func = limitMatch[1];     // f
+		const approachVal = limitMatch[2];  // 2
+
+		return {
+			type: "limit",
+			func,
+			approachVal
+		};
+	}
+
+	// ---- f+g, 2f-3g, -f, -3g+1 ----
 	const funcOpRe = /([+-]?\d*)([fghpqr][0-9]*)\b/gi
 	const opMatches = [...norm.matchAll(funcOpRe)]
 	if (opMatches.length > 0) {
@@ -687,24 +780,28 @@ function classify(inputRaw) {
 			}
 
 			functions.push(funcName)
-			coefficients.push(coeffStr) // işaretli string
+			coefficients.push(coeffStr)
 		}
-
 		return { type: "functionOperations", functions, coefficients }
 	}
 	return { type: 'unknown' }
 }
 /* CLASSIFY METHOD END */
 
-function capitalizeDizi(str) {
-	return str.replace(/dizi/gi, match => {
-		return match.charAt(0).toUpperCase() + match.slice(1).toLowerCase();
-	});
-}
-function capitalizeBileske(str) {
-	return str.replace(/bileşke/gi, match => {
-		return match.charAt(0).toUpperCase() + match.slice(1).toLowerCase();
-	});
+function capitalizeName(str) {
+	if (/dizi/i.test(str)) {
+		return str.replace(/dizi/gi, match => {
+			return match.charAt(0).toUpperCase() + match.slice(1).toLowerCase();
+		})
+	} else if (/bileşke/i.test(str)) {
+		return str.replace(/bileşke/gi, match => {
+			return match.charAt(0).toUpperCase() + match.slice(1).toLowerCase();
+		})
+	} else if (/limit/i.test(str)) {
+		return str.replace(/limit/gi, match => {
+			return match.charAt(0).toUpperCase() + match.slice(1).toLowerCase();
+		})
+	}
 }
 function bileskeProcess(funcs) {
 	return funcs.reduceRight((acc, f) => {
@@ -726,7 +823,7 @@ function inputKeyDown(evt, id) {
 		if (id == -1) { //Giriş input
 			if (classify(come).type == 'point') {
 				console.log('point çalıştı', come)
-
+				
 				let point = new mPoint(classify(come).x, classify(come).y, come)
 				arrObjects.push(point)
 				activeElementID = point.id
@@ -734,6 +831,7 @@ function inputKeyDown(evt, id) {
 				undoObjects = []
 				delCount = 0
 				objectsContainer.innerHTML = null
+				drawCoordinates()
 			} else if (classify(come).type == 'line') {
 				console.log('line çalıştı', come)
 
@@ -755,26 +853,47 @@ function inputKeyDown(evt, id) {
 					undoObjects = []
 					delCount = 0
 					objectsContainer.innerHTML = null
+					drawCoordinates()
 				} else {
 					showToast('GİRİŞ', 'Hatalı giriş yaptınız.' + getDrawableFunction(line.graph).reason)
 				}
 			} else if (classify(come).type == 'sequence') {
-				console.log('sequence çalıştı', come)
+				console.log('sequence çalıştı', come, classify(come))
 
-				come = capitalizeDizi(come)
-				comeFunc = normalizeExpr(classify(come).expr)
+				if (come.split(",").length - 1 !== 2) {
+					showToast('GİRİŞ', 'Hatalı parametre girişi yaptınız.')
+					return
+				}
 
-				if (getDrawableFunction(comeFunc).status) {
-					let seq = new mSequence(comeFunc, classify(come).start, classify(come).end, come)
-					seq.graphParse = getDrawableFunction(comeFunc).parsedFunc
-					arrObjects.push(seq)
-					activeElementID = seq.id
-					resetSliders()
-					undoObjects = []
-					delCount = 0
-					objectsContainer.innerHTML = null
+				come = capitalizeName(come)
+				newCome = normalizeExpr(come)
+				let funcFound = true
+				let names = arrObjects.map((item) => item.name)
+
+				if (!classify(newCome).func.includes('x') && !Number.isFinite(Number(classify(newCome).func))) {
+					if (!names.includes(classify(newCome).func)) funcFound = false
+				}
+				if (funcFound) {
+					if (!classify(newCome).func.includes('x') && !Number.isFinite(Number(classify(newCome).func))) {
+						newCome = newCome.replaceAll(classify(newCome).func, arrObjects.find(o => o.name === classify(newCome).func).graph)
+					}
+					let comeFunc = classify(newCome).func
+					if (getDrawableFunction(comeFunc).status) {
+						let seq = new mSequence(comeFunc, classify(come).start, classify(come).end, come)
+						seq.graphParse = getDrawableFunction(comeFunc).parsedFunc
+						arrObjects.push(seq)
+						activeElementID = seq.id
+						//resetSliders()
+						setSlider(seq)
+						undoObjects = []
+						delCount = 0
+						objectsContainer.innerHTML = null
+						drawCoordinates()
+					} else {
+						showToast('GİRİŞ', 'Hatalı giriş yaptınız.' + getDrawableFunction(newCome).reason)
+					}
 				} else {
-					showToast('GİRİŞ', 'Hatalı giriş yaptınız.' + getDrawableFunction(comeFunc).reason)
+					showToast('GİRİŞ', 'Hatalı giriş yaptınız. Fonksiyon bulunamadı.')
 				}
 			} else if (classify(come).type == 'functionOperations') {
 				console.log('functionOperations çalıştı', come)
@@ -795,6 +914,7 @@ function inputKeyDown(evt, id) {
 						undoObjects = []
 						delCount = 0
 						objectsContainer.innerHTML = null
+						drawCoordinates()
 					} else {
 						showToast('GİRİŞ', 'Hatalı giriş yaptınız.' + getDrawableFunction(comeWithFuncs).reason)
 					}
@@ -805,7 +925,12 @@ function inputKeyDown(evt, id) {
 			} else if (classify(come).type == 'functionCompositions') {
 				console.log('functionCompositions çalıştı', come)
 
-				come = capitalizeBileske(come)
+				if (come.split(",").length - 1 !== 2) {
+					showToast('GİRİŞ', 'Hatalı parametre girişi yaptınız.')
+					return
+				}
+
+				come = capitalizeName(come)
 				newCome = normalizeExpr(come)
 				let funcsFound = true
 				let names = arrObjects.map((item) => item.name)
@@ -829,9 +954,48 @@ function inputKeyDown(evt, id) {
 						undoObjects = []
 						delCount = 0
 						objectsContainer.innerHTML = null
+						drawCoordinates()
 					} else {
 						showToast('GİRİŞ', 'Hatalı giriş yaptınız.' + getDrawableFunction(cometoBileske).reason)
 					}
+				} else {
+					showToast('GİRİŞ', 'Hatalı giriş yaptınız. Fonksiyon bulunamadı.')
+				}
+			} else if (classify(come).type == 'limit') {
+				console.log('Limit çalıştı', come, classify(come))
+
+				if (come.split(",").length - 1 !== 1) {
+					showToast('GİRİŞ', 'Hatalı parametre girişi yaptınız.')
+					return
+				}
+
+				come = capitalizeName(come)
+				newCome = normalizeExpr(come)
+				let funcFound = true
+				let names = arrObjects.map((item) => item.name)
+
+				if (!classify(newCome).func.includes('x') && !Number.isFinite(Number(classify(newCome).func))) {
+					if (!names.includes(classify(newCome).func)) funcFound = false
+				}
+				if (funcFound) {
+					if (!classify(newCome).func.includes('x') && !Number.isFinite(Number(classify(newCome).func))) {
+						newCome = newCome.replaceAll(classify(newCome).func, arrObjects.find(o => o.name === classify(newCome).func).graph)
+					}
+					let comeFunc = classify(newCome).func
+					if (getDrawableFunction(comeFunc).status) {
+						let lim = new mLimit(comeFunc, classify(come).approachVal, come)
+						lim.graphParse = getDrawableFunction(comeFunc).parsedFunc
+						arrObjects.push(lim)
+						activeElementID = lim.id
+						setSlider(lim)
+						undoObjects = []
+						delCount = 0
+						objectsContainer.innerHTML = null
+						drawCoordinates()
+					} else {
+						showToast('GİRİŞ', 'Hatalı giriş yaptınız.' + getDrawableFunction(newCome).reason)
+					}
+
 				} else {
 					showToast('GİRİŞ', 'Hatalı giriş yaptınız. Fonksiyon bulunamadı.')
 				}
@@ -846,6 +1010,7 @@ function inputKeyDown(evt, id) {
 					undoObjects = []
 					delCount = 0
 					objectsContainer.innerHTML = null
+					drawCoordinates()
 				} else {
 					showToast('GİRİŞ', 'Hatalı giriş yaptınız.' + getDrawableFunction(comeFunc).reason)
 				}
@@ -853,7 +1018,7 @@ function inputKeyDown(evt, id) {
 		} else {
 			showToast('GİRİŞ', 'Giriş inputunda değilsin...')
 		}
-		drawCoordinates()
+		//drawCoordinates()
 		fillSetWindow()
 	}
 }
@@ -869,18 +1034,6 @@ function normalizeExpr(expr) {
 	expr = expr.replace(/(\d)([a-zA-Z])/g, "$1*$2") // sayıharf (ör: 2x → 2*x)
 	expr = expr.replace(/\^/g, "**") // üs işareti ^ → **
 	return expr;
-}
-
-
-function normalizeExpr2(expr) { // neredeyse düzgün çalışıyor.
-	expr = expr.replaceAll('-x', '-1x')
-	expr = expr.replaceAll('+x', '+1x')
-	let result = expr;
-	result = result.replace(/-\s*\(/g, "-1*("); // -(...) → -1*(...)
-	result = result.replace(/(\d)\s*\(/g, "$1*("); // sayı( → sayı*( 
-	result = result.replace(/\)(\d)/g, ")*$1"); // 3) )sayı → )*sayı
-	result = result.replace(/(\d)([a-zA-Z])/g, "$1*$2"); // 4) sayıharf (ör: 2x → 2*x)
-	return result;
 }
 
 function handleParanthesis(e) {
@@ -1065,6 +1218,7 @@ function crossSlider(name) {
 	let slider = document.getElementById('slider' + name.toUpperCase())
 	let sliderLabel = document.getElementById(name)
 	if (activeElementID != null) {
+		drawCoordinates()
 		if (arrObjects[activeElementID].type == 'point') {
 			if (name == 'm') {
 				sliderLabel.innerHTML = 'a = ' + slider.value
@@ -1073,8 +1227,7 @@ function crossSlider(name) {
 				sliderLabel.innerHTML = 'b = ' + slider.value
 				arrObjects[activeElementID].ypoint = slider.value
 			}
-		}
-		if (arrObjects[activeElementID].type == 'line') {
+		} else if (arrObjects[activeElementID].type == 'line') {
 			if (name == 'm') {
 				sliderLabel.innerHTML = 'm = ' + slider.value
 				arrObjects[activeElementID].a = slider.value
@@ -1086,8 +1239,58 @@ function crossSlider(name) {
 				arrObjects[activeElementID].b = slider.value
 				arrObjects[activeElementID].graph = document.getElementById('sliderM').value + '*x+' + slider.value
 			}
+		} else if (arrObjects[activeElementID].type == 'limit') {
+			if (name == 'm') {
+				sliderLabel.innerHTML = 'a+ = ' + slider.value
+				let sliderM = document.getElementById('sliderM')
+				let verticalMNumber = sliderM.value
+				ctx.beginPath()
+				ctx.strokeStyle = ctx.fillStyle = 'blue'
+				ctx.lineWidth = 1
+				ctx.moveTo((-minX + verticalMNumber / unitY) * scaleY, canvas.height + 100)
+				ctx.lineTo((-minX + verticalMNumber / unitY) * scaleY, -canvas.height - 100)
+				ctx.fill()
+				ctx.stroke()
+				ctx.closePath()
+
+				let sliderN = document.getElementById('sliderN')
+				let verticalNNumber = sliderN.value
+				ctx.beginPath()
+				ctx.strokeStyle = ctx.fillStyle = 'blue'
+				ctx.lineWidth = 1
+				ctx.moveTo((-minX + verticalNNumber / unitY) * scaleY, canvas.height + 100)
+				ctx.lineTo((-minX + verticalNNumber / unitY) * scaleY, -canvas.height - 100)
+				ctx.fill()
+				ctx.stroke()
+				ctx.closePath()
+
+			} else {
+				sliderLabel.innerHTML = 'a- = ' + slider.value
+				let sliderM = document.getElementById('sliderM')
+				let verticalMNumber = sliderM.value
+				ctx.beginPath()
+				ctx.strokeStyle = ctx.fillStyle = 'blue'
+				ctx.lineWidth = 1
+				ctx.moveTo((-minX + verticalMNumber / unitY) * scaleY, canvas.height + 100)
+				ctx.lineTo((-minX + verticalMNumber / unitY) * scaleY, -canvas.height - 100)
+				ctx.fill()
+				ctx.stroke()
+				ctx.closePath()
+
+				let sliderN = document.getElementById('sliderN')
+				let verticalNNumber = sliderN.value
+				ctx.beginPath()
+				ctx.strokeStyle = ctx.fillStyle = 'blue'
+				ctx.lineWidth = 1
+				ctx.moveTo((-minX + verticalNNumber / unitY) * scaleY, canvas.height + 100)
+				ctx.lineTo((-minX + verticalNNumber / unitY) * scaleY, -canvas.height - 100)
+				ctx.fill()
+				ctx.stroke()
+				ctx.closePath()
+
+			}
 		}
-		drawCoordinates()
+
 	}
 }
 
@@ -1134,6 +1337,20 @@ setSlider = function (item) {
 		sliderN.value = item.b
 		labelN.innerHTML = 'n = ' + item.b
 		sliderN.title = "n sürgüsü"
+	} else if (item.type == 'limit') {
+		sliderM.min = item.approachVal * 1
+		sliderM.max = item.approachVal * 1 + 1
+		sliderM.value = item.approachVal * 1
+		sliderM.step = '0.01'
+		labelM.innerHTML = 'a+ = ' + item.approachVal
+		sliderM.title = "a+ sürgüsü"
+
+		sliderN.min = item.approachVal * 1 - 1
+		sliderN.max = item.approachVal * 1
+		sliderN.value = item.approachVal * 1
+		sliderN.step = '0.01'
+		labelN.innerHTML = 'a- = ' + item.approachVal
+		sliderN.title = "a- sürgüsü"
 	}
 }
 
@@ -1167,7 +1384,7 @@ function buttonMove(evt) {
 	document.getElementById('coor').innerHTML = evt.name
 }
 
-function checkDirection() {
+/* function checkDirection() {
 	if (innerHeight < innerWidth) {
 		changeCSS("styleVertical.css")
 		document.getElementById('btnimgCalc').src = "img/left.svg"
@@ -1179,7 +1396,7 @@ function checkDirection() {
 		minX = -3
 		minY = -3
 	}
-}
+} */
 showToast = function (title, msg) {
 	let x = document.getElementById("snackbar");
 	document.getElementById('snackTitle').innerHTML = title
@@ -1225,7 +1442,7 @@ nameKeyDown = function (evt) {
 
 $(document).ready(function () {
 	let objectsContainer = document.getElementById('objectsContainer')
-	checkDirection()
+	//checkDirection()
 	drawCoordinates()
 
 	// document.addEventListener('contextmenu', event => event.preventDefault())
@@ -1233,7 +1450,7 @@ $(document).ready(function () {
 	window.onresize = function () {
 		canvas.width = innerWidth
 		canvas.height = innerHeight
-		checkDirection()
+		//checkDirection()
 		drawCoordinates()
 	}
 
@@ -1394,7 +1611,7 @@ $(document).ready(function () {
 					line.graphParse = getDrawableFunction(line.graph).parsedFunc
 					let x, y
 					ctx.beginPath()
-					ctx.strokeStyle = ctx.fill.style = line.color
+					ctx.strokeStyle = ctx.fillStyle = line.color
 					ctx.lineWidth = 2
 					x = minX * unitY
 					y = line.graphParse(x)
