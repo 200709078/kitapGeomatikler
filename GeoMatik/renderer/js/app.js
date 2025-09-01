@@ -41,7 +41,7 @@ class mPoint {
 }
 class mLine {
 	constructor(a, b, come = null) {
-		if (come == null) come = a + 'x+' + b
+		if (come == null) come = 'y=' + a + 'x+' + b
 		if (classify(come).subtype == 'vertical') {
 			const denkCount = arrObjects.filter(f => f.name.includes("denk")).length + 1;
 			this.name = 'denk' + denkCount
@@ -301,6 +301,7 @@ drawCoordinates = function () {
 fillSetWindow = function () {
 	if (activeElementID != null) {
 		document.getElementById('name').value = arrObjects[activeElementID].name
+		if (arrObjects[activeElementID].type == 'sequence') document.getElementById('name').value = arrObjects[activeElementID].name + 'ₓ'
 		document.getElementById('name').disabled = false
 		document.getElementById('defination').value = arrObjects[activeElementID].inputView
 		document.getElementById('defination').disabled = false
@@ -311,7 +312,17 @@ fillSetWindow = function () {
 		document.getElementById('sizeLabel').innerHTML = 'Boyut: ' + arrObjects[activeElementID].size
 		document.getElementById('sizeLabel').disabled = false
 	} else {
-		document.getElementById('set-popup').style.display = 'none'
+		document.getElementById('name').value = null
+		document.getElementById('name').disabled = true
+		document.getElementById('defination').value = null
+		document.getElementById('defination').disabled = true
+		document.getElementById('color').value = "#000000"
+		document.getElementById('color').disabled = true
+		document.getElementById('size').value = null
+		document.getElementById('size').disabled = true
+		document.getElementById('sizeLabel').innerHTML = 'Boyut:'
+		document.getElementById('sizeLabel').disabled = true
+		//document.getElementById('set-popup').style.display = 'none'
 	}
 }
 
@@ -424,7 +435,7 @@ function drawSequence(seq) {
 	let f = seq.graphParse
 
 	ctx.beginPath()
-	ctx.strokeStyle = 'black'
+	ctx.strokeStyle = seq.color
 	ctx.lineWidth = seq.size - 1
 	ctx.setLineDash([2, 5])
 
@@ -477,7 +488,7 @@ function drawLimit(lim) {
 	let f = lim.graphParse
 
 	ctx.beginPath()
-	ctx.strokeStyle = 'black'
+	ctx.strokeStyle = lim.color
 	ctx.lineWidth = lim.size - 1
 	ctx.setLineDash([2, 5])
 
@@ -540,7 +551,7 @@ function labelCreator(item) {
 	} else if (item.type == 'sequence') {
 		input.value = item.name + 'ₓ=' + item.inputView
 	} else if (item.type == 'limit') {
-		input.value = item.inputView
+		input.value = item.name + '=' + item.inputView
 	} else {
 		input.value = item.name + ':' + item.inputView
 	}
@@ -685,6 +696,7 @@ function classify(inputRaw) {
 		};
 	}
 
+	// ---- DOĞRULAR ----
 	// ---- x = sabit veya sabit = x ----
 	const lineXConstRe = /^\s*(?:x\s*=\s*([+-]?\d+(?:\.\d+)?)|([+-]?\d+(?:\.\d+)?)\s*=\s*x)\s*$/i;
 	const xcMatch = norm.match(lineXConstRe);
@@ -692,8 +704,6 @@ function classify(inputRaw) {
 		const val = xcMatch[1] !== undefined ? xcMatch[1] : xcMatch[2];
 		return { type: 'line', subtype: 'vertical', x: Number(val) };
 	}
-
-	// ---- EĞİMLİ DOĞRULAR ----
 	// ---- x eksenine paralel ----
 	const horizRe = /^\s*([+-]?\d+(?:\.\d+)?)\s*$/;
 	const hMatch = norm.match(horizRe);
@@ -818,12 +828,13 @@ function inputKeyDown(evt, id) {
 	}
 	if (evt.key === 'Enter') {
 		let come = document.getElementById(id).value.toLowerCase()
+		if (come == '') return
 		come = come.replaceAll('y=', '')
 		come = come.replaceAll('=y', '')
 		if (id == -1) { //Giriş input
 			if (classify(come).type == 'point') {
 				console.log('point çalıştı', come)
-				
+
 				let point = new mPoint(classify(come).x, classify(come).y, come)
 				arrObjects.push(point)
 				activeElementID = point.id
@@ -925,7 +936,7 @@ function inputKeyDown(evt, id) {
 			} else if (classify(come).type == 'functionCompositions') {
 				console.log('functionCompositions çalıştı', come)
 
-				if (come.split(",").length - 1 !== 2) {
+				if (come.split(",").length - 1 < 1) {
 					showToast('GİRİŞ', 'Hatalı parametre girişi yaptınız.')
 					return
 				}
@@ -1015,17 +1026,71 @@ function inputKeyDown(evt, id) {
 					showToast('GİRİŞ', 'Hatalı giriş yaptınız.' + getDrawableFunction(comeFunc).reason)
 				}
 			}
+		} else if (id == 'name') {
+			let newName = document.getElementById(id).value
+			if (arrObjects[activeElementID].type == 'point' && pointNames.includes(newName)) changeName(newName, 'point')
+			else if (arrObjects[activeElementID].type == 'line' && lineNames.includes(newName)) changeName(newName, 'line')
+			else if (arrObjects[activeElementID].type == 'limit' && limitNames.includes(newName)) changeName(newName, 'limit')
+			else if (arrObjects[activeElementID].type == 'sequence' && sequenceNames.includes(newName)) changeName(newName, 'sequence')
+			else if (arrObjects[activeElementID].type == 'other' && lineNames.includes(newName)) changeName(newName, 'other')
+
+		} else if (id == 'defination') {
+			let newDef = document.getElementById(id).value
+			newDef = newDef.replaceAll('y=', '')
+			newDef = newDef.replaceAll('=y', '')
+			if (classify(newDef).type == 'point') {
+				console.log('point def değişecek')
+				arrObjects[activeElementID].xpoint = classify(newDef).x
+				arrObjects[activeElementID].ypoint = classify(newDef).y
+				arrObjects[activeElementID].inputView = newDef
+			} else if (classify(newDef).type == 'line' && getDrawableFunction(normalizeExpr(newDef)).status) {
+				console.log('line def değişecek', classify(newDef))
+				arrObjects[activeElementID].m = classify(newDef).m
+				arrObjects[activeElementID].n = classify(newDef).n
+				arrObjects[activeElementID].graph = classify(newDef).m + '*x+' + classify(newDef).n
+				arrObjects[activeElementID].graphParse = getDrawableFunction(normalizeExpr(newDef)).parsedFunc
+				arrObjects[activeElementID].inputView = 'y=' + newDef
+
+				console.log(arrObjects[activeElementID].graph)
+
+			} else if (classify(newDef).type == 'sequence' && getDrawableFunction(normalizeExpr(classify(newDef).func))) {
+				console.log('dizi değişecek', classify(newDef))
+				arrObjects[activeElementID].start = classify(newDef).start
+				arrObjects[activeElementID].end = classify(newDef).end
+				arrObjects[activeElementID].graph = normalizeExpr(classify(newDef).func)
+				arrObjects[activeElementID].graphParse = getDrawableFunction(normalizeExpr(classify(newDef).func)).parsedFunc
+				arrObjects[activeElementID].inputView = capitalizeName(newDef)
+			} else if (classify(newDef).type == 'limit' && getDrawableFunction(normalizeExpr(classify(newDef).func))) {
+				console.log('Limit değişecek', classify(newDef))
+				arrObjects[activeElementID].approachVal = classify(newDef).approachVal
+				arrObjects[activeElementID].graph = normalizeExpr(classify(newDef).func)
+				arrObjects[activeElementID].graphParse = getDrawableFunction(normalizeExpr(classify(newDef).func)).parsedFunc
+				arrObjects[activeElementID].inputView = capitalizeName(newDef)
+			} else if (classify(newDef).type == 'unknown' && getDrawableFunction(classify(newDef).func)) {
+				console.log('Unknown değişecek', classify(newDef))
+
+
+			} else if (classify(newDef).type == 'functionOperations') {
+				console.log('functionOperations değişecek', classify(newDef))
+
+
+			} else if (classify(newDef).type == 'functionCompositions') {
+				console.log('functionCompositions değişecek', classify(newDef))
+
+
+			} else {
+				console.log('TÜR BULUNAMADI...')
+			}
+			drawCoordinates()
 		} else {
-			showToast('GİRİŞ', 'Giriş inputunda değilsin...')
+			console.log('cebir arr list')
 		}
-		//drawCoordinates()
 		fillSetWindow()
 	}
 }
 
 function normalizeExpr(expr) {
-
-	expr = expr.replace(/\s+/g, "") // boşlukları temizleyelim
+	expr = expr.replace(/\s+/g, "")
 	expr = expr.replace(/(^|[^\w])\-x/g, "$1-1*x") // -x → -1*x, +x → +1*x
 	expr = expr.replace(/(^|[^\w])\+x/g, "$1+1*x")
 	expr = expr.replace(/-\(/g, "-1*(") // 2) -(...) → -1*(...)
@@ -1087,7 +1152,6 @@ function handleParanthesis(e) {
 }
 
 function getDrawableFunction(expr) {
-
 	const validPattern = /^[0-9x+\-*/().,^ \t\nA-Za-z,]*$/ // izin verilen karakterler
 	if (!validPattern.test(expr)) {
 		return { status: false, reason: "Geçersiz karakter" }
@@ -1405,14 +1469,24 @@ showToast = function (title, msg) {
 	setTimeout(function () { x.className = x.className.replace("show", ""); }, 3000)
 }
 
-function nameChange(newName) {
-	let hasNameid = null
-	arrObjects.forEach(item => {
-		if (item.name == newName) hasNameid = item.id
-	})
+function changeName(newName, type) {
+	let hasNameid
+	/* 	arrObjects.forEach(item => {
+			if (item.name == newName) hasNameid = item.id
+		}) */
+
+	let found = arrObjects.find(item => item.name === newName)
+	hasNameid = found ? found.id : null
+
+
 	if (hasNameid != null && arrObjects[hasNameid] != newName) {
 		let i = 1
-		let names = arrObjects.map((item) => item.name)
+		//let names = arrObjects.map((item) => item.name)
+		let names
+		if (arrObjects[hasNameid].type === 'point') names = arrObjects.filter(item => item.type === "point").map(item => item.name)
+		if (arrObjects[hasNameid].type === 'sequence') names = arrObjects.filter(item => item.type === "sequence").map(item => item.name)
+		if (arrObjects[hasNameid].type === 'limit') names = arrObjects.filter(item => item.type === "limit").map(item => item.name)
+		if (arrObjects[hasNameid].type === 'other' || arrObjects[hasNameid].type === 'line') names = arrObjects.filter(item => item.type === "line" || item.type === "other").map(item => item.name)
 		let foundName
 		while (true) {
 			if (!(names).includes(arrObjects[hasNameid].name + i)) {
@@ -1426,18 +1500,6 @@ function nameChange(newName) {
 	arrObjects[activeElementID].name = newName
 	drawCoordinates()
 	fillSetWindow()
-}
-
-nameFocusOut = function (evt) {
-	let newName = document.getElementById('name').value
-	nameChange(newName)
-}
-
-nameKeyDown = function (evt) {
-	if (evt.key === 'Enter') {
-		let newName = document.getElementById('name').value
-		nameChange(newName)
-	}
 }
 
 $(document).ready(function () {
@@ -1679,6 +1741,7 @@ $(document).ready(function () {
 				arrObjects.pop()
 			}
 			drawCoordinates()
+			fillSetWindow()
 		}
 	}, false)
 
