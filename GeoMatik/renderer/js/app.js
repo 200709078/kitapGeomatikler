@@ -25,6 +25,7 @@ let pointNames = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 let sequenceNames = "abcdeijklmostuvwxyz"
 let limitNames = "abcdeijklmostuvwxyz"
 let lineNames = "fghpqr"
+let sliders = document.getElementById('sliders')
 class mPoint {
 	constructor(xpoint, ypoint, come = null) {
 		if (come == null) come = '(' + xpoint + ',' + ypoint + ')'
@@ -36,6 +37,21 @@ class mPoint {
 		this.visibility = true
 		this.size = 3
 		this.type = 'point'
+		this.inputView = come
+	}
+}
+class mLineSegment {
+	constructor(Ax, Ay, Bx, By, come = null) {
+		this.name = createName('linesegment')
+		this.id = arrObjects.length
+		this.Ax = Ax
+		this.Ay = Ay
+		this.Bx = Bx
+		this.By = By
+		this.color = getRandomColor()
+		this.visibility = true
+		this.size = 3
+		this.type = 'linesegment'
 		this.inputView = come
 	}
 }
@@ -296,6 +312,9 @@ drawCoordinates = function () {
 
 	if (activeElementID != null) {
 		document.getElementById(activeElementID).style.background = 'lightgreen'
+		/* 		let objectsContainer = document.getElementById('objectsContainer')
+				objectsContainer.insertBefore(sliders, objectsContainer.children[2])
+				sliders.style.display = 'flex' */
 	}
 }
 fillSetWindow = function () {
@@ -322,7 +341,7 @@ fillSetWindow = function () {
 		document.getElementById('size').disabled = true
 		document.getElementById('sizeLabel').innerHTML = 'Boyut:'
 		document.getElementById('sizeLabel').disabled = true
-		//document.getElementById('set-popup').style.display = 'none'
+		document.getElementById('set-popup').style.display = 'none'
 	}
 }
 
@@ -382,8 +401,7 @@ function drawLine(line) {
 	if (line.a != 0) {
 		text((-minX + (-minY - line.b) / line.a) * scaleY + 5, 20, line.color, 'center', 'bold 15px arial', line.name)
 	} else {
-		x = 0
-		text(-minX * scaleY * 2 - 100, (-minY - y) * scaleX - 10, line.color, 'center', 'bold 15px arial', line.name)
+		text(canvas.width - 10, -minY * scaleX - (y * scaleX) / unitX - 10, line.color, 'center', 'bold 15px arial', line.name)
 	}
 	ctx.fill()
 	ctx.stroke()
@@ -402,25 +420,24 @@ function drawFunction(func) {
 
 	let step = 0.01;
 
-	let firstPoint = true;
+	let firstPoint = true
 	let x = minX * unitY
 
 	while (x < (minX + Math.round(canvas.width / scaleY) + 1) * unitY) {
-		let y = f(x);
+		let y = f(x)
 		if (!isFinite(y)) {
-			firstPoint = true;
-			x += step;
-			continue;
+			firstPoint = true
+			x += step
+			continue
 		}
-
-		let canvasX = -minX * scaleY + (x * scaleY) / unitY;
-		let canvasY = -minY * scaleX - (y * scaleX) / unitX;
+		let canvasX = -minX * scaleY + (x * scaleY) / unitY
+		let canvasY = -minY * scaleX - (y * scaleX) / unitX
 
 		if (firstPoint) {
-			ctx.moveTo(canvasX, canvasY);
-			firstPoint = false;
+			ctx.moveTo(canvasX, canvasY)
+			firstPoint = false
 		} else {
-			ctx.lineTo(canvasX, canvasY);
+			ctx.lineTo(canvasX, canvasY)
 		}
 		x += step
 	}
@@ -523,12 +540,47 @@ function drawLimit(lim) {
 
 	let verticalMNumber = lim.approachVal
 	ctx.beginPath()
-	ctx.strokeStyle = ctx.fillStyle = 'blue'
+	ctx.strokeStyle = ctx.fillStyle = 'red'
 	ctx.lineWidth = 1
 	ctx.moveTo((-minX + verticalMNumber / unitY) * scaleY, canvas.height + 100)
 	ctx.lineTo((-minX + verticalMNumber / unitY) * scaleY, -canvas.height - 100)
 	ctx.fill()
 	ctx.stroke()
+	ctx.closePath()
+}
+
+function drawLineSegment(A, B) {
+	//A noktası
+	ctx.beginPath()
+	ctx.strokeStyle = 'black'
+	ctx.fillStyle = 'red'
+	ctx.arc((-minX + A.x / unitY) * scaleY, (-minY - A.y / unitX) * scaleX, 2, 0, 2 * Math.PI)
+	ctx.lineWidth = 1
+	ctx.fill()
+	ctx.stroke()
+	ctx.closePath()
+
+	//B noktası
+	ctx.beginPath()
+	ctx.strokeStyle = 'black'
+	ctx.fillStyle = 'red'
+	ctx.arc((-minX + B.x / unitY) * scaleY, (-minY - B.y / unitX) * scaleX, 2, 0, 2 * Math.PI)
+	ctx.lineWidth = 1
+	ctx.fill()
+	ctx.stroke()
+	ctx.closePath()
+
+	//Doğru Parçası
+	ctx.beginPath()
+	ctx.strokeStyle = ctx.fillStyle = 'red'
+	ctx.lineWidth = 2
+	ctx.setLineDash([2, 5])
+	ctx.moveTo((-minX + A.x / unitY) * scaleY, (-minY - A.y / unitX) * scaleX)
+	ctx.lineTo((-minX + B.x / unitY) * scaleY, (-minY - B.y / unitX) * scaleX)
+	//text((-minX + verticalNumber / unitY) * scaleY + 10, 15, line.color, 'center', 'bold 15px arial', line.name)
+	ctx.fill()
+	ctx.stroke()
+	ctx.setLineDash([])
 	ctx.closePath()
 }
 
@@ -772,6 +824,55 @@ function classify(inputRaw) {
 		};
 	}
 
+	// ---- DoğruParçası ----
+	if (/^DoğruParçası\s*\(/i.test(norm)) {
+		const trimmed = norm.trim();
+
+		// Kapanış parantezi kontrolü
+		if (!trimmed.endsWith(")")) {
+			return { type: "unknown", reason: "Missing closing parenthesis" };
+		}
+
+		const inner = trimmed.replace(/^DoğruParçası\s*\(/i, '').replace(/\)$/, '');
+		let depth = 0, splitIndex = -1;
+
+		for (let i = 0; i < inner.length; i++) {
+			const ch = inner[i];
+			if (ch === '(') depth++;
+			else if (ch === ')') depth--;
+			else if (ch === ',' && depth === 0) {
+				splitIndex = i;
+				break;
+			}
+		}
+
+		if (splitIndex === -1 || depth !== 0) {
+			return { type: 'unknown', reason: "Invalid or unbalanced points in DoğruParçası" };
+		}
+
+		const rawP1 = inner.slice(0, splitIndex).trim();
+		const rawP2 = inner.slice(splitIndex + 1).trim();
+
+		function parsePoint(raw) {
+			const coordRe = /^\(\s*([+-]?\d+(?:\.\d+)?)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*\)$/;
+			const coordMatch = raw.match(coordRe);
+			if (coordMatch) return { name: null, x: Number(coordMatch[1]), y: Number(coordMatch[2]) };
+
+			const pointRe = /^[A-Z][0-9]*$/;
+			if (pointRe.test(raw)) return { name: raw, x: null, y: null };
+
+			if (/^[a-z]/.test(raw)) {
+				return { unknown: raw, reason: "Invalid point name: must start with uppercase letter" };
+			}
+
+			return { unknown: raw };
+		}
+
+		return {
+			type: 'linesegment',
+			points: [parsePoint(rawP1), parsePoint(rawP2)]
+		};
+	}
 	// ---- f+g, 2f-3g, -f, -3g+1 ----
 	const funcOpRe = /([+-]?\d*)([fghpqr][0-9]*)\b/gi
 	const opMatches = [...norm.matchAll(funcOpRe)]
@@ -798,21 +899,24 @@ function classify(inputRaw) {
 }
 /* CLASSIFY METHOD END */
 
+
 function capitalizeName(str) {
-	if (/dizi/i.test(str)) {
-		return str.replace(/dizi/gi, match => {
-			return match.charAt(0).toUpperCase() + match.slice(1).toLowerCase();
-		})
-	} else if (/bileşke/i.test(str)) {
-		return str.replace(/bileşke/gi, match => {
-			return match.charAt(0).toUpperCase() + match.slice(1).toLowerCase();
-		})
-	} else if (/limit/i.test(str)) {
-		return str.replace(/limit/gi, match => {
-			return match.charAt(0).toUpperCase() + match.slice(1).toLowerCase();
-		})
+	const specialMap = {
+		"dizi": "Dizi",
+		"bileşke": "Bileşke",
+		"limit": "Limit",
+		"doğruparçası": "DoğruParçası"
+	};
+
+	for (const word in specialMap) {
+		const re = new RegExp(word, "gi");
+		if (re.test(str)) {
+			return str.replace(re, specialMap[word]);
+		}
 	}
+	return str;
 }
+
 function bileskeProcess(funcs) {
 	return funcs.reduceRight((acc, f) => {
 		return f.replace(/x/g, `(${acc})`);
@@ -822,12 +926,12 @@ function bileskeProcess(funcs) {
 function inputKeyDown(evt, id) {
 	resetSliders()
 	handleParanthesis(evt)
-	let allowKeys = '(){}[],=-+.*^/bdjmnşquvxyzCEFGHIJKMNOPQTUVWXYZBackspaceArrowLeftArrowRightShiftDelete'
+	let allowKeys = '(){}[],=-+.*^/bçdğjımnşquvxyzCÇEFGĞHIJKMNOPQTUVWXYZBackspaceArrowLeftArrowRightShiftDelete'
 	if (isNaN(evt.key) && !allowKeys.includes(evt.key)) {
 		evt.preventDefault()
 	}
 	if (evt.key === 'Enter') {
-		let come = document.getElementById(id).value.toLowerCase()
+		let come = document.getElementById(id).value
 		if (come == '') return
 		come = come.replaceAll('y=', '')
 		come = come.replaceAll('=y', '')
@@ -998,11 +1102,11 @@ function inputKeyDown(evt, id) {
 						lim.graphParse = getDrawableFunction(comeFunc).parsedFunc
 						arrObjects.push(lim)
 						activeElementID = lim.id
-						setSlider(lim)
 						undoObjects = []
 						delCount = 0
 						objectsContainer.innerHTML = null
 						drawCoordinates()
+						setSlider(lim)
 					} else {
 						showToast('GİRİŞ', 'Hatalı giriş yaptınız.' + getDrawableFunction(newCome).reason)
 					}
@@ -1025,6 +1129,11 @@ function inputKeyDown(evt, id) {
 				} else {
 					showToast('GİRİŞ', 'Hatalı giriş yaptınız.' + getDrawableFunction(comeFunc).reason)
 				}
+			} else if (classify(come).type == 'linesegment') {
+				console.log('linesegment çalıştı', come)
+
+			} else {
+				console.log('type bulunamadı.')
 			}
 		} else if (id == 'name') {
 			let newName = document.getElementById(id).value
@@ -1081,7 +1190,7 @@ function inputKeyDown(evt, id) {
 			} else {
 				console.log('TÜR BULUNAMADI...')
 			}
-			drawCoordinates()
+			//drawCoordinates()
 		} else {
 			console.log('cebir arr list')
 		}
@@ -1090,6 +1199,8 @@ function inputKeyDown(evt, id) {
 }
 
 function normalizeExpr(expr) {
+	expr = expr.replaceAll('y=', '')
+	expr = expr.replaceAll('+-', '-')
 	expr = expr.replace(/\s+/g, "")
 	expr = expr.replace(/(^|[^\w])\-x/g, "$1-1*x") // -x → -1*x, +x → +1*x
 	expr = expr.replace(/(^|[^\w])\+x/g, "$1+1*x")
@@ -1291,6 +1402,8 @@ function crossSlider(name) {
 				sliderLabel.innerHTML = 'b = ' + slider.value
 				arrObjects[activeElementID].ypoint = slider.value
 			}
+			arrObjects[activeElementID].inputView = '(' + arrObjects[activeElementID].xpoint + ',' + arrObjects[activeElementID].ypoint + ')'
+			drawCoordinates()
 		} else if (arrObjects[activeElementID].type == 'line') {
 			if (name == 'm') {
 				sliderLabel.innerHTML = 'm = ' + slider.value
@@ -1303,55 +1416,76 @@ function crossSlider(name) {
 				arrObjects[activeElementID].b = slider.value
 				arrObjects[activeElementID].graph = document.getElementById('sliderM').value + '*x+' + slider.value
 			}
+			arrObjects[activeElementID].inputView = 'y=' + normalizeExpr(arrObjects[activeElementID].a + 'x+' + arrObjects[activeElementID].b)
+			arrObjects[activeElementID].graphParse = getDrawableFunction(normalizeExpr(arrObjects[activeElementID].inputView)).parsedFunc
+			drawCoordinates()
 		} else if (arrObjects[activeElementID].type == 'limit') {
 			if (name == 'm') {
-				sliderLabel.innerHTML = 'a+ = ' + slider.value
+				sliderLabel.innerHTML = 'a⁺ = ' + Number(slider.value).toFixed(2)
 				let sliderM = document.getElementById('sliderM')
-				let verticalMNumber = sliderM.value
-				ctx.beginPath()
-				ctx.strokeStyle = ctx.fillStyle = 'blue'
-				ctx.lineWidth = 1
-				ctx.moveTo((-minX + verticalMNumber / unitY) * scaleY, canvas.height + 100)
-				ctx.lineTo((-minX + verticalMNumber / unitY) * scaleY, -canvas.height - 100)
-				ctx.fill()
-				ctx.stroke()
-				ctx.closePath()
-
 				let sliderN = document.getElementById('sliderN')
-				let verticalNNumber = sliderN.value
-				ctx.beginPath()
-				ctx.strokeStyle = ctx.fillStyle = 'blue'
-				ctx.lineWidth = 1
-				ctx.moveTo((-minX + verticalNNumber / unitY) * scaleY, canvas.height + 100)
-				ctx.lineTo((-minX + verticalNNumber / unitY) * scaleY, -canvas.height - 100)
-				ctx.fill()
-				ctx.stroke()
-				ctx.closePath()
+
+				//limit noktasının sağında
+				let A = { x: null, y: null }
+				let B = { x: null, y: null }
+				let C = { x: null, y: null }
+				A.x = Number(sliderM.value)
+				A.y = 0
+				B.x = A.x
+				B.y = arrObjects[activeElementID].graphParse(A.x)
+				drawLineSegment(A, B) //Dikey doğru parçası
+
+				B.x = A.x
+				B.y = arrObjects[activeElementID].graphParse(B.x)
+				C.x = 0
+				C.y = B.y
+				drawLineSegment(B, C) //Yatay doğru parçası
+
+				//limit noktasının solunda
+				A.x = Number(sliderN.value)
+				A.y = 0
+				B.x = A.x
+				B.y = arrObjects[activeElementID].graphParse(B.x)
+				drawLineSegment(A, B) //Dikey doğru parçası
+
+				B.x = A.x
+				B.y = arrObjects[activeElementID].graphParse(B.x)
+				C.x = 0
+				C.y = B.y
+				drawLineSegment(B, C) //Yatay doğru parçası 
 
 			} else {
-				sliderLabel.innerHTML = 'a- = ' + slider.value
+				sliderLabel.innerHTML = 'a⁻ = ' + Number(slider.value).toFixed(2)
 				let sliderM = document.getElementById('sliderM')
-				let verticalMNumber = sliderM.value
-				ctx.beginPath()
-				ctx.strokeStyle = ctx.fillStyle = 'blue'
-				ctx.lineWidth = 1
-				ctx.moveTo((-minX + verticalMNumber / unitY) * scaleY, canvas.height + 100)
-				ctx.lineTo((-minX + verticalMNumber / unitY) * scaleY, -canvas.height - 100)
-				ctx.fill()
-				ctx.stroke()
-				ctx.closePath()
-
 				let sliderN = document.getElementById('sliderN')
-				let verticalNNumber = sliderN.value
-				ctx.beginPath()
-				ctx.strokeStyle = ctx.fillStyle = 'blue'
-				ctx.lineWidth = 1
-				ctx.moveTo((-minX + verticalNNumber / unitY) * scaleY, canvas.height + 100)
-				ctx.lineTo((-minX + verticalNNumber / unitY) * scaleY, -canvas.height - 100)
-				ctx.fill()
-				ctx.stroke()
-				ctx.closePath()
+				//limit noktasının sağında
+				let A = { x: null, y: null }
+				let B = { x: null, y: null }
+				let C = { x: null, y: null }
+				A.x = Number(sliderM.value)
+				A.y = 0
+				B.x = A.x
+				B.y = arrObjects[activeElementID].graphParse(A.x)
+				drawLineSegment(A, B) //Dikey doğru parçası
 
+				B.x = A.x
+				B.y = arrObjects[activeElementID].graphParse(B.x)
+				C.x = 0
+				C.y = B.y
+				drawLineSegment(B, C) //Yatay doğru parçası
+
+				//limit noktasının solunda
+				A.x = Number(sliderN.value)
+				A.y = 0
+				B.x = A.x
+				B.y = arrObjects[activeElementID].graphParse(B.x)
+				drawLineSegment(A, B) //Dikey doğru parçası
+
+				B.x = A.x
+				B.y = arrObjects[activeElementID].graphParse(B.x)
+				C.x = 0
+				C.y = B.y
+				drawLineSegment(B, C) //Yatay doğru parçası 
 			}
 		}
 
@@ -1359,6 +1493,7 @@ function crossSlider(name) {
 }
 
 setSlider = function (item) {
+	drawCoordinates()
 	let sliderM = document.getElementById('sliderM')
 	let labelM = document.getElementById('m')
 	let sliderN = document.getElementById('sliderN')
@@ -1380,10 +1515,8 @@ setSlider = function (item) {
 		}
 		sliderM.value = item.xpoint
 		labelM.innerHTML = 'a = ' + item.xpoint
-		sliderM.title = "a sürgüsü"
 		sliderN.value = item.ypoint
 		labelN.innerHTML = 'b = ' + item.ypoint
-		sliderN.title = "b sürgüsü"
 	} else if (item.type == 'line') {
 		sliderM.max = sliderN.max = 10 * Math.round(Math.min(Math.abs(item.a), Math.abs(item.b)))
 		sliderM.min = sliderN.min = -10 * Math.round(Math.min(Math.abs(item.a), Math.abs(item.b)))
@@ -1397,24 +1530,55 @@ setSlider = function (item) {
 		}
 		sliderM.value = item.a
 		labelM.innerHTML = 'm = ' + item.a
-		sliderM.title = "m sürgüsü"
 		sliderN.value = item.b
 		labelN.innerHTML = 'n = ' + item.b
-		sliderN.title = "n sürgüsü"
 	} else if (item.type == 'limit') {
-		sliderM.min = item.approachVal * 1
-		sliderM.max = item.approachVal * 1 + 1
-		sliderM.value = item.approachVal * 1
-		sliderM.step = '0.01'
-		labelM.innerHTML = 'a+ = ' + item.approachVal
-		sliderM.title = "a+ sürgüsü"
+		let verticalMNumberRight = Number(item.approachVal * 1 + 0.4).toFixed(2)
+		let verticalMNumberLeft = Number(item.approachVal * 1 - 0.4).toFixed(2)
 
-		sliderN.min = item.approachVal * 1 - 1
+		let mostLeft = minX * unitY
+		let mostRight = (minX + Math.round(canvas.width / scaleY) + 1) * unitY
+
+		sliderM.min = item.approachVal * 1
+		sliderM.max = mostRight
+		sliderM.step = '0.1'
+		sliderM.value = verticalMNumberRight
+		labelM.innerHTML = sliderM.min + '⁺ = ' + verticalMNumberRight
+
+		//limit noktasının sağında
+		let A = { x: null, y: null }
+		let B = { x: null, y: null }
+		let C = { x: null, y: null }
+		A.x = Number(item.approachVal) + 0.4
+		A.y = 0
+		B.x = A.x
+		B.y = item.graphParse(B.x)
+		drawLineSegment(A, B) //Dikey doğru parçası
+
+		B.x = A.x
+		B.y = item.graphParse(B.x)
+		C.x = 0
+		C.y = B.y
+		drawLineSegment(B, C) //Yatay doğru parçası
+
+		sliderN.min = mostLeft
 		sliderN.max = item.approachVal * 1
-		sliderN.value = item.approachVal * 1
-		sliderN.step = '0.01'
-		labelN.innerHTML = 'a- = ' + item.approachVal
-		sliderN.title = "a- sürgüsü"
+		sliderN.step = '0.1'
+		sliderN.value = verticalMNumberLeft
+		labelN.innerHTML = sliderN.max + '⁻ = ' + verticalMNumberLeft
+
+		//limit noktasının solunda
+		A.x = Number(item.approachVal) - 0.4
+		A.y = 0
+		B.x = A.x
+		B.y = item.graphParse(B.x)
+		drawLineSegment(A, B) //Dikey doğru parçası
+
+		B.x = A.x
+		B.y = item.graphParse(B.x)
+		C.x = 0
+		C.y = B.y
+		drawLineSegment(B, C) //Yatay doğru parçası
 	}
 }
 
@@ -1547,6 +1711,7 @@ $(document).ready(function () {
 			activeObject = 'choice'
 			lineDrawing = false
 			canvas.style.cursor = 'pointer'
+			fillSetWindow()
 			resetSliders()
 			drawCoordinates()
 		}
