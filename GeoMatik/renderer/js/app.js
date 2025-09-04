@@ -309,11 +309,13 @@ drawCoordinates = function () {
 			drawFunction(item)
 		} else if (item.type === 'linesegment') {
 			drawLineSegment(item)
-		} else { console.log('Type bulunamadı') }
+		} else { console.log('Type bulunamadı.') }
 	})
 
 	if (activeElementID != null) {
 		document.getElementById(activeElementID).style.background = 'lightgreen'
+
+
 		/* 		let objectsContainer = document.getElementById('objectsContainer')
 				objectsContainer.insertBefore(sliders, objectsContainer.children[2])
 				sliders.style.display = 'flex' */
@@ -388,7 +390,7 @@ function drawLine(line) {
 		ctx.fill()
 		ctx.stroke()
 		ctx.closePath()
-		resetSliders()
+		//clearSliders()
 		return
 	}
 
@@ -545,17 +547,19 @@ function drawLimit(lim) {
 	ctx.setLineDash([])
 	ctx.closePath()
 
-	let verticalMNumber = lim.approachVal
-	ctx.beginPath()
-	ctx.strokeStyle = ctx.fillStyle = 'red'
-	ctx.lineWidth = lim.size
-	ctx.setLineDash([2, 5])
-	ctx.moveTo((-minX + verticalMNumber / unitY) * scaleY, canvas.height + 100)
-	ctx.lineTo((-minX + verticalMNumber / unitY) * scaleY, -canvas.height - 100)
-	ctx.fill()
-	ctx.stroke()
-	ctx.setLineDash([])
-	ctx.closePath()
+	// Limit noktasında
+	let A = new mPoint(Number(lim.approachVal), 0)
+	let B = new mPoint(Number(lim.approachVal), lim.graphParse(A.x))
+	let C = new mPoint(0, lim.graphParse(A.x))
+	A.inputView = B.inputView = C.inputView = null
+	let vls = new mLineSegment(A, B)
+	let hls = new mLineSegment(B, C)
+	A.color = B.color = C.color = vls.color = hls.color = lim.color
+	drawLineSegment(vls)
+	drawLineSegment(hls)
+	drawPoint(A)
+	drawPoint(B)
+	drawPoint(C)
 }
 
 function drawLineSegment(ls) {
@@ -591,6 +595,8 @@ function labelCreator(item) {
 
 	if (item.type == 'point') {
 		input.value = item.name + item.inputView
+	} else if (item.type == 'line') {
+		input.value = item.name + ':' + item.inputView
 	} else if (item.type == 'linesegment') {
 		input.value = item.name + '=' + item.inputView
 	} else if (item.type == 'sequence') {
@@ -644,6 +650,10 @@ document.querySelector('.buttonGroup').addEventListener('click', e => {
 			activeObject = 'line';
 			break;
 
+		case 'linesegment':
+			activeObject = 'linesegment';
+			break;
+
 		case 'calc':
 			activeObject = 'choice';
 			toggleCalcIcon(document.getElementById('btnimgCalc'));
@@ -669,73 +679,6 @@ function toggleCalcIcon(imgEl) {
 	let next = cycle[(cycle.indexOf(current) + 1) % cycle.length];
 	imgEl.src = next;
 }
-/* function choiceClick() {
-	showToast('Taşı', 'Düzlemi tutarak kaydırınız.')
-	activeObject = 'choice'
-	canvas.style.cursor = 'pointer'
-	document.getElementById('btnChoice').classList.remove('active')
-	document.getElementById('btnPoint').classList.remove('active')
-	document.getElementById('btnLine').classList.remove('active')
-	document.getElementById('btnCalc').classList.remove('active')
-	document.getElementById('btnHelp').classList.remove('active')
-	document.getElementById('btnChoice').classList.add('active')
-}
-function pointClick() {
-	showToast('Nokta', 'Konum seçiniz.')
-	activeObject = 'point'
-	canvas.style.cursor = 'crosshair'
-	document.getElementById('btnChoice').classList.remove('active')
-	document.getElementById('btnPoint').classList.remove('active')
-	document.getElementById('btnLine').classList.remove('active')
-	document.getElementById('btnCalc').classList.remove('active')
-	document.getElementById('btnHelp').classList.remove('active')
-	document.getElementById('btnPoint').classList.add('active')
-}
-function lineClick() {
-	showToast('Doğru', 'Farklı iki nokta seçiniz.')
-	activeObject = 'line'
-	canvas.style.cursor = 'crosshair'
-	document.getElementById('btnChoice').classList.remove('active')
-	document.getElementById('btnPoint').classList.remove('active')
-	document.getElementById('btnLine').classList.remove('active')
-	document.getElementById('btnCalc').classList.remove('active')
-	document.getElementById('btnHelp').classList.remove('active')
-	document.getElementById('btnLine').classList.add('active')
-}
-function calcClick() {
-	activeObject = 'choice'
-	canvas.style.cursor = 'pointer'
-	document.getElementById('btnChoice').classList.remove('active')
-	document.getElementById('btnPoint').classList.remove('active')
-	document.getElementById('btnLine').classList.remove('active')
-	document.getElementById('btnCalc').classList.remove('active')
-	document.getElementById('btnHelp').classList.remove('active')
-	document.getElementById('btnCalc').classList.add('active')
-
-	if (document.getElementById('btnimgCalc').getAttribute('src') == "img/left.svg") {
-		document.getElementById('btnimgCalc').src = "img/right.svg"
-	} else if (document.getElementById('btnimgCalc').getAttribute('src') == "img/right.svg") {
-		document.getElementById('btnimgCalc').src = "img/left.svg"
-	} else if (document.getElementById('btnimgCalc').getAttribute('src') == "img/down.svg") {
-		document.getElementById('btnimgCalc').src = "img/up.svg"
-	} else {
-		document.getElementById('btnimgCalc').src = "img/down.svg"
-	}
-	document.getElementById('leftWrapper').classList.toggle('hide')
-}
-
-function helpClick() {
-	activeObject = 'choice'
-	canvas.style.cursor = 'pointer'
-	document.getElementById('btnChoice').classList.remove('active')
-	document.getElementById('btnPoint').classList.remove('active')
-	document.getElementById('btnLine').classList.remove('active')
-	document.getElementById('btnCalc').classList.remove('active')
-	document.getElementById('btnHelp').classList.remove('active')
-	document.getElementById('btnHelp').classList.add('active')
-
-	showToast('GEOMATİK', 'HENÜZ YAPIM AŞAMASINDA...')
-} */
 
 function changeCSS(cssFile) {
 	var newlink = document.createElement("link")
@@ -751,7 +694,7 @@ function changeCSS(cssFile) {
 }
 
 function inputClick(evt, id) {
-	resetSliders()
+	clearSliders()
 	if (id != -1) {
 		if (activeElementID != null) {
 			document.getElementById(activeElementID).style.background = 'white'
@@ -760,17 +703,7 @@ function inputClick(evt, id) {
 		document.getElementById(activeElementID).style.background = 'lightgreen'
 		document.getElementById(-1).value = null
 		let item = arrObjects[id]
-
-		if (arrObjects[activeElementID].type == 'point') {
-			activeObject = 'point'
-			setSlider(item)
-		} else if (arrObjects[activeElementID].type == 'line') {
-			activeObject = 'line'
-			setSlider(item)
-		} else if (arrObjects[activeElementID].type == 'limit') {
-			//activeObject = 'other'
-			setSlider(item)
-		}
+		setSlider(item)
 		fillSetWindow()
 	}
 }
@@ -967,7 +900,7 @@ function bileskeProcess(funcs) {
 }
 
 function inputKeyDown(evt, id) {
-	resetSliders()
+	clearSliders()
 	handleParanthesis(evt)
 	let allowKeys = '(){}[],=-+.*^/bçdğjımnşquvxyzCÇEFGĞHIJKMNOPQTUVWXYZBackspaceArrowLeftArrowRightShiftDelete'
 	if (isNaN(evt.key) && !allowKeys.includes(evt.key)) {
@@ -979,17 +912,18 @@ function inputKeyDown(evt, id) {
 		come = come.replaceAll('y=', '')
 		come = come.replaceAll('=y', '')
 		if (id == -1) { //Giriş input
+			console.log('Giriş')
 			if (classify(come).type == 'point') {
 				console.log('inputKeyDown point çalıştı', come)
 
 				let point = new mPoint(classify(come).x, classify(come).y, come)
 				arrObjects.push(point)
 				activeElementID = point.id
-				setSlider(point)
 				undoObjects = []
 				delCount = 0
 				objectsContainer.innerHTML = null
-				drawCoordinates()
+				setSlider(point)
+				//drawCoordinates()
 			} else if (classify(come).type == 'line') {
 				console.log('inputKeyDown line çalıştı', come)
 
@@ -1007,11 +941,11 @@ function inputKeyDown(evt, id) {
 					line.graphParse = getDrawableFunction(line.graph).parsedFunc
 					arrObjects.push(line)
 					activeElementID = line.id
-					setSlider(line)
 					undoObjects = []
 					delCount = 0
 					objectsContainer.innerHTML = null
-					drawCoordinates()
+					setSlider(line)
+					//drawCoordinates()
 				} else {
 					showToast('GİRİŞ', 'Hatalı giriş yaptınız.' + getDrawableFunction(line.graph).reason)
 				}
@@ -1041,12 +975,10 @@ function inputKeyDown(evt, id) {
 						seq.graphParse = getDrawableFunction(comeFunc).parsedFunc
 						arrObjects.push(seq)
 						activeElementID = seq.id
-						//resetSliders()
-						setSlider(seq)
 						undoObjects = []
 						delCount = 0
 						objectsContainer.innerHTML = null
-						drawCoordinates()
+						setSlider(seq)
 					} else {
 						showToast('GİRİŞ', 'Hatalı giriş yaptınız.' + getDrawableFunction(newCome).reason)
 					}
@@ -1148,7 +1080,7 @@ function inputKeyDown(evt, id) {
 						undoObjects = []
 						delCount = 0
 						objectsContainer.innerHTML = null
-						drawCoordinates()
+						//drawCoordinates()
 						setSlider(lim)
 					} else {
 						showToast('GİRİŞ', 'Hatalı giriş yaptınız.' + getDrawableFunction(newCome).reason)
@@ -1369,20 +1301,19 @@ function delClick(evt) {
 	document.getElementById('btnLine').classList.remove('active')
 	document.getElementById('btnCalc').classList.remove('active')
 	document.getElementById('btnChoice').classList.add('active')
-	resetSliders()
+	clearSliders()
 	fillSetWindow()
 }
 
-function resetSliders() {
+function clearSliders() {
 	document.getElementById('m').innerHTML = 'a'
 	document.getElementById('n').innerHTML = 'b'
 	let sliderM = document.getElementById('sliderM')
 	let sliderN = document.getElementById('sliderN')
 	sliderM.disabled = true
 	sliderN.disabled = true
-	sliderM.value = sliderM.min
-	sliderN.value = sliderN.min
-
+	sliderM.value = 0
+	sliderN.value = 0
 }
 
 function setClick(evt) {
@@ -1448,7 +1379,7 @@ function crossSlider(name) {
 	let slider = document.getElementById('slider' + name.toUpperCase())
 	let sliderLabel = document.getElementById(name)
 	if (activeElementID != null) {
-		drawCoordinates()
+		//drawCoordinates()
 		if (arrObjects[activeElementID].type == 'point') {
 			if (name == 'm') {
 				sliderLabel.innerHTML = 'a = ' + slider.value
@@ -1459,7 +1390,7 @@ function crossSlider(name) {
 			}
 			arrObjects[activeElementID].inputView = '(' + arrObjects[activeElementID].x + ',' + arrObjects[activeElementID].y + ')'
 			drawCoordinates()
-		} else if (arrObjects[activeElementID].type == 'line') {
+		} else if (arrObjects[activeElementID].type == 'line' && classify(arrObjects[activeElementID].inputView).subtype != 'vertical') {
 			if (name == 'm') {
 				sliderLabel.innerHTML = 'm = ' + slider.value
 				arrObjects[activeElementID].a = slider.value
@@ -1474,76 +1405,55 @@ function crossSlider(name) {
 			arrObjects[activeElementID].inputView = 'y=' + normalizeExpr(arrObjects[activeElementID].a + 'x+' + arrObjects[activeElementID].b)
 			arrObjects[activeElementID].graphParse = getDrawableFunction(normalizeExpr(arrObjects[activeElementID].inputView)).parsedFunc
 			drawCoordinates()
-		} else if (arrObjects[activeElementID].type == 'limit') {
+		} else if (arrObjects[activeElementID].type == 'line' && classify(arrObjects[activeElementID].inputView).subtype == 'vertical') {
 			if (name == 'm') {
-				sliderLabel.innerHTML = 'a⁺ = ' + Number(slider.value).toFixed(2)
-				let sliderM = document.getElementById('sliderM')
-				let sliderN = document.getElementById('sliderN')
-
-				//limit noktasının sağında
-				let A = { x: null, y: null }
-				let B = { x: null, y: null }
-				let C = { x: null, y: null }
-				A.x = Number(sliderM.value)
-				A.y = 0
-				B.x = A.x
-				B.y = arrObjects[activeElementID].graphParse(A.x)
-				drawLineSegment(A, B) //Dikey doğru parçası
-
-				B.x = A.x
-				B.y = arrObjects[activeElementID].graphParse(B.x)
-				C.x = 0
-				C.y = B.y
-				drawLineSegment(B, C) //Yatay doğru parçası
-
-				//limit noktasının solunda
-				A.x = Number(sliderN.value)
-				A.y = 0
-				B.x = A.x
-				B.y = arrObjects[activeElementID].graphParse(B.x)
-				drawLineSegment(A, B) //Dikey doğru parçası
-
-				B.x = A.x
-				B.y = arrObjects[activeElementID].graphParse(B.x)
-				C.x = 0
-				C.y = B.y
-				drawLineSegment(B, C) //Yatay doğru parçası 
-
-			} else {
-				sliderLabel.innerHTML = 'a⁻ = ' + Number(slider.value).toFixed(2)
-				let sliderM = document.getElementById('sliderM')
-				let sliderN = document.getElementById('sliderN')
-				//limit noktasının sağında
-				let A = { x: null, y: null }
-				let B = { x: null, y: null }
-				let C = { x: null, y: null }
-				A.x = Number(sliderM.value)
-				A.y = 0
-				B.x = A.x
-				B.y = arrObjects[activeElementID].graphParse(A.x)
-				drawLineSegment(A, B) //Dikey doğru parçası
-
-				B.x = A.x
-				B.y = arrObjects[activeElementID].graphParse(B.x)
-				C.x = 0
-				C.y = B.y
-				drawLineSegment(B, C) //Yatay doğru parçası
-
-				//limit noktasının solunda
-				A.x = Number(sliderN.value)
-				A.y = 0
-				B.x = A.x
-				B.y = arrObjects[activeElementID].graphParse(B.x)
-				drawLineSegment(A, B) //Dikey doğru parçası
-
-				B.x = A.x
-				B.y = arrObjects[activeElementID].graphParse(B.x)
-				C.x = 0
-				C.y = B.y
-				drawLineSegment(B, C) //Yatay doğru parçası 
+				sliderLabel.innerHTML = 'x= ' + Number(slider.value)
+				arrObjects[activeElementID].inputView = 'x= ' + Number(slider.value)
+				drawCoordinates()
 			}
-		}
+		} else if (arrObjects[activeElementID].type == 'limit') {
+			drawCoordinates()
+			let sliderM = document.getElementById('sliderM')
+			let sliderN = document.getElementById('sliderN')
 
+			if (name == 'm') {
+				sliderLabel.innerHTML = arrObjects[activeElementID].approachVal + '⁺ = ' + Number(slider.value).toFixed(2)
+			} else {
+				sliderLabel.innerHTML = arrObjects[activeElementID].approachVal + '⁻ = ' + Number(slider.value).toFixed(2)
+			}
+
+			// Limit noktasının sağında
+			let A = new mPoint(Number(sliderM.value), 0)
+			let B = new mPoint(Number(sliderM.value), arrObjects[activeElementID].graphParse(A.x))
+			let C = new mPoint(0, arrObjects[activeElementID].graphParse(A.x))
+			A.inputView = B.inputView = C.inputView = null
+			let vls = new mLineSegment(A, B)
+			let hls = new mLineSegment(B, C)
+			A.color = B.color = C.color = vls.color = hls.color = arrObjects[activeElementID].color
+			vls.lineDash = hls.lineDash = [2, 5]
+			drawLineSegment(vls)
+			drawLineSegment(hls)
+			drawPoint(A)
+			drawPoint(B)
+			drawPoint(C)
+
+			//limit noktasının solunda
+			A = new mPoint(Number(sliderN.value), 0)
+			B = new mPoint(Number(sliderN.value), arrObjects[activeElementID].graphParse(A.x))
+			C = new mPoint(0, arrObjects[activeElementID].graphParse(A.x))
+			A.inputView = B.inputView = C.inputView = null
+			vls = new mLineSegment(A, B)
+			hls = new mLineSegment(B, C)
+			A.color = B.color = C.color = vls.color = hls.color = arrObjects[activeElementID].color
+			vls.lineDash = hls.lineDash = [2, 5]
+			drawLineSegment(vls)
+			drawLineSegment(hls)
+			drawPoint(A)
+			drawPoint(B)
+			drawPoint(C)
+		} else {
+			console.log('Tür bulunamadı.')
+		}
 	}
 }
 
@@ -1554,39 +1464,37 @@ setSlider = function (item) {
 	let sliderN = document.getElementById('sliderN')
 	let labelN = document.getElementById('n')
 
+	if (classify(item.inputView).subtype == 'vertical') {
+		sliderN.style.display = 'none'
+		labelN.style.display = 'none'
+	} else {
+		sliderN.style.display = 'flex'
+		labelN.style.display = 'flex'
+	}
+
+	sliderM.min = minX * unitY - 1
+	sliderM.max = (minX + Math.round(canvas.width / scaleY) + 1) * unitY
+
+	sliderN.max = minY * -unitX + 1
+	sliderN.min = (minY + Math.round(canvas.height / scaleX) + 1) * -unitX
+
 	sliderM.disabled = false
 	sliderN.disabled = false
 
 	if (item.type == 'point') {
-		sliderM.max = sliderN.max = 10 * Math.round(Math.min(Math.abs(item.x), Math.abs(item.y)))
-		sliderM.min = sliderN.min = -10 * Math.round(Math.min(Math.abs(item.x), Math.abs(item.y)))
-		if (Math.min(Math.abs(item.x), Math.abs(item.y)) == 0) {
-			sliderM.max = sliderN.max = 10 * Math.round(Math.max(Math.abs(item.x), Math.abs(item.y)))
-			sliderM.min = sliderN.min = -10 * Math.round(Math.max(Math.abs(item.x), Math.abs(item.y)))
-		}
-		if (Math.min(Math.abs(item.x), Math.abs(item.y)) == 0 && Math.max(Math.abs(item.x), Math.abs(item.y)) == 0) {
-			sliderM.max = sliderN.max = 10
-			sliderM.min = sliderN.min = -10
-		}
 		sliderM.value = item.x
 		labelM.innerHTML = 'a = ' + item.x
 		sliderN.value = item.y
 		labelN.innerHTML = 'b = ' + item.y
 	} else if (item.type == 'line') {
-		sliderM.max = sliderN.max = 10 * Math.round(Math.min(Math.abs(item.a), Math.abs(item.b)))
-		sliderM.min = sliderN.min = -10 * Math.round(Math.min(Math.abs(item.a), Math.abs(item.b)))
-		if (Math.min(Math.abs(item.a), Math.abs(item.b)) == 0) {
-			sliderM.max = sliderN.max = 10 * Math.round(Math.max(Math.abs(item.a), Math.abs(item.b)))
-			sliderM.min = sliderN.min = -10 * Math.round(Math.max(Math.abs(item.a), Math.abs(item.b)))
-		}
-		if (Math.min(Math.abs(item.a), Math.abs(item.b)) == 0 && Math.max(Math.abs(item.a), Math.abs(item.b)) == 0) {
-			sliderM.max = sliderN.max = 10
-			sliderM.min = sliderN.min = -10
-		}
 		sliderM.value = item.a
 		labelM.innerHTML = 'm = ' + item.a
 		sliderN.value = item.b
 		labelN.innerHTML = 'n = ' + item.b
+		if (classify(item.inputView).subtype == 'vertical') {
+			labelM.innerHTML = 'x=' + classify(item.inputView).x
+			sliderM.value = Number(classify(item.inputView).x)
+		}
 	} else if (item.type == 'limit') {
 		let verticalMNumberRight = Number(item.approachVal * 1 + 0.4).toFixed(2)
 		let verticalMNumberLeft = Number(item.approachVal * 1 - 0.4).toFixed(2)
@@ -1635,6 +1543,8 @@ setSlider = function (item) {
 		drawPoint(A)
 		drawPoint(B)
 		drawPoint(C)
+	} else {
+		console.log('Type bulunamadı.')
 	}
 }
 
@@ -1768,7 +1678,7 @@ $(document).ready(function () {
 			lineDrawing = false
 			canvas.style.cursor = 'pointer'
 			fillSetWindow()
-			resetSliders()
+			clearSliders()
 			drawCoordinates()
 		}
 	}, false)

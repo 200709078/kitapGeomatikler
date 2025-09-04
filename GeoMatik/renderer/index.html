@@ -23,34 +23,6 @@
 	<div id="centerWrapper">
 		<canvas id="canvas"></canvas>
 		<script type="text/javascript" src="js/func.js"></script>
-		<!-- <script type="text/javascript" src="js/app.js"></script> -->
-
-		<!-- 		<div class="buttonGroup">
-			<button class="button active" type="button" id="btnChoice" title="Taşı" onclick="choiceClick()">
-				<img src="img/choice.svg">
-				<span>Taşı</span>
-			</button>
-			<button class="button" type="button" id="btnPoint" title="Nokta" onclick="pointClick()">
-				<img src="img/point_blue.svg">
-				<span>Nokta</span>
-			</button>
-			<button class="button" type="button" id="btnLine" title="Doğru" onclick="lineClick()">
-				<img src="img/line_blue.svg">
-				<span>Doğru</span>
-			</button>
-			<button class="button" type="button" id="btnCalc" title="Cebir" onclick="calcClick()">
-				<img id="btnimgCalc" src="img/left.svg">
-				<span>Cebir</span>
-			</button>
-			<button class="button" type="button" id="btnHelp" title="Yardım" onclick="helpClick()">
-				<img id="btnimgHelp" src="img/help.svg">
-				<span>Yardım</span>
-			</button>
-		</div> -->
-
-
-
-
 		<div class="buttonGroup">
 			<button class="button active" id="btnChoice" data-action="choice" data-cursor="pointer"
 				data-toast="Taşı|Düzlemi tutarak kaydırınız.">
@@ -67,6 +39,11 @@
 				<img src="img/line_blue.svg">
 				<span>Doğru</span>
 			</button>
+			<button class="button" id="btnLineSegment" data-action="linesegment" data-cursor="crosshair"
+				data-toast="Doğru Parçası|Farklı iki nokta seçiniz.">
+				<img src="img/linesegment_blue.svg">
+				<span>Doğru Parçası</span>
+			</button>
 			<button class="button" id="btnCalc" data-action="calc" data-cursor="pointer">
 				<img id="btnimgCalc" src="img/left.svg">
 				<span>Cebir</span>
@@ -76,21 +53,15 @@
 				<span>Yardım</span>
 			</button>
 		</div>
-
-
-
-
-
-
 		<div class="leftWrapper" id="leftWrapper">
 			<div class="reSizer"></div>
 			<div id="scrollWrapper">
 				<div id="sliders">
 					<label class="slideLabel" for="sliderM" id="m">a</label>
-					<input type="range" min="-20" max="20" value="-20" name="m" id="sliderM" oninput="crossSlider(name)"
+					<input type="range" min="-20" max="20" step="0.01" name="m" id="sliderM" oninput="crossSlider(name)"
 						disabled="true" />
 					<label class="slideLabel" for="sliderN" id="n">b</label>
-					<input type="range" min="-20" max="20" value="-20" name="n" id="sliderN" oninput="crossSlider(name)"
+					<input type="range" min="-20" max="20" step="0.01" name="n" id="sliderN" oninput="crossSlider(name)"
 						disabled="true" />
 				</div>
 				<div class="entryContainer" id="objectsContainer"></div>
