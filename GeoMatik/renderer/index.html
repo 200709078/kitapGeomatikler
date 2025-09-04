@@ -23,9 +23,9 @@
 	<div id="centerWrapper">
 		<canvas id="canvas"></canvas>
 		<script type="text/javascript" src="js/func.js"></script>
-		<script type="text/javascript" src="js/app.js"></script>
+		<!-- <script type="text/javascript" src="js/app.js"></script> -->
 
-		<div class="buttonGroup">
+		<!-- 		<div class="buttonGroup">
 			<button class="button active" type="button" id="btnChoice" title="Taşı" onclick="choiceClick()">
 				<img src="img/choice.svg">
 				<span>Taşı</span>
@@ -46,17 +46,52 @@
 				<img id="btnimgHelp" src="img/help.svg">
 				<span>Yardım</span>
 			</button>
+		</div> -->
+
+
+
+
+		<div class="buttonGroup">
+			<button class="button active" id="btnChoice" data-action="choice" data-cursor="pointer"
+				data-toast="Taşı|Düzlemi tutarak kaydırınız.">
+				<img src="img/choice.svg">
+				<span>Taşı</span>
+			</button>
+			<button class="button" id="btnPoint" data-action="point" data-cursor="crosshair"
+				data-toast="Nokta|Konum seçiniz.">
+				<img src="img/point_blue.svg">
+				<span>Nokta</span>
+			</button>
+			<button class="button" id="btnLine" data-action="line" data-cursor="crosshair"
+				data-toast="Doğru|Farklı iki nokta seçiniz.">
+				<img src="img/line_blue.svg">
+				<span>Doğru</span>
+			</button>
+			<button class="button" id="btnCalc" data-action="calc" data-cursor="pointer">
+				<img id="btnimgCalc" src="img/left.svg">
+				<span>Cebir</span>
+			</button>
+			<button class="button" id="btnHelp" data-action="help" data-cursor="pointer">
+				<img id="btnimgHelp" src="img/help.svg">
+				<span>Yardım</span>
+			</button>
 		</div>
+
+
+
+
+
+
 		<div class="leftWrapper" id="leftWrapper">
 			<div class="reSizer"></div>
 			<div id="scrollWrapper">
 				<div id="sliders">
 					<label class="slideLabel" for="sliderM" id="m">a</label>
 					<input type="range" min="-20" max="20" value="-20" name="m" id="sliderM" oninput="crossSlider(name)"
-						disabled="true"/>
+						disabled="true" />
 					<label class="slideLabel" for="sliderN" id="n">b</label>
 					<input type="range" min="-20" max="20" value="-20" name="n" id="sliderN" oninput="crossSlider(name)"
-						disabled="true"/>
+						disabled="true" />
 				</div>
 				<div class="entryContainer" id="objectsContainer"></div>
 			</div>
@@ -159,6 +194,8 @@
 			</div>
 		</div>
 	</div>
+
+	<script type="text/javascript" src="js/app.js"></script>
 </body>
 
 </html>
