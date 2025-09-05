@@ -61,7 +61,7 @@ class mLine {
 	constructor(a, b, come = null) {
 		if (come == null) come = 'y=' + a + 'x+' + b
 		if (classify(come).subtype == 'vertical') {
-			const denkCount = arrObjects.filter(f => f.name.includes("denk")).length + 1;
+			const denkCount = arrObjects.filter(f => f.name.includes("denk")).length + 1
 			this.name = 'denk' + denkCount
 		} else {
 			this.name = createName('line')
@@ -128,19 +128,19 @@ class mLimit {
 }
 
 function getRandomColor() {
-	var lum = -0.25;
-	var hex = String('#' + Math.random().toString(16).slice(2, 8).toUpperCase()).replace(/[^0-9a-f]/gi, '');
+	var lum = -0.25
+	var hex = String('#' + Math.random().toString(16).slice(2, 8).toUpperCase()).replace(/[^0-9a-f]/gi, '')
 	if (hex.length < 6) {
-		hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+		hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2]
 	}
 	var rgbColor = "#",
-		c, i;
+		c, i
 	for (i = 0; i < 3; i++) {
-		c = parseInt(hex.substr(i * 2, 2), 16);
-		c = Math.round(Math.min(Math.max(0, c + (c * lum)), 255)).toString(16);
-		rgbColor += ("00" + c).substr(c.length);
+		c = parseInt(hex.substr(i * 2, 2), 16)
+		c = Math.round(Math.min(Math.max(0, c + (c * lum)), 255)).toString(16)
+		rgbColor += ("00" + c).substr(c.length)
 	}
-	return rgbColor;
+	return rgbColor
 }
 
 createName = function (type) {
@@ -351,7 +351,6 @@ fillSetWindow = function () {
 }
 
 function drawPoint(point) {
-	console.log('drawPoint çalıştı')
 	if (point.inputView) labelCreator(point)
 	if (!point.visibility) return
 	ctx.beginPath()
@@ -376,7 +375,6 @@ function drawPoint(point) {
 }
 
 function drawLine(line) {
-	console.log('drawLine çalıştı')
 	labelCreator(line)
 	if (!line.visibility) return
 	if (classify(line.inputView).subtype == 'vertical') { // Drawing Vertical Lines
@@ -415,7 +413,6 @@ function drawLine(line) {
 }
 
 function drawFunction(func) {
-	console.log('drawFunction çalıştı')
 	labelCreator(func)
 	if (!func.visibility) return
 	let f = func.graphParse
@@ -424,7 +421,7 @@ function drawFunction(func) {
 	ctx.strokeStyle = func.color
 	ctx.lineWidth = func.size
 
-	let step = 0.01;
+	let step = 0.01
 
 	let firstPoint = true
 	let x = minX * unitY
@@ -453,7 +450,6 @@ function drawFunction(func) {
 }
 
 function drawSequence(seq) {
-	console.log('drawSequence çalıştı')
 	labelCreator(seq)
 	if (!seq.visibility) return
 	let f = seq.graphParse
@@ -463,27 +459,27 @@ function drawSequence(seq) {
 	ctx.lineWidth = seq.size - 1
 	ctx.setLineDash([2, 5])
 
-	let step = 0.01;
+	let step = 0.01
 
-	let firstPoint = true;
+	let firstPoint = true
 	let x = minX * unitY
 
 	while (x < (minX + Math.round(canvas.width / scaleY) + 1) * unitY) {
-		let y = f(x);
+		let y = f(x)
 		if (!isFinite(y)) {
-			firstPoint = true;
-			x += step;
-			continue;
+			firstPoint = true
+			x += step
+			continue
 		}
 
-		let canvasX = -minX * scaleY + (x * scaleY) / unitY;
-		let canvasY = -minY * scaleX - (y * scaleX) / unitX;
+		let canvasX = -minX * scaleY + (x * scaleY) / unitY
+		let canvasY = -minY * scaleX - (y * scaleX) / unitX
 
 		if (firstPoint) {
-			ctx.moveTo(canvasX, canvasY);
-			firstPoint = false;
+			ctx.moveTo(canvasX, canvasY)
+			firstPoint = false
 		} else {
-			ctx.lineTo(canvasX, canvasY);
+			ctx.lineTo(canvasX, canvasY)
 		}
 		x += step
 	}
@@ -507,7 +503,6 @@ function drawSequence(seq) {
 }
 
 function drawLimit(lim) {
-	console.log('drawLimit çalıştı')
 	labelCreator(lim)
 	if (!lim.visibility) return
 	let f = lim.graphParse
@@ -516,27 +511,27 @@ function drawLimit(lim) {
 	ctx.lineWidth = lim.size - 1
 	ctx.setLineDash(lim.lineDash)
 
-	let step = 0.01;
+	let step = 0.01
 
-	let firstPoint = true;
+	let firstPoint = true
 	let x = minX * unitY
 
 	while (x < (minX + Math.round(canvas.width / scaleY) + 1) * unitY) {
-		let y = f(x);
+		let y = f(x)
 		if (!isFinite(y)) {
-			firstPoint = true;
-			x += step;
-			continue;
+			firstPoint = true
+			x += step
+			continue
 		}
 
-		let canvasX = -minX * scaleY + (x * scaleY) / unitY;
-		let canvasY = -minY * scaleX - (y * scaleX) / unitX;
+		let canvasX = -minX * scaleY + (x * scaleY) / unitY
+		let canvasY = -minY * scaleX - (y * scaleX) / unitX
 
 		if (firstPoint) {
-			ctx.moveTo(canvasX, canvasY);
-			firstPoint = false;
+			ctx.moveTo(canvasX, canvasY)
+			firstPoint = false
 		} else {
-			ctx.lineTo(canvasX, canvasY);
+			ctx.lineTo(canvasX, canvasY)
 		}
 		x += step
 	}
@@ -553,6 +548,7 @@ function drawLimit(lim) {
 	let vls = new mLineSegment(A, B)
 	let hls = new mLineSegment(B, C)
 	A.color = B.color = C.color = vls.color = hls.color = lim.color
+	vls.inputView=hls.inputView=null
 	drawLineSegment(vls)
 	drawLineSegment(hls)
 	drawPoint(A)
@@ -561,7 +557,6 @@ function drawLimit(lim) {
 }
 
 function drawLineSegment(ls) {
-	console.log('drawLineSegment çalıştı')
 	if (ls.inputView) labelCreator(ls)
 	//Doğru Parçası
 	ctx.beginPath()
@@ -624,50 +619,45 @@ function labelCreator(item) {
 }
 
 document.querySelector('.buttonGroup').addEventListener('click', e => {
-	const btn = e.target.closest('button');
-	if (!btn) return;
-
-	// aktif butonu güncelle
-	document.querySelectorAll('.buttonGroup .button').forEach(b => b.classList.remove('active'));
-	btn.classList.add('active');
-	// cursor ayarla
-	canvas.style.cursor = btn.dataset.cursor || 'default';
-	// action kontrolü
+	const btn = e.target.closest('button')
+	if (!btn) return
+	document.querySelectorAll('.buttonGroup .button').forEach(b => b.classList.remove('active'))
+	btn.classList.add('active')
+	canvas.style.cursor = btn.dataset.cursor || 'default'
 	switch (btn.dataset.action) {
 		case 'choice':
-			activeObject = 'choice';
-			break;
+			activeObject = 'choice'
+			break
 		case 'point':
-			activeObject = 'point';
-			break;
+			activeObject = 'point'
+			break
 		case 'line':
-			activeObject = 'line';
-			break;
+			activeObject = 'line'
+			break
 		case 'linesegment':
-			activeObject = 'linesegment';
-			break;
+			activeObject = 'linesegment'
+			break
 		case 'calc':
-			activeObject = 'choice';
-			toggleCalcIcon(document.getElementById('btnimgCalc'));
-			document.getElementById('leftWrapper').classList.toggle('hide');
-			break;
+			activeObject = 'choice'
+			toggleCalcIcon(document.getElementById('btnimgCalc'))
+			document.getElementById('leftWrapper').classList.toggle('hide')
+			break
 		case 'help':
-			activeObject = 'choice';
-			showToast('GEOMATİK', 'HENÜZ YAPIM AŞAMASINDA...');
-			break;
+			activeObject = 'choice'
+			showToast('GEOMATİK', 'HENÜZ YAPIM AŞAMASINDA...')
+			break
 	}
-	// toast varsa göster
 	if (btn.dataset.toast) {
-		const [title, msg] = btn.dataset.toast.split('|');
-		showToast(title, msg);
+		const [title, msg] = btn.dataset.toast.split('|')
+		showToast(title, msg)
 	}
-});
+})
 
 function toggleCalcIcon(imgEl) {
-	const cycle = ["img/left.svg", "img/right.svg"];
-	let current = imgEl.getAttribute("src");
-	let next = cycle[(cycle.indexOf(current) + 1) % cycle.length];
-	imgEl.src = next;
+	const cycle = ["img/left.svg", "img/right.svg"]
+	let current = imgEl.getAttribute("src")
+	let next = cycle[(cycle.indexOf(current) + 1) % cycle.length]
+	imgEl.src = next
 }
 
 function changeCSS(cssFile) {
@@ -711,171 +701,161 @@ function classify(inputRaw) {
 			type: 'point',
 			x: Number(xStr),
 			y: Number(yStr)
-		};
+		}
 	}
 
 	// ---- DOĞRULAR ----
 	// ---- x = sabit veya sabit = x ----
-	const lineXConstRe = /^\s*(?:x\s*=\s*([+-]?\d+(?:\.\d+)?)|([+-]?\d+(?:\.\d+)?)\s*=\s*x)\s*$/i;
-	const xcMatch = norm.match(lineXConstRe);
+	const lineXConstRe = /^\s*(?:x\s*=\s*([+-]?\d+(?:\.\d+)?)|([+-]?\d+(?:\.\d+)?)\s*=\s*x)\s*$/i
+	const xcMatch = norm.match(lineXConstRe)
 	if (xcMatch) {
-		const val = xcMatch[1] !== undefined ? xcMatch[1] : xcMatch[2];
-		return { type: 'line', subtype: 'vertical', x: Number(val) };
+		const val = xcMatch[1] !== undefined ? xcMatch[1] : xcMatch[2]
+		return { type: 'line', subtype: 'vertical', x: Number(val) }
 	}
 	// ---- x eksenine paralel ----
-	const horizRe = /^\s*([+-]?\d+(?:\.\d+)?)\s*$/;
-	const hMatch = norm.match(horizRe);
-	if (hMatch) return { type: 'line', subtype: 'horizontal', m: 0, n: Number(hMatch[1]) };
+	const horizRe = /^\s*([+-]?\d+(?:\.\d+)?)\s*$/
+	const hMatch = norm.match(horizRe)
+	if (hMatch) return { type: 'line', subtype: 'horizontal', m: 0, n: Number(hMatch[1]) }
 
 	// Normalize: -x => -1*x, +x => 1*x, x => 1*x
-	let expr = norm.replace(/(^|\s)-\s*([a-z])/gi, "$1-1*$2");
-	expr = expr.replace(/(^|\s)\+\s*([a-z])/gi, "$11*$2");
-	expr = expr.replace(/(^|\s)([a-z])/gi, "$11*$2");
+	let expr = norm.replace(/(^|\s)-\s*([a-z])/gi, "$1-1*$2")
+	expr = expr.replace(/(^|\s)\+\s*([a-z])/gi, "$11*$2")
+	expr = expr.replace(/(^|\s)([a-z])/gi, "$11*$2")
 
 	// mx + n
-	let slopeMatch = expr.match(/^\s*([+-]?\d*\.?\d*)\*?([a-z])([+-]\d+(?:\.\d+)?)?\s*$/i);
+	let slopeMatch = expr.match(/^\s*([+-]?\d*\.?\d*)\*?([a-z])([+-]\d+(?:\.\d+)?)?\s*$/i)
 	if (slopeMatch) {
-		const m = Number(slopeMatch[1] || 1);
-		const n = slopeMatch[3] ? Number(slopeMatch[3].replace(/\s+/g, "")) : 0;
-		return { type: 'line', subtype: 'slope', m, n };
+		const m = Number(slopeMatch[1] || 1)
+		const n = slopeMatch[3] ? Number(slopeMatch[3].replace(/\s+/g, "")) : 0
+		return { type: 'line', subtype: 'slope', m, n }
 	}
 
 	// n + mx
-	slopeMatch = expr.match(/^\s*([+-]?\d+(?:\.\d+)?)?([+-]?\d*\.?\d*)\*?([a-z])\s*$/i);
+	slopeMatch = expr.match(/^\s*([+-]?\d+(?:\.\d+)?)?([+-]?\d*\.?\d*)\*?([a-z])\s*$/i)
 	if (slopeMatch) {
-		const n = slopeMatch[1] ? Number(slopeMatch[1]) : 0;
-		const m = Number(slopeMatch[2] || 1);
-		return { type: 'line', subtype: 'slope', m, n };
+		const n = slopeMatch[1] ? Number(slopeMatch[1]) : 0
+		const m = Number(slopeMatch[2] || 1)
+		return { type: 'line', subtype: 'slope', m, n }
 	}
 
 	// ---- Dizi(function, start, end) ----
-	const diziRe = /^\s*Dizi\s*\(\s*(.+)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*\)\s*$/i;
-	const arrayMatch = norm.match(diziRe);
+	const diziRe = /^\s*Dizi\s*\(\s*(.+)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*\)\s*$/i
+	const arrayMatch = norm.match(diziRe)
 	if (arrayMatch) {
-		const func = arrayMatch[1].trim();
-		const start = Number(arrayMatch[2]);
-		const end = Number(arrayMatch[3]);
+		const func = arrayMatch[1].trim()
+		const start = Number(arrayMatch[2])
+		const end = Number(arrayMatch[3])
 		return {
 			type: "sequence",
 			func,
 			start,
 			end
-		};
+		}
 	}
 
 	// ---- Bileşke(...) ----
-	const funcCompRe = /^\s*Bileşke\s*\((.+)\)\s*$/i;  // <-- i flag var
-	const compMatch = norm.match(funcCompRe);
+	const funcCompRe = /^\s*Bileşke\s*\((.+)\)\s*$/i // <-- i flag var
+	const compMatch = norm.match(funcCompRe)
 	if (compMatch) {
-		const inside = compMatch[1];
-		const functions = inside.split(/\s*,\s*/).map(p => p.trim());
+		const inside = compMatch[1]
+		const functions = inside.split(/\s*,\s*/).map(p => p.trim())
 		return {
 			type: "functionCompositions",
 			functions
-		};
+		}
 	}
 
 	// ---- Limit(f,2) ----
-	const limitRe = /^\s*Limit\s*\(\s*(.+)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*\)\s*$/i;
-	const limitMatch = norm.match(limitRe);
+	const limitRe = /^\s*Limit\s*\(\s*(.+)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*\)\s*$/i
+	const limitMatch = norm.match(limitRe)
 	if (limitMatch) {
-		const func = limitMatch[1];     // f
-		const approachVal = limitMatch[2];  // 2
+		const func = limitMatch[1] // f
+		const approachVal = limitMatch[2] // 2
 		return {
 			type: "limit",
 			func,
 			approachVal
-		};
+		}
 	}
 
 	// ---- DoğruParçası ----
 	if (/^DoğruParçası\s*\(/i.test(norm)) {
-		const trimmed = norm.trim();
+		const trimmed = norm.trim()
 		// Kapanış parantezi kontrolü
 		if (!trimmed.endsWith(")")) {
-			return { type: "unknown", reason: "Eksik kapanış parantezi." };
+			return { type: "unknown", reason: "Eksik kapanış parantezi." }
 		}
-		const inner = trimmed.replace(/^DoğruParçası\s*\(/i, '').replace(/\)$/, '');
-		let depth = 0, splitIndex = -1;
+		const inner = trimmed.replace(/^DoğruParçası\s*\(/i, '').replace(/\)$/, '')
+		let depth = 0, splitIndex = -1
 		for (let i = 0; i < inner.length; i++) {
-			const ch = inner[i];
-			if (ch === '(') depth++;
-			else if (ch === ')') depth--;
+			const ch = inner[i]
+			if (ch === '(') depth++
+			else if (ch === ')') depth--
 			else if (ch === ',' && depth === 0) {
-				splitIndex = i;
-				break;
+				splitIndex = i
+				break
 			}
 		}
 		if (splitIndex === -1 || depth !== 0) {
-			return { type: 'unknown', reason: "Nokta sayısı yeterli değil." };
+			return { type: 'unknown', reason: "Nokta sayısı yeterli değil." }
 		}
-		const rawP1 = inner.slice(0, splitIndex).trim();
-		const rawP2 = inner.slice(splitIndex + 1).trim();
+		const rawP1 = inner.slice(0, splitIndex).trim()
+		const rawP2 = inner.slice(splitIndex + 1).trim()
 		function parsePoint(raw) {
-			const coordRe = /^\(\s*([+-]?\d+(?:\.\d+)?)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*\)$/;
-			const coordMatch = raw.match(coordRe);
-			if (coordMatch) return { name: null, x: Number(coordMatch[1]), y: Number(coordMatch[2]) };
+			const coordRe = /^\(\s*([+-]?\d+(?:\.\d+)?)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*\)$/
+			const coordMatch = raw.match(coordRe)
+			if (coordMatch) return { name: null, x: Number(coordMatch[1]), y: Number(coordMatch[2]) }
 			const pointRe = /^[A-Z][0-9]*$/;
-			if (pointRe.test(raw)) return { name: raw, x: null, y: null };
+			if (pointRe.test(raw)) return { name: raw, x: null, y: null }
 			if (/^[a-z]/.test(raw)) {
-				return { unknown: raw, reason: "Nokta adları büyük harle başlamalıdır." };
+				return { unknown: raw, reason: "Nokta adları büyük harle başlamalıdır." }
 			}
-			return { unknown: raw };
+			return { unknown: raw }
 		}
 		return {
 			type: 'linesegment',
 			points: [parsePoint(rawP1), parsePoint(rawP2)]
-		};
+		}
 	}
 	// ---- Doğru ----
 	if (/^Doğru\s*\(/i.test(norm)) {
-		const trimmed = norm.trim();
+		const trimmed = norm.trim()
 		if (!trimmed.endsWith(")")) {
-			return { type: "unknown", reason: "Eksik kapanış parantezi." };
+			return { type: "unknown", reason: "Eksik kapanış parantezi." }
 		}
-		const inner = trimmed.replace(/^Doğru\s*\(/i, '').replace(/\)$/, '');
-		let depth = 0, splitIndex = -1;
+		const inner = trimmed.replace(/^Doğru\s*\(/i, '').replace(/\)$/, '')
+		let depth = 0, splitIndex = -1
 		for (let i = 0; i < inner.length; i++) {
-			const ch = inner[i];
-			if (ch === '(') depth++;
-			else if (ch === ')') depth--;
+			const ch = inner[i]
+			if (ch === '(') depth++
+			else if (ch === ')') depth--
 			else if (ch === ',' && depth === 0) {
-				splitIndex = i;
-				break;
+				splitIndex = i
+				break
 			}
 		}
 		if (splitIndex === -1 || depth !== 0) {
-			return { type: 'unknown', reason: "Nokta sayısı yeterli değil." };
+			return { type: 'unknown', reason: "Nokta sayısı yeterli değil." }
 		}
-		const rawP1 = inner.slice(0, splitIndex).trim();
-		const rawP2 = inner.slice(splitIndex + 1).trim();
+		const rawP1 = inner.slice(0, splitIndex).trim()
+		const rawP2 = inner.slice(splitIndex + 1).trim()
 		function parsePoint(raw) {
-			const coordRe = /^\(\s*([+-]?\d+(?:\.\d+)?)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*\)$/;
-			const coordMatch = raw.match(coordRe);
-			if (coordMatch) return { name: null, x: Number(coordMatch[1]), y: Number(coordMatch[2]) };
-			const pointRe = /^[A-Z][0-9]*$/;
-			if (pointRe.test(raw)) return { name: raw, x: null, y: null };
+			const coordRe = /^\(\s*([+-]?\d+(?:\.\d+)?)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*\)$/
+			const coordMatch = raw.match(coordRe)
+			if (coordMatch) return { name: null, x: Number(coordMatch[1]), y: Number(coordMatch[2]) }
+			const pointRe = /^[A-Z][0-9]*$/
+			if (pointRe.test(raw)) return { name: raw, x: null, y: null }
 
 			if (/^[a-z]/.test(raw)) {
-				return { unknown: raw, reason: "Nokta adları büyük harle başlamalıdır." };
+				return { unknown: raw, reason: "Nokta adları büyük harle başlamalıdır." }
 			}
-			return { unknown: raw };
+			return { unknown: raw }
 		}
 		return {
 			type: 'linewithpoints',
 			points: [parsePoint(rawP1), parsePoint(rawP2)]
-		};
+		}
 	}
-
-
-
-
-
-
-
-
-
-
 
 	// ---- f+g, 2f-3g, -f, -3g+1 ----
 	const funcOpRe = /([+-]?\d*)([fghpqr][0-9]*)\b/gi
@@ -909,21 +889,21 @@ function capitalizeName(str) {
 		"bileşke": "Bileşke",
 		"limit": "Limit",
 		"doğruparçası": "DoğruParçası"
-	};
+	}
 
 	for (const word in specialMap) {
-		const re = new RegExp(word, "gi");
+		const re = new RegExp(word, "gi")
 		if (re.test(str)) {
-			return str.replace(re, specialMap[word]);
+			return str.replace(re, specialMap[word])
 		}
 	}
-	return str;
+	return str
 }
 
 function bileskeProcess(funcs) {
 	return funcs.reduceRight((acc, f) => {
-		return f.replace(/x/g, `(${acc})`);
-	}, "x");
+		return f.replace(/x/g, `(${acc})`)
+	}, "x")
 }
 
 function inputKeyDown(evt, id) {
@@ -972,7 +952,6 @@ function inputKeyDown(evt, id) {
 					delCount = 0
 					objectsContainer.innerHTML = null
 					setSlider(line)
-					//drawCoordinates()
 				} else {
 					showToast('GİRİŞ', 'Hatalı giriş yaptınız.' + getDrawableFunction(line.graph).reason)
 				}
@@ -1111,7 +1090,6 @@ function inputKeyDown(evt, id) {
 					} else {
 						showToast('GİRİŞ', 'Hatalı giriş yaptınız.' + getDrawableFunction(newCome).reason)
 					}
-
 				} else {
 					showToast('GİRİŞ', 'Hatalı giriş yaptınız. Fonksiyon bulunamadı.')
 				}
@@ -1151,7 +1129,7 @@ function inputKeyDown(evt, id) {
 				arrObjects.push(A)
 				let B = new mPoint(classify(come).points[1].x, classify(come).points[1].y)
 				arrObjects.push(B)
-				createLineEquation(A,B)
+				createLineEquation(A, B)
 				drawCoordinates()
 			} else {
 				console.log('Type bulunamadı.')
@@ -1224,51 +1202,51 @@ function normalizeExpr(expr) {
 }
 
 function handleParanthesis(e) {
-	const el = e.target;
+	const el = e.target
 	const pairs = {
 		'(': ')',
 		'[': ']',
 		'{': '}'
-	};
-	const closePairs = Object.fromEntries(Object.entries(pairs).map(([o, c]) => [c, o]));
+	}
+	const closePairs = Object.fromEntries(Object.entries(pairs).map(([o, c]) => [c, o]))
 
 	// --- Açılış parantezi yazma ---
 	if (pairs[e.key]) {
-		e.preventDefault();
-		const start = el.selectionStart;
-		const end = el.selectionEnd;
-		const value = el.value;
-		const open = e.key;
-		const close = pairs[e.key];
-		const selectedText = value.slice(start, end);
+		e.preventDefault()
+		const start = el.selectionStart
+		const end = el.selectionEnd
+		const value = el.value
+		const open = e.key
+		const close = pairs[e.key]
+		const selectedText = value.slice(start, end)
 
 		el.value = value.slice(0, start) + open + selectedText + close + value.slice(end);
 
 		if (selectedText) {
-			el.selectionStart = start + 1;
-			el.selectionEnd = end + 1;
+			el.selectionStart = start + 1
+			el.selectionEnd = end + 1
 		} else {
-			el.selectionStart = el.selectionEnd = start + 1;
+			el.selectionStart = el.selectionEnd = start + 1
 		}
 	}
 
 	// --- Backspace ile silme kontrolü ---
 	if (e.key === "Backspace") {
-		const start = el.selectionStart;
-		const end = el.selectionEnd;
-		const value = el.value;
+		const start = el.selectionStart
+		const end = el.selectionEnd
+		const value = el.value
 
 		// Seçim varsa normal silmeye izin ver
-		if (start !== end) return;
+		if (start !== end) return
 
 		// Sol karakter bir açılış parantezi mi?
-		const prevChar = value[start - 1];
-		const nextChar = value[start];
+		const prevChar = value[start - 1]
+		const nextChar = value[start]
 
 		if (pairs[prevChar] && nextChar === pairs[prevChar]) {
-			e.preventDefault();
-			el.value = value.slice(0, start - 1) + value.slice(start + 1);
-			el.selectionStart = el.selectionEnd = start - 1;
+			e.preventDefault()
+			el.value = value.slice(0, start - 1) + value.slice(start + 1)
+			el.selectionStart = el.selectionEnd = start - 1
 		}
 	}
 }
@@ -1455,6 +1433,7 @@ function crossSlider(name) {
 			let hls = new mLineSegment(B, C)
 			A.color = B.color = C.color = vls.color = hls.color = arrObjects[activeElementID].color
 			vls.lineDash = hls.lineDash = [2, 5]
+			vls.inputView=hls.inputView=null
 			drawLineSegment(vls)
 			drawLineSegment(hls)
 			drawPoint(A)
@@ -1470,6 +1449,7 @@ function crossSlider(name) {
 			hls = new mLineSegment(B, C)
 			A.color = B.color = C.color = vls.color = hls.color = arrObjects[activeElementID].color
 			vls.lineDash = hls.lineDash = [2, 5]
+			vls.inputView=hls.inputView=null
 			drawLineSegment(vls)
 			drawLineSegment(hls)
 			drawPoint(A)
@@ -1541,6 +1521,7 @@ setSlider = function (item) {
 		let hls = new mLineSegment(B, C)
 		A.color = B.color = C.color = vls.color = hls.color = item.color
 		vls.lineDash = hls.lineDash = [2, 5]
+		vls.inputView=hls.inputView=null
 		drawLineSegment(vls)
 		drawLineSegment(hls)
 		drawPoint(A)
@@ -1562,6 +1543,7 @@ setSlider = function (item) {
 		hls = new mLineSegment(B, C)
 		A.color = B.color = C.color = vls.color = hls.color = item.color
 		vls.lineDash = hls.lineDash = [2, 5]
+		vls.inputView=hls.inputView=null
 		drawLineSegment(vls)
 		drawLineSegment(hls)
 		drawPoint(A)
@@ -1616,11 +1598,11 @@ function buttonMove(evt) {
 	}
 } */
 showToast = function (title, msg) {
-	let x = document.getElementById("snackbar");
+	let x = document.getElementById("snackbar")
 	document.getElementById('snackTitle').innerHTML = title
 	document.getElementById('snackContent').innerHTML = msg
-	x.className = "show";
-	setTimeout(function () { x.className = x.className.replace("show", ""); }, 3000)
+	x.className = "show"
+	setTimeout(function () { x.className = x.className.replace("show", "") }, 3000)
 }
 
 function changeName(newName) {
@@ -1664,8 +1646,8 @@ function createLineEquation(lineA, lineB) {
 
 		let line = new mLine(m, c)
 		line.graphParse = getDrawableFunction(line.graph).parsedFunc
-		setSlider(line)
 		arrObjects.push(line)
+		setSlider(line)
 		activeElementID = line.id
 		objectsContainer.innerHTML = null
 		drawCoordinates()
@@ -1673,13 +1655,29 @@ function createLineEquation(lineA, lineB) {
 }
 
 function createLineSegment(lineSegmentA, lineSegmentB) {
-	let ls = new mLineSegment(lineSegmentA, lineSegmentB)
+	arrObjects.pop()
+	arrObjects.pop()
+	let A = new mPoint(lineSegmentA.x, lineSegmentA.y)
+	arrObjects.push(A)
+	let B = new mPoint(lineSegmentB.x, lineSegmentB.y)
+	arrObjects.push(B)
+	let ls = new mLineSegment(A, B)
 	arrObjects.push(ls)
 	activeElementID = ls.id
 	undoObjects = []
 	delCount = 0
 	objectsContainer.innerHTML = null
 	drawCoordinates()
+
+
+	/* 	let ls = new mLineSegment(lineSegmentA, lineSegmentB)
+		arrObjects.push(ls)
+		setSlider(ls)
+		activeElementID = ls.id
+		undoObjects = []
+		delCount = 0
+		objectsContainer.innerHTML = null
+		drawCoordinates() */
 }
 
 $(document).ready(function () {
@@ -1919,15 +1917,15 @@ $(document).ready(function () {
 				lineSegmentA = getMousePos(evt)
 				let point = new mPoint(lineSegmentA.x, lineSegmentA.y)
 				arrObjects.push(point)
-				undoObjects = []
-				delCount = 0
+/* 				undoObjects = []
+				delCount = 0 */
 				lineSegmentDrawing = true
 			} else {
 				lineSegmentB = getMousePos(evt)
 				let point = new mPoint(lineSegmentB.x, lineSegmentB.y)
 				arrObjects.push(point)
-				undoObjects = []
-				delCount = 0
+/* 				undoObjects = []
+				delCount = 0 */
 				lineSegmentDrawing = false
 			}
 			if (lineSegmentA != null && lineSegmentB != null) {
