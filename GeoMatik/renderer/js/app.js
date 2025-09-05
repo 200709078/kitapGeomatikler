@@ -8,6 +8,8 @@ let activeObject = 'choice'
 let activeElementID = null
 let lineDrawing = false
 let lineA, lineB
+let lineSegmentDrawing = false
+let lineSegmentA, lineSegmentB
 let delPointCount = 0
 let scaleX = 100
 let scaleY = 100
@@ -42,6 +44,7 @@ class mPoint {
 }
 class mLineSegment {
 	constructor(A, B, come = null) {
+		if (come == null) come = 'DoğruParçası((' + A.x + ',' + A.y + '),(' + B.x + ',' + B.y + '))'
 		this.name = createName('linesegment')
 		this.id = arrObjects.length
 		this.A = A
@@ -314,8 +317,6 @@ drawCoordinates = function () {
 
 	if (activeElementID != null) {
 		document.getElementById(activeElementID).style.background = 'lightgreen'
-
-
 		/* 		let objectsContainer = document.getElementById('objectsContainer')
 				objectsContainer.insertBefore(sliders, objectsContainer.children[2])
 				sliders.style.display = 'flex' */
@@ -390,7 +391,6 @@ function drawLine(line) {
 		ctx.fill()
 		ctx.stroke()
 		ctx.closePath()
-		//clearSliders()
 		return
 	}
 
@@ -418,7 +418,6 @@ function drawFunction(func) {
 	console.log('drawFunction çalıştı')
 	labelCreator(func)
 	if (!func.visibility) return
-
 	let f = func.graphParse
 
 	ctx.beginPath()
@@ -512,7 +511,6 @@ function drawLimit(lim) {
 	labelCreator(lim)
 	if (!lim.visibility) return
 	let f = lim.graphParse
-
 	ctx.beginPath()
 	ctx.strokeStyle = lim.color
 	ctx.lineWidth = lim.size - 1
@@ -632,40 +630,32 @@ document.querySelector('.buttonGroup').addEventListener('click', e => {
 	// aktif butonu güncelle
 	document.querySelectorAll('.buttonGroup .button').forEach(b => b.classList.remove('active'));
 	btn.classList.add('active');
-
 	// cursor ayarla
 	canvas.style.cursor = btn.dataset.cursor || 'default';
-
 	// action kontrolü
 	switch (btn.dataset.action) {
 		case 'choice':
 			activeObject = 'choice';
 			break;
-
 		case 'point':
 			activeObject = 'point';
 			break;
-
 		case 'line':
 			activeObject = 'line';
 			break;
-
 		case 'linesegment':
 			activeObject = 'linesegment';
 			break;
-
 		case 'calc':
 			activeObject = 'choice';
 			toggleCalcIcon(document.getElementById('btnimgCalc'));
 			document.getElementById('leftWrapper').classList.toggle('hide');
 			break;
-
 		case 'help':
 			activeObject = 'choice';
 			showToast('GEOMATİK', 'HENÜZ YAPIM AŞAMASINDA...');
 			break;
 	}
-
 	// toast varsa göster
 	if (btn.dataset.toast) {
 		const [title, msg] = btn.dataset.toast.split('|');
@@ -765,7 +755,6 @@ function classify(inputRaw) {
 		const func = arrayMatch[1].trim();
 		const start = Number(arrayMatch[2]);
 		const end = Number(arrayMatch[3]);
-
 		return {
 			type: "sequence",
 			func,
@@ -792,7 +781,6 @@ function classify(inputRaw) {
 	if (limitMatch) {
 		const func = limitMatch[1];     // f
 		const approachVal = limitMatch[2];  // 2
-
 		return {
 			type: "limit",
 			func,
@@ -803,15 +791,12 @@ function classify(inputRaw) {
 	// ---- DoğruParçası ----
 	if (/^DoğruParçası\s*\(/i.test(norm)) {
 		const trimmed = norm.trim();
-
 		// Kapanış parantezi kontrolü
 		if (!trimmed.endsWith(")")) {
-			return { type: "unknown", reason: "Missing closing parenthesis" };
+			return { type: "unknown", reason: "Eksik kapanış parantezi." };
 		}
-
 		const inner = trimmed.replace(/^DoğruParçası\s*\(/i, '').replace(/\)$/, '');
 		let depth = 0, splitIndex = -1;
-
 		for (let i = 0; i < inner.length; i++) {
 			const ch = inner[i];
 			if (ch === '(') depth++;
@@ -821,34 +806,77 @@ function classify(inputRaw) {
 				break;
 			}
 		}
-
 		if (splitIndex === -1 || depth !== 0) {
-			return { type: 'unknown', reason: "Invalid or unbalanced points in DoğruParçası" };
+			return { type: 'unknown', reason: "Nokta sayısı yeterli değil." };
 		}
-
 		const rawP1 = inner.slice(0, splitIndex).trim();
 		const rawP2 = inner.slice(splitIndex + 1).trim();
-
 		function parsePoint(raw) {
 			const coordRe = /^\(\s*([+-]?\d+(?:\.\d+)?)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*\)$/;
 			const coordMatch = raw.match(coordRe);
 			if (coordMatch) return { name: null, x: Number(coordMatch[1]), y: Number(coordMatch[2]) };
-
 			const pointRe = /^[A-Z][0-9]*$/;
 			if (pointRe.test(raw)) return { name: raw, x: null, y: null };
-
 			if (/^[a-z]/.test(raw)) {
-				return { unknown: raw, reason: "Invalid point name: must start with uppercase letter" };
+				return { unknown: raw, reason: "Nokta adları büyük harle başlamalıdır." };
 			}
-
 			return { unknown: raw };
 		}
-
 		return {
 			type: 'linesegment',
 			points: [parsePoint(rawP1), parsePoint(rawP2)]
 		};
 	}
+	// ---- Doğru ----
+	if (/^Doğru\s*\(/i.test(norm)) {
+		const trimmed = norm.trim();
+		if (!trimmed.endsWith(")")) {
+			return { type: "unknown", reason: "Eksik kapanış parantezi." };
+		}
+		const inner = trimmed.replace(/^Doğru\s*\(/i, '').replace(/\)$/, '');
+		let depth = 0, splitIndex = -1;
+		for (let i = 0; i < inner.length; i++) {
+			const ch = inner[i];
+			if (ch === '(') depth++;
+			else if (ch === ')') depth--;
+			else if (ch === ',' && depth === 0) {
+				splitIndex = i;
+				break;
+			}
+		}
+		if (splitIndex === -1 || depth !== 0) {
+			return { type: 'unknown', reason: "Nokta sayısı yeterli değil." };
+		}
+		const rawP1 = inner.slice(0, splitIndex).trim();
+		const rawP2 = inner.slice(splitIndex + 1).trim();
+		function parsePoint(raw) {
+			const coordRe = /^\(\s*([+-]?\d+(?:\.\d+)?)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*\)$/;
+			const coordMatch = raw.match(coordRe);
+			if (coordMatch) return { name: null, x: Number(coordMatch[1]), y: Number(coordMatch[2]) };
+			const pointRe = /^[A-Z][0-9]*$/;
+			if (pointRe.test(raw)) return { name: raw, x: null, y: null };
+
+			if (/^[a-z]/.test(raw)) {
+				return { unknown: raw, reason: "Nokta adları büyük harle başlamalıdır." };
+			}
+			return { unknown: raw };
+		}
+		return {
+			type: 'linewithpoints',
+			points: [parsePoint(rawP1), parsePoint(rawP2)]
+		};
+	}
+
+
+
+
+
+
+
+
+
+
+
 	// ---- f+g, 2f-3g, -f, -3g+1 ----
 	const funcOpRe = /([+-]?\d*)([fghpqr][0-9]*)\b/gi
 	const opMatches = [...norm.matchAll(funcOpRe)]
@@ -874,7 +902,6 @@ function classify(inputRaw) {
 	return { type: 'unknown' }
 }
 /* CLASSIFY METHOD END */
-
 
 function capitalizeName(str) {
 	const specialMap = {
@@ -1080,7 +1107,6 @@ function inputKeyDown(evt, id) {
 						undoObjects = []
 						delCount = 0
 						objectsContainer.innerHTML = null
-						//drawCoordinates()
 						setSlider(lim)
 					} else {
 						showToast('GİRİŞ', 'Hatalı giriş yaptınız.' + getDrawableFunction(newCome).reason)
@@ -1119,16 +1145,24 @@ function inputKeyDown(evt, id) {
 				delCount = 0
 				objectsContainer.innerHTML = null
 				drawCoordinates()
+			} else if (classify(come).type == 'linewithpoints') {
+				console.log('inputKeyDown linewithpoints çalıştı', come)
+				let A = new mPoint(classify(come).points[0].x, classify(come).points[0].y)
+				arrObjects.push(A)
+				let B = new mPoint(classify(come).points[1].x, classify(come).points[1].y)
+				arrObjects.push(B)
+				createLineEquation(A,B)
+				drawCoordinates()
 			} else {
-				console.log('type bulunamadı.')
+				console.log('Type bulunamadı.')
 			}
 		} else if (id == 'name') {
 			let newName = document.getElementById(id).value
-			if (arrObjects[activeElementID].type == 'point' && pointNames.includes(newName)) changeName(newName, 'point')
-			else if (arrObjects[activeElementID].type == 'line' && lineNames.includes(newName)) changeName(newName, 'line')
-			else if (arrObjects[activeElementID].type == 'limit' && limitNames.includes(newName)) changeName(newName, 'limit')
-			else if (arrObjects[activeElementID].type == 'sequence' && sequenceNames.includes(newName)) changeName(newName, 'sequence')
-			else if (arrObjects[activeElementID].type == 'other' && lineNames.includes(newName)) changeName(newName, 'other')
+			if (arrObjects[activeElementID].type == 'point' && pointNames.includes(newName)) changeName(newName)
+			else if (arrObjects[activeElementID].type == 'line' && lineNames.includes(newName)) changeName(newName)
+			else if (arrObjects[activeElementID].type == 'limit' && limitNames.includes(newName)) changeName(newName)
+			else if (arrObjects[activeElementID].type == 'sequence' && sequenceNames.includes(newName)) changeName(newName)
+			else if (arrObjects[activeElementID].type == 'other' && lineNames.includes(newName)) changeName(newName)
 
 		} else if (id == 'defination') {
 			let newDef = document.getElementById(id).value
@@ -1146,9 +1180,6 @@ function inputKeyDown(evt, id) {
 				arrObjects[activeElementID].graph = classify(newDef).m + '*x+' + classify(newDef).n
 				arrObjects[activeElementID].graphParse = getDrawableFunction(normalizeExpr(newDef)).parsedFunc
 				arrObjects[activeElementID].inputView = 'y=' + newDef
-
-				console.log(arrObjects[activeElementID].graph)
-
 			} else if (classify(newDef).type == 'sequence' && getDrawableFunction(normalizeExpr(classify(newDef).func))) {
 				console.log('dizi değişecek', classify(newDef))
 				arrObjects[activeElementID].start = classify(newDef).start
@@ -1164,20 +1195,13 @@ function inputKeyDown(evt, id) {
 				arrObjects[activeElementID].inputView = capitalizeName(newDef)
 			} else if (classify(newDef).type == 'unknown' && getDrawableFunction(classify(newDef).func)) {
 				console.log('Unknown değişecek', classify(newDef))
-
-
 			} else if (classify(newDef).type == 'functionOperations') {
 				console.log('functionOperations değişecek', classify(newDef))
-
-
 			} else if (classify(newDef).type == 'functionCompositions') {
 				console.log('functionCompositions değişecek', classify(newDef))
-
-
 			} else {
 				console.log('TÜR BULUNAMADI...')
 			}
-			//drawCoordinates()
 		} else {
 			console.log('cebir arr list')
 		}
@@ -1299,6 +1323,7 @@ function delClick(evt) {
 	document.getElementById('btnChoice').classList.remove('active')
 	document.getElementById('btnPoint').classList.remove('active')
 	document.getElementById('btnLine').classList.remove('active')
+	document.getElementById('btnLineSegment').classList.remove('active')
 	document.getElementById('btnCalc').classList.remove('active')
 	document.getElementById('btnChoice').classList.add('active')
 	clearSliders()
@@ -1312,8 +1337,8 @@ function clearSliders() {
 	let sliderN = document.getElementById('sliderN')
 	sliderM.disabled = true
 	sliderN.disabled = true
-	sliderM.value = 0
-	sliderN.value = 0
+	sliderM.value = (sliderM.min + sliderM.max) / 2
+	sliderN.value = (sliderN.min + sliderN.max) / 2
 }
 
 function setClick(evt) {
@@ -1415,7 +1440,6 @@ function crossSlider(name) {
 			drawCoordinates()
 			let sliderM = document.getElementById('sliderM')
 			let sliderN = document.getElementById('sliderN')
-
 			if (name == 'm') {
 				sliderLabel.innerHTML = arrObjects[activeElementID].approachVal + '⁺ = ' + Number(slider.value).toFixed(2)
 			} else {
@@ -1599,19 +1623,13 @@ showToast = function (title, msg) {
 	setTimeout(function () { x.className = x.className.replace("show", ""); }, 3000)
 }
 
-function changeName(newName, type) {
+function changeName(newName) {
 	let hasNameid
-	/* 	arrObjects.forEach(item => {
-			if (item.name == newName) hasNameid = item.id
-		}) */
-
 	let found = arrObjects.find(item => item.name === newName)
 	hasNameid = found ? found.id : null
 
-
 	if (hasNameid != null && arrObjects[hasNameid] != newName) {
 		let i = 1
-		//let names = arrObjects.map((item) => item.name)
 		let names
 		if (arrObjects[hasNameid].type === 'point') names = arrObjects.filter(item => item.type === "point").map(item => item.name)
 		if (arrObjects[hasNameid].type === 'sequence') names = arrObjects.filter(item => item.type === "sequence").map(item => item.name)
@@ -1630,6 +1648,38 @@ function changeName(newName, type) {
 	arrObjects[activeElementID].name = newName
 	drawCoordinates()
 	fillSetWindow()
+}
+
+function createLineEquation(lineA, lineB) {
+	if ((lineB.x - lineA.x) != 0) {
+		let m = (lineB.y - lineA.y) / (lineB.x - lineA.x)
+		let c = lineA.y - m * lineA.x
+
+		if (!Number.isInteger(m)) {
+			m = Number((lineB.y - lineA.y) / (lineB.x - lineA.x)).toFixed(2)
+		}
+		if (!Number.isInteger(c)) {
+			c = Number(lineA.y - m * lineA.x).toFixed(2)
+		}
+
+		let line = new mLine(m, c)
+		line.graphParse = getDrawableFunction(line.graph).parsedFunc
+		setSlider(line)
+		arrObjects.push(line)
+		activeElementID = line.id
+		objectsContainer.innerHTML = null
+		drawCoordinates()
+	}
+}
+
+function createLineSegment(lineSegmentA, lineSegmentB) {
+	let ls = new mLineSegment(lineSegmentA, lineSegmentB)
+	arrObjects.push(ls)
+	activeElementID = ls.id
+	undoObjects = []
+	delCount = 0
+	objectsContainer.innerHTML = null
+	drawCoordinates()
 }
 
 $(document).ready(function () {
@@ -1793,31 +1843,45 @@ $(document).ready(function () {
 
 	canvas.addEventListener("mousemove", function (evt) {
 		let line
-		if (activeObject === 'line') {
-			if (lineDrawing == true) {
-				lineB = getMousePos(evt)
-				if ((lineB.x - lineA.x) != 0) {
-					drawCoordinates()
-					let m = parseFloat((lineB.y - lineA.y) / (lineB.x - lineA.x)).toFixed(2)
-					let c = parseFloat(lineA.y - m * lineA.x).toFixed(2)
-					line = new mLine(m, c)
-					line.graphParse = getDrawableFunction(line.graph).parsedFunc
-					let x, y
-					ctx.beginPath()
-					ctx.strokeStyle = ctx.fillStyle = line.color
-					ctx.lineWidth = 2
-					x = minX * unitY
-					y = line.graphParse(x)
-					ctx.moveTo(-minX * scaleY + (x * scaleY) / unitY, -minY * scaleX - (y * scaleX) / unitX)
+		if (activeObject === 'line' && lineDrawing == true) {
+			lineB = getMousePos(evt)
+			if ((lineB.x - lineA.x) != 0) {
+				drawCoordinates()
+				let m = parseFloat((lineB.y - lineA.y) / (lineB.x - lineA.x)).toFixed(2)
+				let c = parseFloat(lineA.y - m * lineA.x).toFixed(2)
+				line = new mLine(m, c)
+				line.graphParse = getDrawableFunction(line.graph).parsedFunc
+				let x, y
+				ctx.beginPath()
+				ctx.strokeStyle = ctx.fillStyle = line.color
+				ctx.lineWidth = 2
+				x = minX * unitY
+				y = line.graphParse(x)
+				ctx.moveTo(-minX * scaleY + (x * scaleY) / unitY, -minY * scaleX - (y * scaleX) / unitX)
 
-					x = (minX + Math.round(canvas.width / scaleX) + 1) * unitY
-					y = line.graphParse(x)
-					ctx.lineTo(-minX * scaleY + (x * scaleY) / unitY, -minY * scaleX - (y * scaleX) / unitX)
-					ctx.stroke()
-					ctx.fill()
-					ctx.closePath()
-				}
+				x = (minX + Math.round(canvas.width / scaleX) + 1) * unitY
+				y = line.graphParse(x)
+				ctx.lineTo(-minX * scaleY + (x * scaleY) / unitY, -minY * scaleX - (y * scaleX) / unitX)
+				ctx.stroke()
+				ctx.fill()
+				ctx.closePath()
 			}
+		}
+		let ls
+		if (activeObject === 'linesegment' && lineSegmentDrawing == true) {
+			lineSegmentB = getMousePos(evt)
+			drawCoordinates()
+			ls = new mLineSegment(lineSegmentA, lineSegmentB)
+			ctx.beginPath()
+			ctx.strokeStyle = ctx.fillStyle = ls.color
+			ctx.lineWidth = ls.size
+			ctx.setLineDash(ls.lineDash)
+			ctx.moveTo((-minX + ls.A.x / unitY) * scaleY, (-minY - ls.A.y / unitX) * scaleX)
+			ctx.lineTo((-minX + ls.B.x / unitY) * scaleY, (-minY - ls.B.y / unitX) * scaleX)
+			ctx.fill()
+			ctx.stroke()
+			ctx.setLineDash([])
+			ctx.closePath()
 		}
 	}, false)
 
@@ -1844,8 +1908,31 @@ $(document).ready(function () {
 				lineDrawing = false
 			}
 			if (lineA != null && lineB != null) {
-				createEquation(lineA, lineB)
+				createLineEquation(lineA, lineB)
 				lineA = lineB = null
+			}
+			fillSetWindow()
+		}
+
+		if (activeObject === 'linesegment' && evt.button == 0) {
+			if (lineSegmentDrawing == false) {
+				lineSegmentA = getMousePos(evt)
+				let point = new mPoint(lineSegmentA.x, lineSegmentA.y)
+				arrObjects.push(point)
+				undoObjects = []
+				delCount = 0
+				lineSegmentDrawing = true
+			} else {
+				lineSegmentB = getMousePos(evt)
+				let point = new mPoint(lineSegmentB.x, lineSegmentB.y)
+				arrObjects.push(point)
+				undoObjects = []
+				delCount = 0
+				lineSegmentDrawing = false
+			}
+			if (lineSegmentA != null && lineSegmentB != null) {
+				createLineSegment(lineSegmentA, lineSegmentB)
+				lineSegmentA = lineSegmentB = null
 			}
 			fillSetWindow()
 		}
@@ -1871,32 +1958,15 @@ $(document).ready(function () {
 				lineA = lineB = null
 				arrObjects.pop()
 			}
+			if (lineSegmentDrawing == true) {
+				lineSegmentDrawing = false
+				lineSegmentA = lineSegmentB = null
+				arrObjects.pop()
+			}
 			drawCoordinates()
 			fillSetWindow()
 		}
 	}, false)
-
-	function createEquation(lineA, lineB) {
-		if ((lineB.x - lineA.x) != 0) {
-			let m = (lineB.y - lineA.y) / (lineB.x - lineA.x)
-			let c = lineA.y - m * lineA.x
-
-			if (!Number.isInteger(m)) {
-				m = Number((lineB.y - lineA.y) / (lineB.x - lineA.x)).toFixed(2)
-			}
-			if (!Number.isInteger(c)) {
-				c = Number(lineA.y - m * lineA.x).toFixed(2)
-			}
-
-			let line = new mLine(m, c)
-			line.graphParse = getDrawableFunction(line.graph).parsedFunc
-			setSlider(line)
-			arrObjects.push(line)
-			activeElementID = line.id
-			objectsContainer.innerHTML = null
-			drawCoordinates()
-		}
-	}
 
 	let reSizer = document.querySelector(".reSizer")
 	let leftWrapper = document.querySelector(".leftWrapper")
