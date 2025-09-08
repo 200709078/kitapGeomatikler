@@ -58,7 +58,7 @@ class mLineSegment {
 	}
 }
 class mLine {
-	constructor(a, b, come = null) {
+	constructor(a, b, come = null, startX = null, endX = null) {
 		if (come == null) come = 'y=' + a + 'x+' + b
 		if (classify(come).subtype == 'vertical') {
 			const denkCount = arrObjects.filter(f => f.name.includes("denk")).length + 1
@@ -75,6 +75,8 @@ class mLine {
 			this.graph = a + '*x+' + b
 		}
 		this.graphParse = null
+		this.startX = startX
+		this.endX = endX
 		this.color = getRandomColor()
 		this.visibility = true
 		this.size = 2
@@ -83,11 +85,13 @@ class mLine {
 	}
 }
 class mFunction {
-	constructor(newCome, come) {
+	constructor(newCome, come, startX = null, endX = null) {
 		this.name = createName('other')
 		this.id = arrObjects.length
 		this.graph = newCome
 		this.graphParse = null
+		this.startX = startX
+		this.endX = endX
 		this.color = getRandomColor()
 		this.visibility = true
 		this.size = 2
@@ -123,6 +127,18 @@ class mLimit {
 		this.visibility = true
 		this.size = 2
 		this.type = 'limit'
+		this.inputView = come
+	}
+}
+class mSectionalFunction {
+	constructor(come) {
+		this.name = createName('other')
+		this.id = arrObjects.length
+		this.secFuncs = null
+		this.color = getRandomColor()
+		this.visibility = true
+		this.size = 2
+		this.type = 'sectionalfunctions'
 		this.inputView = come
 	}
 }
@@ -312,6 +328,8 @@ drawCoordinates = function () {
 			drawFunction(item)
 		} else if (item.type === 'linesegment') {
 			drawLineSegment(item)
+		} else if (item.type === 'sectionalfunctions') {
+			drawSectionalFunctions(item)
 		} else { console.log('Type bulunamadı.') }
 	})
 
@@ -375,7 +393,7 @@ function drawPoint(point) {
 }
 
 function drawLine(line) {
-	labelCreator(line)
+	if (line.id!=null) labelCreator(line)
 	if (!line.visibility) return
 	if (classify(line.inputView).subtype == 'vertical') { // Drawing Vertical Lines
 		let verticalNumber = classify(line.inputView).x
@@ -392,14 +410,24 @@ function drawLine(line) {
 		return
 	}
 
+	let mostLeft = minX * unitY
+	let mostRight = (minX + Math.round(canvas.width / scaleY) + 1) * unitY
+	let startX
+	let endX
+	line.startX == null ? startX = -50000 : startX = line.startX
+	line.endX == null ? endX = 50000 : endX = line.endX
+	startX = Math.max(mostLeft, startX)
+	endX = Math.min(mostRight, endX)
+	if (startX > endX) startX = endX
+
 	let x, y
 	ctx.beginPath()
 	ctx.strokeStyle = ctx.fillStyle = line.color
 	ctx.lineWidth = line.size
-	x = minX * unitY
+	x = startX
 	y = line.graphParse(x)
 	ctx.moveTo(-minX * scaleY + (x * scaleY) / unitY, -minY * scaleX - (y * scaleX) / unitX)
-	x = (minX + Math.round(canvas.width / scaleY) + 1) * unitY
+	x = endX
 	y = line.graphParse(x)
 	ctx.lineTo(-minX * scaleY + (x * scaleY) / unitY, -minY * scaleX - (y * scaleX) / unitX)
 	if (line.a != 0) {
@@ -413,20 +441,27 @@ function drawLine(line) {
 }
 
 function drawFunction(func) {
-	labelCreator(func)
+	if (func.id!=null) labelCreator(func)
 	if (!func.visibility) return
 	let f = func.graphParse
+
+	let mostLeft = minX * unitY
+	let mostRight = (minX + Math.round(canvas.width / scaleY) + 1) * unitY
+	let startX
+	let endX
+	func.startX == null ? startX = -50000 : startX = func.startX
+	func.endX == null ? endX = 50000 : endX = func.endX
+	startX = Math.max(mostLeft, startX)
+	endX = Math.min(mostRight, endX)
+	if (startX > endX) startX = endX
 
 	ctx.beginPath()
 	ctx.strokeStyle = func.color
 	ctx.lineWidth = func.size
-
 	let step = 0.01
-
 	let firstPoint = true
-	let x = minX * unitY
-
-	while (x < (minX + Math.round(canvas.width / scaleY) + 1) * unitY) {
+	let x = startX
+	while (x < endX) {
 		let y = f(x)
 		if (!isFinite(y)) {
 			firstPoint = true
@@ -548,7 +583,7 @@ function drawLimit(lim) {
 	let vls = new mLineSegment(A, B)
 	let hls = new mLineSegment(B, C)
 	A.color = B.color = C.color = vls.color = hls.color = lim.color
-	vls.inputView=hls.inputView=null
+	vls.inputView = hls.inputView = null
 	drawLineSegment(vls)
 	drawLineSegment(hls)
 	drawPoint(A)
@@ -558,6 +593,7 @@ function drawLimit(lim) {
 
 function drawLineSegment(ls) {
 	if (ls.inputView) labelCreator(ls)
+	if (!ls.visibility) return
 	//Doğru Parçası
 	ctx.beginPath()
 	ctx.strokeStyle = ctx.fillStyle = ls.color
@@ -570,6 +606,29 @@ function drawLineSegment(ls) {
 	ctx.stroke()
 	ctx.setLineDash([])
 	ctx.closePath()
+}
+function drawSectionalFunctions(sf) {
+	if (sf.inputView) labelCreator(sf)
+	if (!sf.visibility) return
+
+
+
+
+	let exercises = '2x-3,x<=-5;x^2-4,-5<x<1;sin(x),1<=x'
+	sf.secFuncs.forEach(func => {
+		if (func.type == 'line') {
+			drawLine(func)
+		} else if (func.type == 'other') {
+			drawFunction(func)
+		} else {
+			console.log('Type bulunamadı.')
+		}
+	})
+
+
+
+
+
 }
 
 function labelCreator(item) {
@@ -596,6 +655,8 @@ function labelCreator(item) {
 		input.value = item.name + 'ₓ=' + item.inputView
 	} else if (item.type == 'limit') {
 		input.value = item.name + '=' + item.inputView
+	} else if (item.type == 'sectionalfunctions') {
+		input.value = item.name + '(x)={' + item.inputView + '}'
 	} else if (item.type == 'other') {
 		input.value = item.name + ':' + item.inputView
 	}
@@ -691,7 +752,7 @@ function inputClick(evt, id) {
 /* CLASSIFY METHOD PROCESS */
 function classify(inputRaw) {
 	const norm = inputRaw.trim()
-	// ---- (x,y) ----
+	// ---- Noktalar ----
 	const pointRe = /^\s*\(\s*([+-]?\d+(?:\.\d+)?)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*\)\s*$/
 	const pMatch = norm.match(pointRe)
 
@@ -879,6 +940,106 @@ function classify(inputRaw) {
 		}
 		return { type: "functionOperations", functions, coefficients }
 	}
+
+
+
+
+
+
+
+
+
+
+	// ---- SectionalFunctions ----
+	if (/,/.test(norm)) { // en az bir ',' varsa işle
+		const segments = norm.split(";").map(s => s.trim()).filter(s => s.length > 0);
+		// segments.length = 1 ise de işlem yapılacak
+		const functions = [];
+		const ranges = [];
+
+		for (let seg of segments) {
+			const parts = seg.split(",").map(p => p.trim());
+			if (parts.length !== 2) {
+				return { type: "unknown", reason: `Segment '${seg}' must be in 'func,range' format` };
+			}
+
+			const func = parts[0];
+			const rangeExpr = parts[1].replace(/\s+/g, "");
+
+			// Range parse
+			function parseRange(expr) {
+				let from = null, to = null, fromInclusive = false, toInclusive = false;
+
+				// Tek nokta x=c
+				let mEq = expr.match(/^x=([+-]?\d+(?:\.\d+)?)$/);
+				if (mEq) {
+					const c = Number(mEq[1]);
+					return { from: c, to: c, fromInclusive: true, toInclusive: true };
+				}
+
+				// Tek taraflı
+				let m1 = expr.match(/^x([<>=]+)(-?\d+(?:\.\d+)?)$/);
+				let m2 = expr.match(/^(-?\d+(?:\.\d+)?)([<>=]+)x$/);
+
+				if (m1) {
+					const op = m1[1], num = Number(m1[2]);
+					if (op === "<") return { from: null, to: num, fromInclusive: false, toInclusive: false };
+					if (op === "<=") return { from: null, to: num, fromInclusive: false, toInclusive: true };
+					if (op === ">") return { from: num, to: null, fromInclusive: false, toInclusive: false };
+					if (op === ">=") return { from: num, to: null, fromInclusive: true, toInclusive: false };
+				}
+
+				if (m2) {
+					const num = Number(m2[1]), op = m2[2];
+					if (op === "<") return { from: num, to: null, fromInclusive: false, toInclusive: false };
+					if (op === "<=") return { from: num, to: null, fromInclusive: true, toInclusive: false };
+					if (op === ">") return { from: null, to: num, fromInclusive: false, toInclusive: false };
+					if (op === ">=") return { from: null, to: num, fromInclusive: false, toInclusive: true };
+				}
+
+				// Çift taraflı
+				let m3 = expr.match(/^(-?\d+(?:\.\d+)?)(<=|<)x(<=|<)(-?\d+(?:\.\d+)?)$/);
+				if (m3) {
+					const a = Number(m3[1]), leftOp = m3[2];
+					const rightOp = m3[3], b = Number(m3[4]);
+
+					if (a > b) return { type: "unknown", reason: `Invalid range: '${expr}'` };
+
+					return {
+						from: a,
+						to: b,
+						fromInclusive: leftOp === "<=",
+						toInclusive: rightOp === "<="
+					};
+				}
+
+				return { type: "unknown", reason: `Invalid range expression: '${expr}'` };
+			}
+			const range = parseRange(rangeExpr);
+			if (!range || range.type === "unknown") return range;
+
+			functions.push(func);
+			ranges.push(range);
+		}
+
+		return {
+			type: "sectionalfunctions",
+			functions,
+			ranges
+		};
+	}
+
+
+
+
+
+
+
+
+
+
+
+
 	return { type: 'unknown' }
 }
 /* CLASSIFY METHOD END */
@@ -909,7 +1070,7 @@ function bileskeProcess(funcs) {
 function inputKeyDown(evt, id) {
 	clearSliders()
 	handleParanthesis(evt)
-	let allowKeys = '(){}[],=-+.*^/bçdğjımnşquvxyzCÇEFGĞHIJKMNOPQTUVWXYZBackspaceArrowLeftArrowRightShiftDelete'
+	let allowKeys = '(){}[],=-+.;<>*^/bçdğjımnşquvxyzCÇEFGĞHIJKMNOPQTUVWXYZBackspaceArrowLeftArrowRightShiftDelete'
 	if (isNaN(evt.key) && !allowKeys.includes(evt.key)) {
 		evt.preventDefault()
 	}
@@ -1093,22 +1254,6 @@ function inputKeyDown(evt, id) {
 				} else {
 					showToast('GİRİŞ', 'Hatalı giriş yaptınız. Fonksiyon bulunamadı.')
 				}
-			} else if (classify(come).type == 'unknown') {
-				console.log('inputKeyDown unknown çalıştı', come)
-
-				let comeFunc = normalizeExpr(come)
-				if (getDrawableFunction(comeFunc).status) {
-					let func = new mFunction(comeFunc, 'y=' + come)
-					func.graphParse = getDrawableFunction(comeFunc).parsedFunc
-					arrObjects.push(func)
-					activeElementID = func.id
-					undoObjects = []
-					delCount = 0
-					objectsContainer.innerHTML = null
-					drawCoordinates()
-				} else {
-					showToast('GİRİŞ', 'Hatalı giriş yaptınız.' + getDrawableFunction(comeFunc).reason)
-				}
 			} else if (classify(come).type == 'linesegment') {
 				console.log('inputKeyDown linesegment çalıştı', come)
 
@@ -1125,12 +1270,68 @@ function inputKeyDown(evt, id) {
 				drawCoordinates()
 			} else if (classify(come).type == 'linewithpoints') {
 				console.log('inputKeyDown linewithpoints çalıştı', come)
+
 				let A = new mPoint(classify(come).points[0].x, classify(come).points[0].y)
 				arrObjects.push(A)
 				let B = new mPoint(classify(come).points[1].x, classify(come).points[1].y)
 				arrObjects.push(B)
 				createLineEquation(A, B)
 				drawCoordinates()
+			} else if (classify(come).type == 'sectionalfunctions') {
+				console.log('inputKeyDown sectionalfunction çalıştı', come)
+
+				let allFuncsDrawable = true
+				classify(come).functions.forEach(func => {
+					if (!getDrawableFunction(normalizeExpr(func)).status) {
+						allFuncsDrawable = false
+					}
+				})
+				if (allFuncsDrawable) {
+					let secFuncs = []
+					classify(come).functions.forEach((func, i) => {
+						if (classify(func).type == 'line') {
+							let line = new mLine(classify(normalizeExpr(func)).m, classify(normalizeExpr(func)).n, null, classify(come).ranges[i].from, classify(come).ranges[i].to)
+							line.graphParse = getDrawableFunction(line.graph).parsedFunc
+							line.id = null
+							secFuncs.push(line)
+						} else if (classify(func).type == 'unknown') {
+							let other = new mFunction(func, func, classify(come).ranges[i].from, classify(come).ranges[i].to)
+							other.graph = normalizeExpr(func)
+							other.graphParse = getDrawableFunction(other.graph).parsedFunc
+							other.id = null
+							secFuncs.push(other)
+						} else {
+							console.log('Tür bulunamadı.')
+						}
+					})
+					let sf = new mSectionalFunction(come)
+					sf.secFuncs = secFuncs
+					arrObjects.push(sf)
+					activeElementID = sf.id
+					undoObjects = []
+					delCount = 0
+					objectsContainer.innerHTML = null
+					drawCoordinates()
+
+				} else {
+					showToast('GİRİŞ', 'Hatalı giriş yaptınız.')
+				}
+			} else if (classify(come).type == 'unknown') {
+				console.log('inputKeyDown unknown çalıştı', come)
+
+				let comeFunc = normalizeExpr(come)
+				if (getDrawableFunction(comeFunc).status) {
+					let func = new mFunction(comeFunc, 'y=' + come)
+					func.graphParse = getDrawableFunction(comeFunc).parsedFunc
+					arrObjects.push(func)
+					activeElementID = func.id
+					undoObjects = []
+					delCount = 0
+					objectsContainer.innerHTML = null
+					drawCoordinates()
+				} else {
+					showToast('GİRİŞ', 'Hatalı giriş yaptınız.')
+				}
 			} else {
 				console.log('Type bulunamadı.')
 			}
@@ -1433,7 +1634,7 @@ function crossSlider(name) {
 			let hls = new mLineSegment(B, C)
 			A.color = B.color = C.color = vls.color = hls.color = arrObjects[activeElementID].color
 			vls.lineDash = hls.lineDash = [2, 5]
-			vls.inputView=hls.inputView=null
+			vls.inputView = hls.inputView = null
 			drawLineSegment(vls)
 			drawLineSegment(hls)
 			drawPoint(A)
@@ -1449,7 +1650,7 @@ function crossSlider(name) {
 			hls = new mLineSegment(B, C)
 			A.color = B.color = C.color = vls.color = hls.color = arrObjects[activeElementID].color
 			vls.lineDash = hls.lineDash = [2, 5]
-			vls.inputView=hls.inputView=null
+			vls.inputView = hls.inputView = null
 			drawLineSegment(vls)
 			drawLineSegment(hls)
 			drawPoint(A)
@@ -1502,10 +1703,8 @@ setSlider = function (item) {
 	} else if (item.type == 'limit') {
 		let verticalMNumberRight = Number(item.approachVal * 1 + 0.4).toFixed(2)
 		let verticalMNumberLeft = Number(item.approachVal * 1 - 0.4).toFixed(2)
-
 		let mostLeft = minX * unitY
 		let mostRight = (minX + Math.round(canvas.width / scaleY) + 1) * unitY
-
 		sliderM.min = item.approachVal * 1
 		sliderM.max = mostRight
 		sliderM.step = '0.1'
@@ -1521,7 +1720,7 @@ setSlider = function (item) {
 		let hls = new mLineSegment(B, C)
 		A.color = B.color = C.color = vls.color = hls.color = item.color
 		vls.lineDash = hls.lineDash = [2, 5]
-		vls.inputView=hls.inputView=null
+		vls.inputView = hls.inputView = null
 		drawLineSegment(vls)
 		drawLineSegment(hls)
 		drawPoint(A)
@@ -1543,7 +1742,7 @@ setSlider = function (item) {
 		hls = new mLineSegment(B, C)
 		A.color = B.color = C.color = vls.color = hls.color = item.color
 		vls.lineDash = hls.lineDash = [2, 5]
-		vls.inputView=hls.inputView=null
+		vls.inputView = hls.inputView = null
 		drawLineSegment(vls)
 		drawLineSegment(hls)
 		drawPoint(A)
@@ -1917,15 +2116,15 @@ $(document).ready(function () {
 				lineSegmentA = getMousePos(evt)
 				let point = new mPoint(lineSegmentA.x, lineSegmentA.y)
 				arrObjects.push(point)
-/* 				undoObjects = []
-				delCount = 0 */
+				/* 				undoObjects = []
+								delCount = 0 */
 				lineSegmentDrawing = true
 			} else {
 				lineSegmentB = getMousePos(evt)
 				let point = new mPoint(lineSegmentB.x, lineSegmentB.y)
 				arrObjects.push(point)
-/* 				undoObjects = []
-				delCount = 0 */
+				/* 				undoObjects = []
+								delCount = 0 */
 				lineSegmentDrawing = false
 			}
 			if (lineSegmentA != null && lineSegmentB != null) {
