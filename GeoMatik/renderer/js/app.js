@@ -28,6 +28,18 @@ let sequenceNames = "abcdeijklmostuvwxyz"
 let limitNames = "abcdeijklmostuvwxyz"
 let lineNames = "fghpqr"
 let sliders = document.getElementById('sliders')
+
+/* WATCH LİSTESİ */
+
+function writeWatchList(wtch, type = null) {
+	let watchlistspan = document.getElementById('watchList')
+	Object.entries(wtch).forEach(([key, value]) => {
+		if (type) { watchlistspan.innerHTML += key + ':' + value + '<br>' } else { console.log(key + ':' + value) }
+	});
+}
+/* WATCH LİSTESİ */
+
+
 class mPoint {
 	constructor(x, y, come = null) {
 		if (come == null) come = '(' + x + ',' + y + ')'
@@ -44,7 +56,7 @@ class mPoint {
 }
 class mLineSegment {
 	constructor(A, B, come = null) {
-		if (come == null) come = 'DoğruParçası((' + A.x + ',' + A.y + '),(' + B.x + ',' + B.y + '))'
+		if (come == null) come = 'DoğruParçası(' + A.inputView + ',' + B.inputView + ')'
 		this.name = createName('linesegment')
 		this.id = arrObjects.length
 		this.A = A
@@ -58,7 +70,7 @@ class mLineSegment {
 	}
 }
 class mLine {
-	constructor(a, b, come = null, startX = null, endX = null) {
+	constructor(a, b, A, B, come = null, startX = null, endX = null) {
 		if (come == null) come = 'y=' + a + 'x+' + b
 		if (classify(come).subtype == 'vertical') {
 			const denkCount = arrObjects.filter(f => f.name.includes("denk")).length + 1
@@ -69,6 +81,8 @@ class mLine {
 		this.id = arrObjects.length
 		this.a = a
 		this.b = b
+		this.A = A
+		this.B = B
 		if (Math.sign(b) == -1) {
 			this.graph = a + '*x-' + Math.abs(b)
 		} else {
@@ -393,23 +407,10 @@ function drawPoint(point) {
 }
 
 function drawLine(line) {
-	if (line.id!=null) labelCreator(line)
+	if (line.id != null) labelCreator(line)
 	if (!line.visibility) return
-	if (classify(line.inputView).subtype == 'vertical') { // Drawing Vertical Lines
-		let verticalNumber = classify(line.inputView).x
 
-		ctx.beginPath()
-		ctx.strokeStyle = ctx.fillStyle = line.color
-		ctx.lineWidth = line.size
-		ctx.moveTo((-minX + verticalNumber / unitY) * scaleY, canvas.height + 100)
-		ctx.lineTo((-minX + verticalNumber / unitY) * scaleY, -canvas.height - 100)
-		text((-minX + verticalNumber / unitY) * scaleY + 10, 15, line.color, 'center', 'bold 15px arial', line.name)
-		ctx.fill()
-		ctx.stroke()
-		ctx.closePath()
-		return
-	}
-
+	let verticalNumber
 	let mostLeft = minX * unitY
 	let mostRight = (minX + Math.round(canvas.width / scaleY) + 1) * unitY
 	let startX
@@ -420,28 +421,84 @@ function drawLine(line) {
 	endX = Math.min(mostRight, endX)
 	if (startX > endX) startX = endX
 
-	let x, y
-	ctx.beginPath()
-	ctx.strokeStyle = ctx.fillStyle = line.color
-	ctx.lineWidth = line.size
-	x = startX
-	y = line.graphParse(x)
-	ctx.moveTo(-minX * scaleY + (x * scaleY) / unitY, -minY * scaleX - (y * scaleX) / unitX)
-	x = endX
-	y = line.graphParse(x)
-	ctx.lineTo(-minX * scaleY + (x * scaleY) / unitY, -minY * scaleX - (y * scaleX) / unitX)
-	if (line.a != 0) {
-		text((-minX + (-minY - line.b) / line.a) * scaleY + 5, 20, line.color, 'center', 'bold 15px arial', line.name)
+	if (line.A == null) {
+		if (classify(line.inputView).subtype == 'vertical') { // Drawing Vertical Lines
+			//console.log('vertical denklem girildi')
+			verticalNumber = classify(line.inputView).x
+			ctx.beginPath()
+			ctx.strokeStyle = ctx.fillStyle = line.color
+			ctx.lineWidth = line.size
+			ctx.moveTo((-minX + verticalNumber / unitY) * scaleY, canvas.height + 100)
+			ctx.lineTo((-minX + verticalNumber / unitY) * scaleY, -canvas.height - 100)
+			text((-minX + verticalNumber / unitY) * scaleY + 10, 15, line.color, 'center', 'bold 15px arial', line.name)
+			ctx.fill()
+			ctx.stroke()
+			ctx.closePath()
+		} else {
+			//console.log('eğimli denklem girildi')
+			let x, y
+			ctx.beginPath()
+			ctx.strokeStyle = ctx.fillStyle = line.color
+			ctx.lineWidth = line.size
+			x = startX
+			y = line.graphParse(x)
+			ctx.moveTo(-minX * scaleY + (x * scaleY) / unitY, -minY * scaleX - (y * scaleX) / unitX)
+			x = endX
+			y = line.graphParse(x)
+			ctx.lineTo(-minX * scaleY + (x * scaleY) / unitY, -minY * scaleX - (y * scaleX) / unitX)
+			if (line.a != 0) {
+				text((-minX + (-minY - line.b) / line.a) * scaleY + 5, 20, line.color, 'center', 'bold 15px arial', line.name)
+			} else {
+				text(canvas.width - 10, -minY * scaleX - (y * scaleX) / unitX - 10, line.color, 'center', 'bold 15px arial', line.name)
+			}
+			ctx.fill()
+			ctx.stroke()
+			ctx.closePath()
+		}
 	} else {
-		text(canvas.width - 10, -minY * scaleX - (y * scaleX) / unitX - 10, line.color, 'center', 'bold 15px arial', line.name)
+		if (line.A.x == line.B.x) {
+			//console.log('noktalar girildi A.x=B.x')
+			verticalNumber = line.A.x
+			ctx.beginPath()
+			ctx.strokeStyle = ctx.fillStyle = line.color
+			ctx.lineWidth = line.size
+			ctx.moveTo((-minX + verticalNumber / unitY) * scaleY, canvas.height + 100)
+			ctx.lineTo((-minX + verticalNumber / unitY) * scaleY, -canvas.height - 100)
+			text((-minX + verticalNumber / unitY) * scaleY + 10, 15, line.color, 'center', 'bold 15px arial', line.name)
+			ctx.fill()
+			ctx.stroke()
+			ctx.closePath()
+		} else {
+			//console.log('noktalar girildi A.x!=B.x')
+			line.a = createLineEquation(line.A, line.B).m
+			line.b = createLineEquation(line.A, line.B).c
+			line.graph = normalizeExpr(createLineEquation(line.A, line.B).m + 'x+' + createLineEquation(line.A, line.B).c)
+			line.graphParse = getDrawableFunction(line.graph).parsedFunc
+
+			let x, y
+			ctx.beginPath()
+			ctx.strokeStyle = ctx.fillStyle = line.color
+			ctx.lineWidth = line.size
+			x = startX
+			y = line.graphParse(x)
+			ctx.moveTo(-minX * scaleY + (x * scaleY) / unitY, -minY * scaleX - (y * scaleX) / unitX)
+			x = endX
+			y = line.graphParse(x)
+			ctx.lineTo(-minX * scaleY + (x * scaleY) / unitY, -minY * scaleX - (y * scaleX) / unitX)
+			if (line.a != 0) {
+				text((-minX + (-minY - line.b) / line.a) * scaleY + 5, 20, line.color, 'center', 'bold 15px arial', line.name)
+			} else {
+				text(canvas.width - 10, -minY * scaleX - (y * scaleX) / unitX - 10, line.color, 'center', 'bold 15px arial', line.name)
+			}
+			ctx.fill()
+			ctx.stroke()
+			ctx.closePath()
+		}
 	}
-	ctx.fill()
-	ctx.stroke()
-	ctx.closePath()
 }
 
 function drawFunction(func) {
-	if (func.id!=null) labelCreator(func)
+	if (func.id != null) labelCreator(func)
 	if (!func.visibility) return
 	let f = func.graphParse
 
@@ -594,6 +651,7 @@ function drawLimit(lim) {
 function drawLineSegment(ls) {
 	if (ls.inputView) labelCreator(ls)
 	if (!ls.visibility) return
+	ls.inputView = 'DoğruParçası(' + ls.A.inputView + ',' + ls.B.inputView + ')'
 	//Doğru Parçası
 	ctx.beginPath()
 	ctx.strokeStyle = ctx.fillStyle = ls.color
@@ -648,7 +706,12 @@ function labelCreator(item) {
 	if (item.type == 'point') {
 		input.value = item.name + item.inputView
 	} else if (item.type == 'line') {
-		input.value = item.name + ':' + item.inputView
+		if (item.A == null) {
+			input.value = item.name + ':' + item.inputView
+		} else {
+			input.value = item.name + '(x)=Doğru(' + item.A.inputView + ',' + item.B.inputView + ')=' + item.graph
+			if (item.graph == null) input.value = item.name + '=Doğru(' + item.A.inputView + ',' + item.B.inputView + ')=x=' + item.A.x
+		}
 	} else if (item.type == 'linesegment') {
 		input.value = item.name + '=' + item.inputView
 	} else if (item.type == 'sequence') {
@@ -1080,7 +1143,7 @@ function inputKeyDown(evt, id) {
 		come = come.replaceAll('y=', '')
 		come = come.replaceAll('=y', '')
 		if (id == -1) { //Giriş input
-			console.log('Giriş')
+			//console.log('Giriş')
 			if (classify(come).type == 'point') {
 				console.log('inputKeyDown point çalıştı', come)
 
@@ -1098,12 +1161,12 @@ function inputKeyDown(evt, id) {
 				comeLine = normalizeExpr(come)
 				let line
 				if (classify(come).subtype == 'vertical') {
-					line = new mLine(classify(comeLine).m, classify(comeLine).n, 'x=' + classify(comeLine).x)
+					line = new mLine(classify(comeLine).m, classify(comeLine).n, null, null, 'x=' + classify(comeLine).x)
 					line.graph = null
 					line.a = null
 					line.b = null
 				} else {
-					line = new mLine(classify(comeLine).m, classify(comeLine).n, 'y=' + come)
+					line = new mLine(classify(comeLine).m, classify(comeLine).n, null, null, 'y=' + come)
 				}
 				if (getDrawableFunction(line.graph).status = true) {
 					line.graphParse = getDrawableFunction(line.graph).parsedFunc
@@ -1257,6 +1320,11 @@ function inputKeyDown(evt, id) {
 			} else if (classify(come).type == 'linesegment') {
 				console.log('inputKeyDown linesegment çalıştı', come)
 
+				if (come.split(",").length - 1 !== 3) {
+					showToast('GİRİŞ', 'Hatalı parametre girişi yaptınız.')
+					return
+				}
+
 				let A = new mPoint(classify(come).points[0].x, classify(come).points[0].y)
 				arrObjects.push(A)
 				let B = new mPoint(classify(come).points[1].x, classify(come).points[1].y)
@@ -1268,15 +1336,30 @@ function inputKeyDown(evt, id) {
 				delCount = 0
 				objectsContainer.innerHTML = null
 				drawCoordinates()
+
+
 			} else if (classify(come).type == 'linewithpoints') {
 				console.log('inputKeyDown linewithpoints çalıştı', come)
-
+				
 				let A = new mPoint(classify(come).points[0].x, classify(come).points[0].y)
 				arrObjects.push(A)
 				let B = new mPoint(classify(come).points[1].x, classify(come).points[1].y)
 				arrObjects.push(B)
-				createLineEquation(A, B)
+				let line
+				if (createLineEquation(A, B).x) {
+					line = new mLine(createLineEquation(A, B).m, createLineEquation(A, B).c, A, B, 'x=' + createLineEquation(A, B).x)
+					line.graph = null
+				} else {
+					line = new mLine(createLineEquation(A, B).m, createLineEquation(A, B).c, A, B)
+					line.graphParse = getDrawableFunction(line.graph).parsedFunc
+				}
+				arrObjects.push(line)
+				activeElementID = line.id
+				objectsContainer.innerHTML = null
 				drawCoordinates()
+
+
+
 			} else if (classify(come).type == 'sectionalfunctions') {
 				console.log('inputKeyDown sectionalfunction çalıştı', come)
 
@@ -1348,38 +1431,38 @@ function inputKeyDown(evt, id) {
 			newDef = newDef.replaceAll('y=', '')
 			newDef = newDef.replaceAll('=y', '')
 			if (classify(newDef).type == 'point') {
-				console.log('point def değişecek')
+				//console.log('point def değişecek')
 				arrObjects[activeElementID].x = classify(newDef).x
 				arrObjects[activeElementID].y = classify(newDef).y
 				arrObjects[activeElementID].inputView = newDef
 			} else if (classify(newDef).type == 'line' && getDrawableFunction(normalizeExpr(newDef)).status) {
-				console.log('line def değişecek', classify(newDef))
+				//console.log('line def değişecek', classify(newDef))
 				arrObjects[activeElementID].m = classify(newDef).m
 				arrObjects[activeElementID].n = classify(newDef).n
 				arrObjects[activeElementID].graph = classify(newDef).m + '*x+' + classify(newDef).n
 				arrObjects[activeElementID].graphParse = getDrawableFunction(normalizeExpr(newDef)).parsedFunc
 				arrObjects[activeElementID].inputView = 'y=' + newDef
 			} else if (classify(newDef).type == 'sequence' && getDrawableFunction(normalizeExpr(classify(newDef).func))) {
-				console.log('dizi değişecek', classify(newDef))
+				//console.log('dizi değişecek', classify(newDef))
 				arrObjects[activeElementID].start = classify(newDef).start
 				arrObjects[activeElementID].end = classify(newDef).end
 				arrObjects[activeElementID].graph = normalizeExpr(classify(newDef).func)
 				arrObjects[activeElementID].graphParse = getDrawableFunction(normalizeExpr(classify(newDef).func)).parsedFunc
 				arrObjects[activeElementID].inputView = capitalizeName(newDef)
 			} else if (classify(newDef).type == 'limit' && getDrawableFunction(normalizeExpr(classify(newDef).func))) {
-				console.log('Limit değişecek', classify(newDef))
+				//console.log('Limit değişecek', classify(newDef))
 				arrObjects[activeElementID].approachVal = classify(newDef).approachVal
 				arrObjects[activeElementID].graph = normalizeExpr(classify(newDef).func)
 				arrObjects[activeElementID].graphParse = getDrawableFunction(normalizeExpr(classify(newDef).func)).parsedFunc
 				arrObjects[activeElementID].inputView = capitalizeName(newDef)
 			} else if (classify(newDef).type == 'unknown' && getDrawableFunction(classify(newDef).func)) {
-				console.log('Unknown değişecek', classify(newDef))
+				//console.log('Unknown değişecek', classify(newDef))
 			} else if (classify(newDef).type == 'functionOperations') {
-				console.log('functionOperations değişecek', classify(newDef))
+				//console.log('functionOperations değişecek', classify(newDef))
 			} else if (classify(newDef).type == 'functionCompositions') {
-				console.log('functionCompositions değişecek', classify(newDef))
+				//console.log('functionCompositions değişecek', classify(newDef))
 			} else {
-				console.log('TÜR BULUNAMADI...')
+				//console.log('TÜR BULUNAMADI...')
 			}
 		} else {
 			console.log('cebir arr list')
@@ -1692,6 +1775,10 @@ setSlider = function (item) {
 		sliderN.value = item.y
 		labelN.innerHTML = 'b = ' + item.y
 	} else if (item.type == 'line') {
+		if (item.A != null) {
+			clearSliders()
+			return
+		}
 		sliderM.value = item.a
 		labelM.innerHTML = 'm = ' + item.a
 		sliderN.value = item.b
@@ -1831,28 +1918,25 @@ function changeName(newName) {
 	fillSetWindow()
 }
 
-function createLineEquation(lineA, lineB) {
-	if ((lineB.x - lineA.x) != 0) {
-		let m = (lineB.y - lineA.y) / (lineB.x - lineA.x)
-		let c = lineA.y - m * lineA.x
+function createLineEquation(A, B) {
+	if ((B.x - A.x) != 0) {
+		let m = (B.y - A.y) / (B.x - A.x)
+		let c = A.y - m * A.x
 
 		if (!Number.isInteger(m)) {
-			m = Number((lineB.y - lineA.y) / (lineB.x - lineA.x)).toFixed(2)
+			m = Number((B.y - A.y) / (B.x - A.x)).toFixed(2)
 		}
 		if (!Number.isInteger(c)) {
-			c = Number(lineA.y - m * lineA.x).toFixed(2)
+			c = Number(A.y - m * A.x).toFixed(2)
 		}
-
-		let line = new mLine(m, c)
-		line.graphParse = getDrawableFunction(line.graph).parsedFunc
-		arrObjects.push(line)
-		setSlider(line)
-		activeElementID = line.id
-		objectsContainer.innerHTML = null
-		drawCoordinates()
+		return {
+			m: m,
+			c: c
+		}
+	} else {
+		return { x: A.x }
 	}
 }
-
 function createLineSegment(lineSegmentA, lineSegmentB) {
 	arrObjects.pop()
 	arrObjects.pop()
@@ -1867,16 +1951,6 @@ function createLineSegment(lineSegmentA, lineSegmentB) {
 	delCount = 0
 	objectsContainer.innerHTML = null
 	drawCoordinates()
-
-
-	/* 	let ls = new mLineSegment(lineSegmentA, lineSegmentB)
-		arrObjects.push(ls)
-		setSlider(ls)
-		activeElementID = ls.id
-		undoObjects = []
-		delCount = 0
-		objectsContainer.innerHTML = null
-		drawCoordinates() */
 }
 
 $(document).ready(function () {
@@ -2041,28 +2115,17 @@ $(document).ready(function () {
 	canvas.addEventListener("mousemove", function (evt) {
 		let line
 		if (activeObject === 'line' && lineDrawing == true) {
-			lineB = getMousePos(evt)
-			if ((lineB.x - lineA.x) != 0) {
-				drawCoordinates()
-				let m = parseFloat((lineB.y - lineA.y) / (lineB.x - lineA.x)).toFixed(2)
-				let c = parseFloat(lineA.y - m * lineA.x).toFixed(2)
-				line = new mLine(m, c)
+			let lineB = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
+			if (createLineEquation(lineA, lineB).x) {
+				line = new mLine(createLineEquation(lineA, lineB).m, createLineEquation(lineA, lineB).c, lineA, lineB, 'x=' + createLineEquation(lineA, lineB).x)
+				line.graph = null
+			} else {
+				line = new mLine(createLineEquation(lineA, lineB).m, createLineEquation(lineA, lineB).c, lineA, lineB)
+				line.id = null
 				line.graphParse = getDrawableFunction(line.graph).parsedFunc
-				let x, y
-				ctx.beginPath()
-				ctx.strokeStyle = ctx.fillStyle = line.color
-				ctx.lineWidth = 2
-				x = minX * unitY
-				y = line.graphParse(x)
-				ctx.moveTo(-minX * scaleY + (x * scaleY) / unitY, -minY * scaleX - (y * scaleX) / unitX)
-
-				x = (minX + Math.round(canvas.width / scaleX) + 1) * unitY
-				y = line.graphParse(x)
-				ctx.lineTo(-minX * scaleY + (x * scaleY) / unitY, -minY * scaleX - (y * scaleX) / unitX)
-				ctx.stroke()
-				ctx.fill()
-				ctx.closePath()
 			}
+			drawCoordinates()
+			drawLine(line)
 		}
 		let ls
 		if (activeObject === 'linesegment' && lineSegmentDrawing == true) {
@@ -2090,23 +2153,32 @@ $(document).ready(function () {
 		}
 		if (activeObject === 'line' && evt.button == 0) {
 			if (lineDrawing == false) {
-				lineA = getMousePos(evt)
-				let point = new mPoint(lineA.x, lineA.y)
-				arrObjects.push(point)
-				undoObjects = []
-				delCount = 0
+				lineA = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
+				arrObjects.push(lineA)
+				activeElementID = lineA.id
 				lineDrawing = true
 			} else {
-				lineB = getMousePos(evt)
-				let point = new mPoint(lineB.x, lineB.y)
-				arrObjects.push(point)
-				undoObjects = []
-				delCount = 0
+				lineB = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
+				arrObjects.push(lineB)
+				let line
+				if (createLineEquation(lineA, lineB).x) {
+					line = new mLine(createLineEquation(lineA, lineB).m, createLineEquation(lineA, lineB).c, lineA, lineB, 'x=' + createLineEquation(lineA, lineB).x)
+					line.graph = null
+				} else {
+					line = new mLine(createLineEquation(lineA, lineB).m, createLineEquation(lineA, lineB).c, lineA, lineB)
+					line.graphParse = getDrawableFunction(line.graph).parsedFunc
+				}
+				arrObjects.push(line)
+				activeElementID = line.id
+				canvas.style.cursor = 'default'
+				objectsContainer.innerHTML = null
+
 				lineDrawing = false
-			}
-			if (lineA != null && lineB != null) {
-				createLineEquation(lineA, lineB)
 				lineA = lineB = null
+
+				//activeObject = 'choice'
+				//document.getElementById('btnChoice').classList.add('active')
+				//document.getElementById('btnLine').classList.remove('active')
 			}
 			fillSetWindow()
 		}
@@ -2116,19 +2188,19 @@ $(document).ready(function () {
 				lineSegmentA = getMousePos(evt)
 				let point = new mPoint(lineSegmentA.x, lineSegmentA.y)
 				arrObjects.push(point)
-				/* 				undoObjects = []
-								delCount = 0 */
 				lineSegmentDrawing = true
 			} else {
 				lineSegmentB = getMousePos(evt)
 				let point = new mPoint(lineSegmentB.x, lineSegmentB.y)
 				arrObjects.push(point)
-				/* 				undoObjects = []
-								delCount = 0 */
 				lineSegmentDrawing = false
 			}
 			if (lineSegmentA != null && lineSegmentB != null) {
 				createLineSegment(lineSegmentA, lineSegmentB)
+				//activeObject = 'choice'
+				//document.getElementById('btnChoice').classList.add('active')
+				//document.getElementById('btnLineSegment').classList.remove('active')
+
 				lineSegmentA = lineSegmentB = null
 			}
 			fillSetWindow()
@@ -2160,8 +2232,10 @@ $(document).ready(function () {
 				lineSegmentA = lineSegmentB = null
 				arrObjects.pop()
 			}
+			activeElementID = null
 			drawCoordinates()
 			fillSetWindow()
+
 		}
 	}, false)
 
