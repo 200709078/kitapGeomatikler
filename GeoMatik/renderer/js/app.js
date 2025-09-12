@@ -39,7 +39,6 @@ function writeWatchList(wtch, type = null) {
 }
 /* WATCH LİSTESİ */
 
-
 class mPoint {
 	constructor(x, y, come = null) {
 		if (come == null) come = '(' + x + ',' + y + ')'
@@ -144,7 +143,7 @@ class mLimit {
 		this.inputView = come
 	}
 }
-class mSectionalFunction {
+class mSectionalFunctions {
 	constructor(come) {
 		this.name = createName('other')
 		this.id = arrObjects.length
@@ -434,7 +433,6 @@ function drawLine(line) {
 	/*  */
 
 
-
 	if (line.A == null) {
 		if (classify(line.inputView).subtype == 'vertical') { // Drawing Vertical Lines
 			//console.log('vertical denklem girildi')
@@ -708,6 +706,23 @@ function drawLineSegment(ls) {
 function drawSectionalFunctions(sf) {
 	if (sf.inputView) labelCreator(sf)
 	if (!sf.visibility) return
+
+
+	/*  */
+	let sfSize
+	if (sf.id == activeElementID) {
+		sf.secFuncs.forEach(func => {
+			func.size = sf.size + 1
+		})
+	} else {
+		sf.secFuncs.forEach(func => {
+			func.size = sf.size
+		})
+	}
+	/*  */
+
+
+
 	sf.secFuncs.forEach(func => {
 		if (func.type == 'line') {
 			drawLine(func)
@@ -720,6 +735,7 @@ function drawSectionalFunctions(sf) {
 }
 
 function labelCreator(item) {
+	if (item.id == null) return
 	let label = document.createElement('label')
 	let input = document.createElement('input')
 	let buttonDelete = document.createElement('button')
@@ -1391,7 +1407,7 @@ function inputKeyDown(evt, id) {
 
 
 			} else if (classify(come).type == 'sectionalfunctions') {
-				console.log('inputKeyDown sectionalfunction çalıştı', come)
+				console.log('inputKeyDown sectionalfunctions çalıştı', come)
 
 				let allFuncsDrawable = true
 				classify(come).functions.forEach(func => {
@@ -1417,7 +1433,7 @@ function inputKeyDown(evt, id) {
 							console.log('Tür bulunamadı.')
 						}
 					})
-					let sf = new mSectionalFunction(come)
+					let sf = new mSectionalFunctions(come)
 					sf.secFuncs = secFuncs
 					arrObjects.push(sf)
 					activeElementID = sf.id
@@ -1865,8 +1881,6 @@ setSlider = function (item) {
 		drawPoint(A)
 		drawPoint(B)
 		drawPoint(C)
-	} else {
-		console.log('Type bulunamadı.')
 	}
 }
 
@@ -2151,18 +2165,37 @@ $(document).ready(function () {
 				line.graph = null
 			} else {
 				line = new mLine(createLineEquation(lineA, lineB).m, createLineEquation(lineA, lineB).c, lineA, lineB)
-				line.id = null
 				line.graphParse = getDrawableFunction(line.graph).parsedFunc
 			}
 			drawCoordinates()
+
+			/*  */
+			line.B.id = null
+			line.id = null
+			drawPoint(line.B)
+			/*  */
+
 			drawLine(line)
 		}
 		let ls
 		if (activeObject === 'linesegment' && lineSegmentDrawing == true) {
-			lineSegmentB = getMousePos(evt)
+			let lineSegmentB = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
 			drawCoordinates()
+
+			lineSegmentB.id = null
+			drawPoint(lineSegmentB)
+
+
+
 			ls = new mLineSegment(lineSegmentA, lineSegmentB)
-			ctx.beginPath()
+
+			ls.id = null
+			drawLineSegment(ls)
+
+
+
+
+/* 			ctx.beginPath()
 			ctx.strokeStyle = ctx.fillStyle = ls.color
 			ctx.lineWidth = ls.size
 			ctx.setLineDash(ls.lineDash)
@@ -2171,7 +2204,10 @@ $(document).ready(function () {
 			ctx.fill()
 			ctx.stroke()
 			ctx.setLineDash([])
-			ctx.closePath()
+			ctx.closePath() */
+
+
+			
 		}
 	}, false)
 
