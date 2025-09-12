@@ -29,7 +29,7 @@ let limitNames = "abcdeijklmostuvwxyz"
 let lineNames = "fghpqr"
 let sliders = document.getElementById('sliders')
 
-/* WATCH LİSTESİ */
+/* WATCH LIST */
 
 function writeWatchList(wtch, type = null) {
 	let watchlistspan = document.getElementById('watchList')
@@ -37,7 +37,7 @@ function writeWatchList(wtch, type = null) {
 		if (type) { watchlistspan.innerHTML += key + ':' + value + '<br>' } else { console.log(key + ':' + value) }
 	});
 }
-/* WATCH LİSTESİ */
+/* WATCH LIST */
 
 class mPoint {
 	constructor(x, y, come = null) {
@@ -316,18 +316,15 @@ drawCoordinates = function () {
 	}
 
 	objectsContainer.innerHTML = null
-	let label = document.createElement('label')
 	let input = document.createElement('input')
 	input.id = -1
-	label.htmlFor = input.id
 	input.placeholder = 'Giriş'
 	input.title = 'Giriş'
-	input.setAttribute('onclick', 'inputClick(event,id)')
-	input.setAttribute('onkeydown', 'inputKeyDown(event,id)')
-	label.appendChild(input)
-	objectsContainer.appendChild(label)
-	arrObjects.sort(function (a, b) { return a.id - b.id })
+	input.addEventListener('click', (e) => inputClick(e, input.id))
+	input.addEventListener('keydown', (e) => inputKeyDown(e, input.id))
+	objectsContainer.appendChild(input)
 
+	arrObjects.sort(function (a, b) { return a.id - b.id })
 	arrObjects.findLast((item) => {
 		if (item.type === 'point') {
 			drawPoint(item)
@@ -345,12 +342,8 @@ drawCoordinates = function () {
 			drawSectionalFunctions(item)
 		} else { console.log('Type bulunamadı.') }
 	})
-
 	if (activeElementID != null) {
 		document.getElementById(activeElementID).style.background = 'lightgreen'
-		/* 		let objectsContainer = document.getElementById('objectsContainer')
-				objectsContainer.insertBefore(sliders, objectsContainer.children[2])
-				sliders.style.display = 'flex' */
 	}
 }
 fillSetWindow = function () {
@@ -387,11 +380,8 @@ function drawPoint(point) {
 	ctx.beginPath()
 	ctx.strokeStyle = 'black'
 	ctx.fillStyle = point.color
-
-	/*  */
 	let pSize
 	point.id == activeElementID ? pSize = point.size + 2 : pSize = point.size
-	/*  */
 
 	ctx.arc((-minX + point.x / unitY) * scaleY, (-minY - point.y / unitX) * scaleX, pSize, 0, 2 * Math.PI)
 	ctx.lineWidth = 1
@@ -426,12 +416,9 @@ function drawLine(line) {
 	endX = Math.min(mostRight, endX)
 	if (startX > endX) startX = endX
 
-	/*  */
 	let lineSize
 	line.id == activeElementID ? lineSize = line.size + 1 : lineSize = line.size
 	ctx.lineWidth = lineSize
-	/*  */
-
 
 	if (line.A == null) {
 		if (classify(line.inputView).subtype == 'vertical') { // Drawing Vertical Lines
@@ -526,16 +513,9 @@ function drawFunction(func) {
 
 	ctx.beginPath()
 	ctx.strokeStyle = func.color
-
-
-
-	/*  */
 	let fSize
 	func.id == activeElementID ? fSize = func.size + 1 : fSize = func.size
 	ctx.lineWidth = fSize
-	/*  */
-
-
 
 	let step = 0.01
 	let firstPoint = true
@@ -570,15 +550,9 @@ function drawSequence(seq) {
 
 	ctx.beginPath()
 	ctx.strokeStyle = seq.color
-
-	/*  */
 	let sSize
 	seq.id == activeElementID ? sSize = seq.size + 1 : sSize = seq.size - 1
 	ctx.lineWidth = sSize
-	/*  */
-
-
-
 	ctx.setLineDash([2, 5])
 
 	let step = 0.01
@@ -630,11 +604,9 @@ function drawLimit(lim) {
 	let f = lim.graphParse
 	ctx.beginPath()
 	ctx.strokeStyle = lim.color
-	/*  */
 	let limSize
 	lim.id == activeElementID ? limSize = lim.size + 1 : limSize = lim.size
 	ctx.lineWidth = limSize
-	/*  */
 	ctx.setLineDash(lim.lineDash)
 
 	let step = 0.01
@@ -689,11 +661,9 @@ function drawLineSegment(ls) {
 	//Doğru Parçası
 	ctx.beginPath()
 	ctx.strokeStyle = ctx.fillStyle = ls.color
-	/*  */
 	let lsSize
 	ls.id == activeElementID ? lsSize = ls.size + 1 : lsSize = ls.size
 	ctx.lineWidth = lsSize
-	/*  */
 	ctx.setLineDash(ls.lineDash)
 	ctx.moveTo((-minX + ls.A.x / unitY) * scaleY, (-minY - ls.A.y / unitX) * scaleX)
 	ctx.lineTo((-minX + ls.B.x / unitY) * scaleY, (-minY - ls.B.y / unitX) * scaleX)
@@ -707,8 +677,6 @@ function drawSectionalFunctions(sf) {
 	if (sf.inputView) labelCreator(sf)
 	if (!sf.visibility) return
 
-
-	/*  */
 	let sfSize
 	if (sf.id == activeElementID) {
 		sf.secFuncs.forEach(func => {
@@ -719,9 +687,6 @@ function drawSectionalFunctions(sf) {
 			func.size = sf.size
 		})
 	}
-	/*  */
-
-
 
 	sf.secFuncs.forEach(func => {
 		if (func.type == 'line') {
@@ -775,11 +740,20 @@ function labelCreator(item) {
 	buttonVisibility.classList = 'buttonVisibility'
 	buttonVisibility.style.borderColor = item.color
 	item.visibility ? buttonVisibility.style.background = item.color : buttonVisibility.style.background = 'transparent'
-	input.setAttribute("onclick", "inputClick(event,id)")
-	input.setAttribute("onkeydown", "inputKeyDown(event,id)")
-	buttonDelete.setAttribute("onclick", "delClick(event)")
-	buttonSetting.setAttribute("onclick", "setClick(event)")
-	buttonVisibility.setAttribute("onclick", "visibilityClick(event)")
+
+
+	/* 	input.setAttribute("onclick", "inputClick(event,id)")
+		input.setAttribute("onkeydown", "inputKeyDown(event,id)")
+		buttonDelete.setAttribute("onclick", "delClick(event)")
+		buttonSetting.setAttribute("onclick", "setClick(event)")
+		buttonVisibility.setAttribute("onclick", "visibilityClick(event)") */
+
+	input.addEventListener('click', (e) => inputClick(e, input.id));
+	input.addEventListener('keydown', (e) => inputKeyDown(e, input.id));
+	buttonDelete.addEventListener('click', (e) => delClick(e));
+	buttonSetting.addEventListener('click', (e) => setClick(e));
+	buttonVisibility.addEventListener('click', (e) => visibilityClick(e));
+
 
 	label.appendChild(input)
 	label.appendChild(buttonVisibility)
@@ -851,7 +825,7 @@ function inputClick(evt, id) {
 		}
 		activeElementID = id
 		document.getElementById(activeElementID).style.background = 'lightgreen'
-		document.getElementById(-1).value = null
+		document.getElementById('-1').value = null
 		let item = arrObjects[id]
 		setSlider(item)
 		fillSetWindow()
@@ -1050,19 +1024,9 @@ function classify(inputRaw) {
 		return { type: "functionOperations", functions, coefficients }
 	}
 
-
-
-
-
-
-
-
-
-
 	// ---- SectionalFunctions ----
 	if (/,/.test(norm)) { // en az bir ',' varsa işle
 		const segments = norm.split(";").map(s => s.trim()).filter(s => s.length > 0);
-		// segments.length = 1 ise de işlem yapılacak
 		const functions = [];
 		const ranges = [];
 
@@ -1137,18 +1101,6 @@ function classify(inputRaw) {
 			ranges
 		};
 	}
-
-
-
-
-
-
-
-
-
-
-
-
 	return { type: 'unknown' }
 }
 /* CLASSIFY METHOD END */
@@ -1328,7 +1280,7 @@ function inputKeyDown(evt, id) {
 					showToast('GİRİŞ', 'Hatalı giriş yaptınız. Fonksiyon bulunamadı.')
 				}
 			} else if (classify(come).type == 'limit') {
-				console.log('Limit çalıştı', come, classify(come))
+				console.log('Limit çalıştı', come)
 
 				if (come.split(",").length - 1 !== 1) {
 					showToast('GİRİŞ', 'Hatalı parametre girişi yaptınız.')
@@ -1403,9 +1355,6 @@ function inputKeyDown(evt, id) {
 				activeElementID = line.id
 				objectsContainer.innerHTML = null
 				drawCoordinates()
-
-
-
 			} else if (classify(come).type == 'sectionalfunctions') {
 				console.log('inputKeyDown sectionalfunctions çalıştı', come)
 
@@ -2169,12 +2118,9 @@ $(document).ready(function () {
 			}
 			drawCoordinates()
 
-			/*  */
 			line.B.id = null
 			line.id = null
 			drawPoint(line.B)
-			/*  */
-
 			drawLine(line)
 		}
 		let ls
@@ -2185,29 +2131,9 @@ $(document).ready(function () {
 			lineSegmentB.id = null
 			drawPoint(lineSegmentB)
 
-
-
 			ls = new mLineSegment(lineSegmentA, lineSegmentB)
-
 			ls.id = null
 			drawLineSegment(ls)
-
-
-
-
-/* 			ctx.beginPath()
-			ctx.strokeStyle = ctx.fillStyle = ls.color
-			ctx.lineWidth = ls.size
-			ctx.setLineDash(ls.lineDash)
-			ctx.moveTo((-minX + ls.A.x / unitY) * scaleY, (-minY - ls.A.y / unitX) * scaleX)
-			ctx.lineTo((-minX + ls.B.x / unitY) * scaleY, (-minY - ls.B.y / unitX) * scaleX)
-			ctx.fill()
-			ctx.stroke()
-			ctx.setLineDash([])
-			ctx.closePath() */
-
-
-			
 		}
 	}, false)
 
@@ -2241,10 +2167,6 @@ $(document).ready(function () {
 
 				lineDrawing = false
 				lineA = lineB = null
-
-				//activeObject = 'choice'
-				//document.getElementById('btnChoice').classList.add('active')
-				//document.getElementById('btnLine').classList.remove('active')
 			}
 			fillSetWindow()
 		}
@@ -2263,10 +2185,6 @@ $(document).ready(function () {
 			}
 			if (lineSegmentA != null && lineSegmentB != null) {
 				createLineSegment(lineSegmentA, lineSegmentB)
-				//activeObject = 'choice'
-				//document.getElementById('btnChoice').classList.add('active')
-				//document.getElementById('btnLineSegment').classList.remove('active')
-
 				lineSegmentA = lineSegmentB = null
 			}
 			fillSetWindow()
