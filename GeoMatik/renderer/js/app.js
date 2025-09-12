@@ -388,7 +388,13 @@ function drawPoint(point) {
 	ctx.beginPath()
 	ctx.strokeStyle = 'black'
 	ctx.fillStyle = point.color
-	ctx.arc((-minX + point.x / unitY) * scaleY, (-minY - point.y / unitX) * scaleX, point.size, 0, 2 * Math.PI)
+
+	/*  */
+	let pSize
+	point.id == activeElementID ? pSize = point.size + 2 : pSize = point.size
+	/*  */
+
+	ctx.arc((-minX + point.x / unitY) * scaleY, (-minY - point.y / unitX) * scaleX, pSize, 0, 2 * Math.PI)
 	ctx.lineWidth = 1
 	//ctx.fillRect(400, 400, 20, 20)
 	if (point.inputView) text((-minX + point.x / unitY) * scaleY - 10, (-minY - point.y / unitX) * scaleX - 5, point.color, 'center', 'bold 15px arial', point.name)
@@ -421,13 +427,21 @@ function drawLine(line) {
 	endX = Math.min(mostRight, endX)
 	if (startX > endX) startX = endX
 
+	/*  */
+	let lineSize
+	line.id == activeElementID ? lineSize = line.size + 1 : lineSize = line.size
+	ctx.lineWidth = lineSize
+	/*  */
+
+
+
 	if (line.A == null) {
 		if (classify(line.inputView).subtype == 'vertical') { // Drawing Vertical Lines
 			//console.log('vertical denklem girildi')
 			verticalNumber = classify(line.inputView).x
 			ctx.beginPath()
 			ctx.strokeStyle = ctx.fillStyle = line.color
-			ctx.lineWidth = line.size
+			ctx.lineWidth = lineSize
 			ctx.moveTo((-minX + verticalNumber / unitY) * scaleY, canvas.height + 100)
 			ctx.lineTo((-minX + verticalNumber / unitY) * scaleY, -canvas.height - 100)
 			text((-minX + verticalNumber / unitY) * scaleY + 10, 15, line.color, 'center', 'bold 15px arial', line.name)
@@ -439,7 +453,7 @@ function drawLine(line) {
 			let x, y
 			ctx.beginPath()
 			ctx.strokeStyle = ctx.fillStyle = line.color
-			ctx.lineWidth = line.size
+			ctx.lineWidth = lineSize
 			x = startX
 			y = line.graphParse(x)
 			ctx.moveTo(-minX * scaleY + (x * scaleY) / unitY, -minY * scaleX - (y * scaleX) / unitX)
@@ -461,7 +475,7 @@ function drawLine(line) {
 			verticalNumber = line.A.x
 			ctx.beginPath()
 			ctx.strokeStyle = ctx.fillStyle = line.color
-			ctx.lineWidth = line.size
+			ctx.lineWidth = lineSize
 			ctx.moveTo((-minX + verticalNumber / unitY) * scaleY, canvas.height + 100)
 			ctx.lineTo((-minX + verticalNumber / unitY) * scaleY, -canvas.height - 100)
 			text((-minX + verticalNumber / unitY) * scaleY + 10, 15, line.color, 'center', 'bold 15px arial', line.name)
@@ -478,7 +492,7 @@ function drawLine(line) {
 			let x, y
 			ctx.beginPath()
 			ctx.strokeStyle = ctx.fillStyle = line.color
-			ctx.lineWidth = line.size
+			ctx.lineWidth = lineSize
 			x = startX
 			y = line.graphParse(x)
 			ctx.moveTo(-minX * scaleY + (x * scaleY) / unitY, -minY * scaleX - (y * scaleX) / unitX)
@@ -514,7 +528,17 @@ function drawFunction(func) {
 
 	ctx.beginPath()
 	ctx.strokeStyle = func.color
-	ctx.lineWidth = func.size
+
+
+
+	/*  */
+	let fSize
+	func.id == activeElementID ? fSize = func.size + 1 : fSize = func.size
+	ctx.lineWidth = fSize
+	/*  */
+
+
+
 	let step = 0.01
 	let firstPoint = true
 	let x = startX
@@ -548,7 +572,15 @@ function drawSequence(seq) {
 
 	ctx.beginPath()
 	ctx.strokeStyle = seq.color
-	ctx.lineWidth = seq.size - 1
+
+	/*  */
+	let sSize
+	seq.id == activeElementID ? sSize = seq.size + 1 : sSize = seq.size - 1
+	ctx.lineWidth = sSize
+	/*  */
+
+
+
 	ctx.setLineDash([2, 5])
 
 	let step = 0.01
@@ -600,7 +632,11 @@ function drawLimit(lim) {
 	let f = lim.graphParse
 	ctx.beginPath()
 	ctx.strokeStyle = lim.color
-	ctx.lineWidth = lim.size - 1
+	/*  */
+	let limSize
+	lim.id == activeElementID ? limSize = lim.size + 1 : limSize = lim.size
+	ctx.lineWidth = limSize
+	/*  */
 	ctx.setLineDash(lim.lineDash)
 
 	let step = 0.01
@@ -655,7 +691,11 @@ function drawLineSegment(ls) {
 	//Doğru Parçası
 	ctx.beginPath()
 	ctx.strokeStyle = ctx.fillStyle = ls.color
-	ctx.lineWidth = ls.size
+	/*  */
+	let lsSize
+	ls.id == activeElementID ? lsSize = ls.size + 1 : lsSize = ls.size
+	ctx.lineWidth = lsSize
+	/*  */
 	ctx.setLineDash(ls.lineDash)
 	ctx.moveTo((-minX + ls.A.x / unitY) * scaleY, (-minY - ls.A.y / unitX) * scaleX)
 	ctx.lineTo((-minX + ls.B.x / unitY) * scaleY, (-minY - ls.B.y / unitX) * scaleX)
@@ -668,11 +708,6 @@ function drawLineSegment(ls) {
 function drawSectionalFunctions(sf) {
 	if (sf.inputView) labelCreator(sf)
 	if (!sf.visibility) return
-
-
-
-
-	let exercises = '2x-3,x<=-5;x^2-4,-5<x<1;sin(x),1<=x'
 	sf.secFuncs.forEach(func => {
 		if (func.type == 'line') {
 			drawLine(func)
@@ -682,11 +717,6 @@ function drawSectionalFunctions(sf) {
 			console.log('Type bulunamadı.')
 		}
 	})
-
-
-
-
-
 }
 
 function labelCreator(item) {
@@ -1340,7 +1370,7 @@ function inputKeyDown(evt, id) {
 
 			} else if (classify(come).type == 'linewithpoints') {
 				console.log('inputKeyDown linewithpoints çalıştı', come)
-				
+
 				let A = new mPoint(classify(come).points[0].x, classify(come).points[0].y)
 				arrObjects.push(A)
 				let B = new mPoint(classify(come).points[1].x, classify(come).points[1].y)
@@ -1373,7 +1403,7 @@ function inputKeyDown(evt, id) {
 					let secFuncs = []
 					classify(come).functions.forEach((func, i) => {
 						if (classify(func).type == 'line') {
-							let line = new mLine(classify(normalizeExpr(func)).m, classify(normalizeExpr(func)).n, null, classify(come).ranges[i].from, classify(come).ranges[i].to)
+							let line = new mLine(classify(normalizeExpr(func)).m, classify(normalizeExpr(func)).n, null, null, null, classify(come).ranges[i].from, classify(come).ranges[i].to)
 							line.graphParse = getDrawableFunction(line.graph).parsedFunc
 							line.id = null
 							secFuncs.push(line)
