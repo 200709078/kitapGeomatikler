@@ -13,8 +13,16 @@ let lineSegmentA, lineSegmentB
 let delPointCount = 0
 let scaleX = 100
 let scaleY = 100
+
+
 let minX = -8
 let minY = -3
+/* if (innerWidth < innerHeight) {
+	minX = -2
+	toggleCalcIcon(document.getElementById('btnimgCalc'))
+	document.getElementById('leftWrapper').classList.toggle('hide')
+} */
+
 let units = [1 / 10, 1 / 5, 1 / 2, 1, 2, 5, 10, 20]
 let tickX = 3
 let unitX = units[tickX]
@@ -30,7 +38,6 @@ let lineNames = "fghpqr"
 let sliders = document.getElementById('sliders')
 
 /* WATCH LIST */
-
 function writeWatchList(wtch, type = null) {
 	let watchlistspan = document.getElementById('watchList')
 	Object.entries(wtch).forEach(([key, value]) => {
@@ -344,8 +351,12 @@ drawCoordinates = function () {
 	})
 	if (activeElementID != null) {
 		document.getElementById(activeElementID).style.background = 'lightgreen'
+		setActiveInput(activeElementID)
+	} else {
+		setActiveInput(-1)
 	}
 }
+
 fillSetWindow = function () {
 	if (activeElementID != null) {
 		document.getElementById('name').value = arrObjects[activeElementID].name
@@ -824,11 +835,14 @@ function inputClick(evt, id) {
 			document.getElementById(activeElementID).style.background = 'white'
 		}
 		activeElementID = id
+		setActiveInput(activeElementID)
 		document.getElementById(activeElementID).style.background = 'lightgreen'
 		document.getElementById('-1').value = null
 		let item = arrObjects[id]
 		setSlider(item)
 		fillSetWindow()
+	} else {
+		setActiveInput(-1)
 	}
 }
 
@@ -1946,6 +1960,27 @@ function createLineSegment(lineSegmentA, lineSegmentB) {
 	drawCoordinates()
 }
 
+
+
+
+
+
+// Odaklanmasını istediğin input'u kontrol et
+function setActiveInput(id) {
+	activeElementID = id;
+	let el = document.getElementById(id);
+	if (el) {
+		el.focus(); // sadece seçtiğin input odaklanır
+	}
+}
+
+function isMobile() {
+	return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+
+
+
+
 $(document).ready(function () {
 	let objectsContainer = document.getElementById('objectsContainer')
 	//checkDirection()
@@ -2267,4 +2302,19 @@ $(document).ready(function () {
 	}
 
 	initResizerFunction(reSizer, leftWrapper)
+
+	/* 	document.addEventListener('focusin', (e) => {
+			// Eğer odaklanan elemanın id'si bizim istediğimiz değilse -> blur yap
+			if (e.target.id !== activeElementID) {
+				e.preventDefault();
+				e.target.blur();
+			}
+			console.log("Odaklandı:", e.target.id);
+		}, true); */
+	setActiveInput('-1')
+
+	/* 	document.addEventListener("focusout", (e) => {
+			console.log("Input odak kaybetti:", e.target.id);
+		}); */
+
 })
