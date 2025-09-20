@@ -19,8 +19,9 @@ canvas {
 	display: flex;
 	gap: 12px;
 	justify-content: left;
-	margin-top: 20px;
-	margin-left: 20px;
+	margin-top: 10px;
+	margin-left: 10px;
+	margin-bottom: 10px;
 }
 
 #butonlar button {

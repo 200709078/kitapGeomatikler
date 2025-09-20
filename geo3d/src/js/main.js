@@ -119,6 +119,7 @@ function createTextSprite(text, x, y, z) {
   scene.add(sprite);
   return sprite;
 }
+
 function updateTextSprite(sprite, newText) {
   const canvas = sprite.material.map.image;
   const ctx = canvas.getContext("2d");
@@ -169,7 +170,6 @@ function addRows() {
   setCameraPosition();
 }
 
-
 let sumText = createTextSprite(null, startPosition, 0.5, 1.25)
 sumText.visible = false;
 function sumCubes() {
@@ -179,7 +179,6 @@ function sumCubes() {
   updateTextSprite(sumText, (ticker + 2) + '²=' + (ticker + 2) ** 2);
   sumText.position.x += 0.5;
   sumText.visible = true;
-
 
   for (let i = ticker + 1; i <= currentRow; i++) {
     rows[i].forEach(cube => {
@@ -205,15 +204,16 @@ function sumCubes() {
   if (currentRow == ticker) {
     toplaBtn.disabled = true;
     crushBtn.disabled = false;
+    destroyBtn.disabled=false;
     return;
   }
-
 }
 
 function resetScene() {
   kupEkleBtn.disabled = false;
   toplaBtn.disabled = false;
   crushBtn.disabled = true;
+  destroyBtn.disabled=true;
   sumText.visible = false;
   ticker = 0;
   nextCount = 3;
@@ -234,7 +234,6 @@ function resetScene() {
   rows[0] = [createCube(startPosition, cubeSize / 2, 0, 0x0077ff)];
   rowTexts[0] = createTextSprite(1, startPosition, cubeSize / 2, 0.7);
   rowTexts[0].visible = true;
-
   setCameraPosition();
 }
 
@@ -251,7 +250,10 @@ function crushCubes() {
       cube.rotation.set(randomRotX, randomRotY, randomRotZ);
     });
   });
+}
 
+function destroyCubesWithaBall(){
+  console.log('destroy çalıştı')
 }
 
 let kupEkleBtn = document.getElementById("kupEkleBtn")
@@ -262,6 +264,8 @@ let resetSceneBtn = document.getElementById("resetSceneBtn")
 resetSceneBtn.addEventListener("click", resetScene);
 let crushBtn = document.getElementById("crushBtn")
 crushBtn.addEventListener("click", crushCubes);
+let destroyBtn = document.getElementById("destroyBtn");
+destroyBtn.addEventListener("click", destroyCubesWithaBall);
 
 function animate() {
   requestAnimationFrame(animate);
