@@ -11,6 +11,7 @@
 	<meta name="author" content="made by mADEMatik">
 	<script type="text/javascript" src="js/jquery.js"></script>
 	<script src="https://jsuites.net/v5/jsuites.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/mathjs@14.0.0/lib/browser/math.js"></script>
 	<link rel="shortcut icon" href="img/favicon.svg" />
 	<link rel="stylesheet" href="css/styles.css" type="text/css" />
 </head>
@@ -53,7 +54,7 @@
 				<span>Yardım</span>
 			</button>
 			<!-- WATCH LIST  -->
-			<span id="watchList" style="font-size: .8cap; color: red;" ></span>
+			<span id="watchList" style="font-size: .8cap; color: red;"></span>
 			<!-- WATCH LIST -->
 		</div>
 		<div class="leftWrapper" id="leftWrapper">
@@ -61,10 +62,10 @@
 			<div id="scrollWrapper">
 				<div id="sliders">
 					<label class="slideLabel" for="sliderM" id="m">a</label>
-					<input type="range" min="-20" max="20" step="0.01" name="m" id="sliderM" oninput="crossSlider(name)"
+					<input type="range" min="-20" max="20" step="0.1" name="m" id="sliderM" oninput="crossSlider(name)"
 						disabled="true" />
 					<label class="slideLabel" for="sliderN" id="n">b</label>
-					<input type="range" min="-20" max="20" step="0.01" name="n" id="sliderN" oninput="crossSlider(name)"
+					<input type="range" min="-20" max="20" step="0.1" name="n" id="sliderN" oninput="crossSlider(name)"
 						disabled="true" />
 				</div>
 				<div class="entryContainer" id="objectsContainer"></div>

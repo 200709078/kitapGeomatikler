@@ -34,6 +34,7 @@ let undoObjects = []
 let pointNames = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 let sequenceNames = "abcdeijklmostuvwxyz"
 let limitNames = "abcdeijklmostuvwxyz"
+let turevNames = "abcdeijklmostuvwxyz"
 let lineNames = "fghpqr"
 let sliders = document.getElementById('sliders')
 
@@ -150,6 +151,33 @@ class mLimit {
 		this.inputView = come
 	}
 }
+
+function derivative(funcStr, variable = "x") {
+	try {
+		const df = math.derivative(normalizeExpr(funcStr), variable);
+		return df.toString();
+	} catch (err) {
+		return "undefined";
+	}
+}
+
+class mTurev {
+	constructor(tur, a, come) {
+		this.name = createName('turev')
+		this.id = arrObjects.length
+		this.graph = tur
+		this.turGraph = derivative(classify(come).func)
+		this.graphParse = null
+		this.approachVal = a
+		this.color = getRandomColor()
+		this.lineDash = []
+		this.visibility = true
+		this.size = 2
+		this.type = 'turev'
+		this.inputView = come
+	}
+}
+
 class mSectionalFunctions {
 	constructor(come) {
 		this.name = createName('other')
@@ -179,7 +207,7 @@ function getRandomColor() {
 	return rgbColor
 }
 
-createName = function (type) {
+function createName(type) {
 	let nm
 	let iFound = false
 	let i = 0
@@ -237,6 +265,24 @@ createName = function (type) {
 			}
 			i++
 		}
+	} else if (type == 'turev') {
+		if (arrObjects.length == 0) return turevNames[0]
+		let names = arrObjects.map((item) => item.name)
+		while (!iFound) {
+			if (i < turevNames.length) {
+				if (!names.includes(turevNames[i])) {
+					iFound = true
+					nm = turevNames[i]
+				}
+			}
+			if (i >= turevNames.length) {
+				if (!(names.includes(turevNames[i % turevNames.length] + ((i / turevNames.length) - ((i / turevNames.length) % 1))))) {
+					iFound = true
+					nm = turevNames[i % turevNames.length] + ((i / turevNames.length) - ((i / turevNames.length) % 1))
+				}
+			}
+			i++
+		}
 	} else {
 		if (arrObjects.length == 0) return lineNames[0]
 		let names = arrObjects.map((item) => item.name)
@@ -259,7 +305,7 @@ createName = function (type) {
 	return nm
 }
 
-drawCoordinates = function () {
+function drawCoordinates() {
 	ctx.strokeStyle = ctx.fillStyle = 'white'
 	ctx.fillRect(0, 0, innerWidth, innerHeight)
 
@@ -341,6 +387,8 @@ drawCoordinates = function () {
 			drawSequence(item)
 		} else if (item.type === 'limit') {
 			drawLimit(item)
+		} else if (item.type === 'turev') {
+			drawTurev(item)
 		} else if (item.type === 'other') {
 			drawFunction(item)
 		} else if (item.type === 'linesegment') {
@@ -351,13 +399,13 @@ drawCoordinates = function () {
 	})
 	if (activeElementID != null) {
 		document.getElementById(activeElementID).style.background = 'lightgreen'
-		setActiveInput(activeElementID)
+		//setActiveInput(activeElementID)
 	} else {
-		setActiveInput(-1)
+		//setActiveInput(-1)
 	}
 }
 
-fillSetWindow = function () {
+function fillSetWindow() {
 	if (activeElementID != null) {
 		document.getElementById('name').value = arrObjects[activeElementID].name
 		if (arrObjects[activeElementID].type == 'sequence') document.getElementById('name').value = arrObjects[activeElementID].name + 'ₓ'
@@ -430,7 +478,6 @@ function drawLine(line) {
 	let lineSize
 	line.id == activeElementID ? lineSize = line.size + 1 : lineSize = line.size
 	ctx.lineWidth = lineSize
-
 	if (line.A == null) {
 		if (classify(line.inputView).subtype == 'vertical') { // Drawing Vertical Lines
 			//console.log('vertical denklem girildi')
@@ -440,7 +487,7 @@ function drawLine(line) {
 			ctx.lineWidth = lineSize
 			ctx.moveTo((-minX + verticalNumber / unitY) * scaleY, canvas.height + 100)
 			ctx.lineTo((-minX + verticalNumber / unitY) * scaleY, -canvas.height - 100)
-			text((-minX + verticalNumber / unitY) * scaleY + 10, 15, line.color, 'center', 'bold 15px arial', line.name)
+			if (id) text((-minX + verticalNumber / unitY) * scaleY + 10, 15, line.color, 'center', 'bold 15px arial', line.name)
 			ctx.fill()
 			ctx.stroke()
 			ctx.closePath()
@@ -451,15 +498,17 @@ function drawLine(line) {
 			ctx.strokeStyle = ctx.fillStyle = line.color
 			ctx.lineWidth = lineSize
 			x = startX
-			y = line.graphParse(x)
+			//y = line.graphParse(x)
+			y = math.evaluate(line.graph, { x: x })
 			ctx.moveTo(-minX * scaleY + (x * scaleY) / unitY, -minY * scaleX - (y * scaleX) / unitX)
 			x = endX
-			y = line.graphParse(x)
+			//y = line.graphParse(x)
+			y = math.evaluate(line.graph, { x: x })
 			ctx.lineTo(-minX * scaleY + (x * scaleY) / unitY, -minY * scaleX - (y * scaleX) / unitX)
 			if (line.a != 0) {
-				text((-minX + (-minY - line.b) / line.a) * scaleY + 5, 20, line.color, 'center', 'bold 15px arial', line.name)
+				if (line.id) text((-minX + (-minY - line.b) / line.a) * scaleY + 5, 20, line.color, 'center', 'bold 15px arial', line.name)
 			} else {
-				text(canvas.width - 10, -minY * scaleX - (y * scaleX) / unitX - 10, line.color, 'center', 'bold 15px arial', line.name)
+				if (line.id) text(canvas.width - 10, -minY * scaleX - (y * scaleX) / unitX - 10, line.color, 'center', 'bold 15px arial', line.name)
 			}
 			ctx.fill()
 			ctx.stroke()
@@ -474,7 +523,7 @@ function drawLine(line) {
 			ctx.lineWidth = lineSize
 			ctx.moveTo((-minX + verticalNumber / unitY) * scaleY, canvas.height + 100)
 			ctx.lineTo((-minX + verticalNumber / unitY) * scaleY, -canvas.height - 100)
-			text((-minX + verticalNumber / unitY) * scaleY + 10, 15, line.color, 'center', 'bold 15px arial', line.name)
+			if (line.id) text((-minX + verticalNumber / unitY) * scaleY + 10, 15, line.color, 'center', 'bold 15px arial', line.name)
 			ctx.fill()
 			ctx.stroke()
 			ctx.closePath()
@@ -496,9 +545,9 @@ function drawLine(line) {
 			y = line.graphParse(x)
 			ctx.lineTo(-minX * scaleY + (x * scaleY) / unitY, -minY * scaleX - (y * scaleX) / unitX)
 			if (line.a != 0) {
-				text((-minX + (-minY - line.b) / line.a) * scaleY + 5, 20, line.color, 'center', 'bold 15px arial', line.name)
+				if (line.id) text((-minX + (-minY - line.b) / line.a) * scaleY + 5, 20, line.color, 'center', 'bold 15px arial', line.name)
 			} else {
-				text(canvas.width - 10, -minY * scaleX - (y * scaleX) / unitX - 10, line.color, 'center', 'bold 15px arial', line.name)
+				if (line.id) text(canvas.width - 10, -minY * scaleX - (y * scaleX) / unitX - 10, line.color, 'center', 'bold 15px arial', line.name)
 			}
 			ctx.fill()
 			ctx.stroke()
@@ -510,7 +559,7 @@ function drawLine(line) {
 function drawFunction(func) {
 	if (func.id != null) labelCreator(func)
 	if (!func.visibility) return
-	let f = func.graphParse
+	//let f = func.graphParse
 
 	let mostLeft = minX * unitY
 	let mostRight = (minX + Math.round(canvas.width / scaleY) + 1) * unitY
@@ -532,12 +581,14 @@ function drawFunction(func) {
 	let firstPoint = true
 	let x = startX
 	while (x < endX) {
-		let y = f(x)
+		//let y = f(x)
+		let y = math.evaluate(func.graph, { x: x })
 		if (!isFinite(y)) {
 			firstPoint = true
 			x += step
 			continue
 		}
+		//console.log(x,y)
 		let canvasX = -minX * scaleY + (x * scaleY) / unitY
 		let canvasY = -minY * scaleX - (y * scaleX) / unitX
 
@@ -557,7 +608,7 @@ function drawFunction(func) {
 function drawSequence(seq) {
 	labelCreator(seq)
 	if (!seq.visibility) return
-	let f = seq.graphParse
+	//let f = seq.graphParse
 
 	ctx.beginPath()
 	ctx.strokeStyle = seq.color
@@ -572,7 +623,8 @@ function drawSequence(seq) {
 	let x = minX * unitY
 
 	while (x < (minX + Math.round(canvas.width / scaleY) + 1) * unitY) {
-		let y = f(x)
+		//let y = f(x)
+		let y = math.evaluate(seq.graph, { x: x })
 		if (!isFinite(y)) {
 			firstPoint = true
 			x += step
@@ -600,7 +652,8 @@ function drawSequence(seq) {
 		ctx.strokeStyle = 'black'
 		ctx.fillStyle = seq.color
 		ctx.lineWidth = 1
-		y = f(x)
+		//y = f(x)
+		let y = math.evaluate(seq.graph, { x: x })
 		ctx.arc((-minX + x / unitY) * scaleY, (-minY - y / unitX) * scaleX, seq.size, 0, 2 * Math.PI)
 		text((-minX + x / unitY) * scaleY - 10, (-minY - y / unitX) * scaleX - 5, seq.color, 'center', 'bold 15px arial', seq.name + x)
 		ctx.fill()
@@ -665,6 +718,63 @@ function drawLimit(lim) {
 	drawPoint(C)
 }
 
+function drawTurev(tur) {
+	labelCreator(tur)
+	if (!tur.visibility) return
+	let f = tur.graphParse
+	ctx.beginPath()
+	ctx.strokeStyle = tur.color
+	let turSize
+	tur.id == activeElementID ? turSize = tur.size + 1 : turSize = tur.size
+	ctx.lineWidth = turSize
+	ctx.setLineDash(tur.lineDash)
+
+	let step = 0.01
+
+	let firstPoint = true
+	let x = minX * unitY
+
+	while (x < (minX + Math.round(canvas.width / scaleY) + 1) * unitY) {
+		//let y = f(x)
+		let y = math.evaluate(tur.graph, { x: x })
+		if (!isFinite(y)) {
+			firstPoint = true
+			x += step
+			continue
+		}
+
+		let canvasX = -minX * scaleY + (x * scaleY) / unitY
+		let canvasY = -minY * scaleX - (y * scaleX) / unitX
+
+		if (firstPoint) {
+			ctx.moveTo(canvasX, canvasY)
+			firstPoint = false
+		} else {
+			ctx.lineTo(canvasX, canvasY)
+		}
+		x += step
+	}
+
+	ctx.stroke()
+	ctx.setLineDash([])
+	ctx.closePath()
+
+	// Türev noktasında
+	let A = new mPoint(Number(tur.approachVal), 0)
+	let B = new mPoint(Number(tur.approachVal), math.evaluate(tur.graph, { x: A.x }))
+	let C = new mPoint(0, math.evaluate(tur.graph, { x: A.x }))
+	A.inputView = B.inputView = C.inputView = null
+	let vls = new mLineSegment(A, B)
+	let hls = new mLineSegment(B, C)
+	A.color = B.color = C.color = vls.color = hls.color = tur.color
+	vls.inputView = hls.inputView = null
+	drawLineSegment(vls)
+	drawLineSegment(hls)
+	drawPoint(A)
+	drawPoint(B)
+	drawPoint(C)
+}
+
 function drawLineSegment(ls) {
 	if (ls.inputView) labelCreator(ls)
 	if (!ls.visibility) return
@@ -719,7 +829,6 @@ function labelCreator(item) {
 	let buttonVisibility = document.createElement('button')
 	input.id = arrObjects.length - objectsContainer.childNodes.length
 	label.htmlFor = input.id
-
 	input.title = 'Değiştir'
 	buttonDelete.title = 'Sil'
 	buttonSetting.title = 'Düzenle'
@@ -740,6 +849,8 @@ function labelCreator(item) {
 		input.value = item.name + 'ₓ=' + item.inputView
 	} else if (item.type == 'limit') {
 		input.value = item.name + '=' + item.inputView
+	} else if (item.type == 'turev') {
+		input.value = item.name + '=' + item.inputView
 	} else if (item.type == 'sectionalfunctions') {
 		input.value = item.name + '(x)={' + item.inputView + '}'
 	} else if (item.type == 'other') {
@@ -751,7 +862,6 @@ function labelCreator(item) {
 	buttonVisibility.classList = 'buttonVisibility'
 	buttonVisibility.style.borderColor = item.color
 	item.visibility ? buttonVisibility.style.background = item.color : buttonVisibility.style.background = 'transparent'
-
 
 	/* 	input.setAttribute("onclick", "inputClick(event,id)")
 		input.setAttribute("onkeydown", "inputKeyDown(event,id)")
@@ -835,14 +945,14 @@ function inputClick(evt, id) {
 			document.getElementById(activeElementID).style.background = 'white'
 		}
 		activeElementID = id
-		setActiveInput(activeElementID)
+		//setActiveInput(activeElementID)
 		document.getElementById(activeElementID).style.background = 'lightgreen'
 		document.getElementById('-1').value = null
 		let item = arrObjects[id]
 		setSlider(item)
 		fillSetWindow()
 	} else {
-		setActiveInput(-1)
+		//setActiveInput(-1)
 	}
 }
 
@@ -931,6 +1041,19 @@ function classify(inputRaw) {
 		const approachVal = limitMatch[2] // 2
 		return {
 			type: "limit",
+			func,
+			approachVal
+		}
+	}
+
+	// ---- Türev(f,2) ----
+	const turevRe = /^\s*Türev\s*\(\s*(.+)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*\)\s*$/i
+	const turevMatch = norm.match(turevRe)
+	if (turevMatch) {
+		const func = turevMatch[1] // f
+		const approachVal = turevMatch[2] // 2
+		return {
+			type: "turev",
 			func,
 			approachVal
 		}
@@ -1124,6 +1247,7 @@ function capitalizeName(str) {
 		"dizi": "Dizi",
 		"bileşke": "Bileşke",
 		"limit": "Limit",
+		"türev": "Türev",
 		"doğruparçası": "DoğruParçası"
 	}
 
@@ -1145,7 +1269,7 @@ function bileskeProcess(funcs) {
 function inputKeyDown(evt, id) {
 	clearSliders()
 	handleParanthesis(evt)
-	let allowKeys = '(){}[],=-+.;<>*^/bçdğjımnşquvxyzCÇEFGĞHIJKMNOPQTUVWXYZBackspaceArrowLeftArrowRightShiftDelete'
+	let allowKeys = '(){}[],=-+.;<>*^/_bçdğjımnşquüvxyzCÇEFGĞHIJKMNOPQTUVWXYZBackspaceArrowLeftArrowRightShiftDelete'
 	if (isNaN(evt.key) && !allowKeys.includes(evt.key)) {
 		evt.preventDefault()
 	}
@@ -1169,7 +1293,6 @@ function inputKeyDown(evt, id) {
 				//drawCoordinates()
 			} else if (classify(come).type == 'line') {
 				console.log('inputKeyDown line çalıştı', come)
-
 				comeLine = normalizeExpr(come)
 				let line
 				if (classify(come).subtype == 'vertical') {
@@ -1192,7 +1315,7 @@ function inputKeyDown(evt, id) {
 					showToast('GİRİŞ', 'Hatalı giriş yaptınız.' + getDrawableFunction(line.graph).reason)
 				}
 			} else if (classify(come).type == 'sequence') {
-				console.log('inputKeyDown sequence çalıştı', come, classify(come))
+				console.log('inputKeyDown sequence çalıştı', come)
 
 				if (come.split(",").length - 1 !== 2) {
 					showToast('GİRİŞ', 'Hatalı parametre girişi yaptınız.')
@@ -1329,6 +1452,43 @@ function inputKeyDown(evt, id) {
 				} else {
 					showToast('GİRİŞ', 'Hatalı giriş yaptınız. Fonksiyon bulunamadı.')
 				}
+			} else if (classify(come).type == 'turev') {
+				console.log('Türev çalıştı', come)
+
+				if (come.split(",").length - 1 !== 1) {
+					showToast('GİRİŞ', 'Hatalı parametre girişi yaptınız.')
+					return
+				}
+
+				come = capitalizeName(come)
+				newCome = normalizeExpr(come)
+				let funcFound = true
+				let names = arrObjects.map((item) => item.name)
+
+				if (!classify(newCome).func.includes('x') && !Number.isFinite(Number(classify(newCome).func))) {
+					if (!names.includes(classify(newCome).func)) funcFound = false
+				}
+				if (funcFound) {
+					if (!classify(newCome).func.includes('x') && !Number.isFinite(Number(classify(newCome).func))) {
+						newCome = newCome.replaceAll(classify(newCome).func, arrObjects.find(o => o.name === classify(newCome).func).graph)
+					}
+					let comeFunc = classify(newCome).func
+					if (getDrawableFunction(comeFunc).status) {
+						let tur = new mTurev(comeFunc, classify(come).approachVal, come)
+						tur.graphParse = getDrawableFunction(comeFunc).parsedFunc
+						arrObjects.push(tur)
+						activeElementID = tur.id
+						undoObjects = []
+						delCount = 0
+						objectsContainer.innerHTML = null
+						setSlider(tur)
+					} else {
+						showToast('GİRİŞ', 'Hatalı giriş yaptınız.' + getDrawableFunction(newCome).reason)
+					}
+				} else {
+					showToast('GİRİŞ', 'Hatalı giriş yaptınız. Fonksiyon bulunamadı.')
+				}
+
 			} else if (classify(come).type == 'linesegment') {
 				console.log('inputKeyDown linesegment çalıştı', come)
 
@@ -1336,7 +1496,6 @@ function inputKeyDown(evt, id) {
 					showToast('GİRİŞ', 'Hatalı parametre girişi yaptınız.')
 					return
 				}
-
 				let A = new mPoint(classify(come).points[0].x, classify(come).points[0].y)
 				arrObjects.push(A)
 				let B = new mPoint(classify(come).points[1].x, classify(come).points[1].y)
@@ -1348,8 +1507,6 @@ function inputKeyDown(evt, id) {
 				delCount = 0
 				objectsContainer.innerHTML = null
 				drawCoordinates()
-
-
 			} else if (classify(come).type == 'linewithpoints') {
 				console.log('inputKeyDown linewithpoints çalıştı', come)
 
@@ -1404,13 +1561,11 @@ function inputKeyDown(evt, id) {
 					delCount = 0
 					objectsContainer.innerHTML = null
 					drawCoordinates()
-
 				} else {
 					showToast('GİRİŞ', 'Hatalı giriş yaptınız.')
 				}
 			} else if (classify(come).type == 'unknown') {
 				console.log('inputKeyDown unknown çalıştı', come)
-
 				let comeFunc = normalizeExpr(come)
 				if (getDrawableFunction(comeFunc).status) {
 					let func = new mFunction(comeFunc, 'y=' + come)
@@ -1480,7 +1635,7 @@ function inputKeyDown(evt, id) {
 	}
 }
 
-function normalizeExpr(expr) {
+/* function normalizeExpr(expr) {
 	expr = expr.replaceAll('y=', '')
 	expr = expr.replaceAll('+-', '-')
 	expr = expr.replace(/\s+/g, "")
@@ -1491,6 +1646,31 @@ function normalizeExpr(expr) {
 	expr = expr.replace(/\)(\d)/g, ")*$1") // )sayı → )*sayı
 	expr = expr.replace(/(\d)([a-zA-Z])/g, "$1*$2") // sayıharf (ör: 2x → 2*x)
 	expr = expr.replace(/\^/g, "**") // üs işareti ^ → **
+	return expr;
+} */
+
+function normalizeExpr(expr) {
+	expr = expr.replaceAll('y=', '');
+	expr = expr.replaceAll('+-', '-');
+	expr = expr.replace(/\s+/g, "");
+	// ---- Tabanlı log/ln yazımları (önce bunlar!) ----
+	expr = expr.replace(/\bln_(\w+)\(([^)]+)\)/g, "log($2, $1)");
+	expr = expr.replace(/\blog_(\w+)\(([^)]+)\)/g, "log($2, $1)");
+	expr = expr.replace(/\bln\(([^,]+),\s*([^)]+)\)/g, "log($1, $2)");
+	// ---- Fonksiyon isimleri alias ----
+	expr = expr.replace(/\bln\(/g, "log(");       // ln(x) → log(x)
+	expr = expr.replace(/\btg\(/g, "tan(");
+	expr = expr.replace(/\bctg\(/g, "1/tan(");
+	expr = expr.replace(/\bcot\(/g, "1/tan(");
+	expr = expr.replace(/\blg\(/g, "log10(");
+	// ---- Diğer normalleştirmeler ----
+	expr = expr.replace(/(^|[^\w])\-x/g, "$1-1*x");
+	expr = expr.replace(/(^|[^\w])\+x/g, "$1+1*x");
+	expr = expr.replace(/-\(/g, "-1*(");
+	expr = expr.replace(/(\d)\(/g, "$1*(");
+	expr = expr.replace(/\)(\d)/g, ")*$1");
+	expr = expr.replace(/(\d)([a-zA-Z])/g, "$1*$2");
+	//expr = expr.replace(/\^/g, "**");
 	return expr;
 }
 
@@ -1557,23 +1737,11 @@ function getDrawableFunction(expr) {
     const log10 = (y) => Math.log10(y);
     const exp = Math.exp;            // e^x
     const E = Math.E;                // sabit e
-    const log = (val, base) => Math.log(val)/Math.log(base); // özel tabanlı log
+    const log = (val, base = Math.E) => Math.log(val) / Math.log(base);
     return ${expr};
-      }
-    `)
-		const testValues = [-10, -5, -2, -1, 0.1, 1, 2, 5, 10, 20, 50]
-		let validCount = 0
-
-		for (let v of testValues) {
-			let y = parsedFunc(v)
-			if (typeof y === "number" && isFinite(y)) validCount++
-		}
-
-		if (validCount >= 5) {
-			return { status: true, parsedFunc }
-		} else {
-			return { status: false, reason: "Çoğu noktada tanımsız" }
-		}
+  }
+`)
+		return { status: true, parsedFunc }
 
 	} catch (e) {
 		return { status: false, reason: "Yazım yanlışı var." }
@@ -1708,15 +1876,16 @@ function crossSlider(name) {
 				drawCoordinates()
 			}
 		} else if (arrObjects[activeElementID].type == 'limit') {
-			drawCoordinates()
+
 			let sliderM = document.getElementById('sliderM')
 			let sliderN = document.getElementById('sliderN')
 			if (name == 'm') {
-				sliderLabel.innerHTML = arrObjects[activeElementID].approachVal + '⁺ = ' + Number(slider.value).toFixed(2)
+				sliderLabel.innerHTML = arrObjects[activeElementID].approachVal + '⁺ = ' + Number(slider.value).toFixed(1)
 			} else {
-				sliderLabel.innerHTML = arrObjects[activeElementID].approachVal + '⁻ = ' + Number(slider.value).toFixed(2)
+				sliderLabel.innerHTML = arrObjects[activeElementID].approachVal + '⁻ = ' + Number(slider.value).toFixed(1)
 			}
 
+			drawCoordinates()
 			// Limit noktasının sağında
 			let A = new mPoint(Number(sliderM.value), 0)
 			let B = new mPoint(Number(sliderM.value), arrObjects[activeElementID].graphParse(A.x))
@@ -1748,20 +1917,36 @@ function crossSlider(name) {
 			drawPoint(A)
 			drawPoint(B)
 			drawPoint(C)
+		} else if (arrObjects[activeElementID].type == 'turev') {
+			sliderLabel.innerHTML = 'x = ' + slider.value
+			arrObjects[activeElementID].approachVal = slider.value
+			arrObjects[activeElementID].inputView = "Türev(" + arrObjects[activeElementID].graph + "," + arrObjects[activeElementID].approachVal + ")"
+
+			//Teğetin grafiği
+			let m = math.evaluate(arrObjects[activeElementID].turGraph, { x: arrObjects[activeElementID].approachVal })
+			let c = math.evaluate(arrObjects[activeElementID].graph, { x: arrObjects[activeElementID].approachVal }) - m * arrObjects[activeElementID].approachVal
+			let tLine = new mLine(m, c)
+			tLine.graphParse = getDrawableFunction(tLine.graph).parsedFunc
+			tLine.color = 'black'
+			tLine.name = null
+			tLine.id = null
+
+			drawCoordinates()
+			drawLine(tLine)
 		} else {
 			console.log('Tür bulunamadı.')
 		}
 	}
 }
 
-setSlider = function (item) {
+function setSlider(item) {
 	drawCoordinates()
 	let sliderM = document.getElementById('sliderM')
 	let labelM = document.getElementById('m')
 	let sliderN = document.getElementById('sliderN')
 	let labelN = document.getElementById('n')
 
-	if (classify(item.inputView).subtype == 'vertical') {
+	if (classify(item.inputView).subtype == 'vertical' || item.type == 'turev') {
 		sliderN.style.display = 'none'
 		labelN.style.display = 'none'
 	} else {
@@ -1797,8 +1982,8 @@ setSlider = function (item) {
 			sliderM.value = Number(classify(item.inputView).x)
 		}
 	} else if (item.type == 'limit') {
-		let verticalMNumberRight = Number(item.approachVal * 1 + 0.4).toFixed(2)
-		let verticalMNumberLeft = Number(item.approachVal * 1 - 0.4).toFixed(2)
+		let verticalMNumberRight = Number(item.approachVal * 1 + 0.4).toFixed(1)
+		let verticalMNumberLeft = Number(item.approachVal * 1 - 0.4).toFixed(1)
 		let mostLeft = minX * unitY
 		let mostRight = (minX + Math.round(canvas.width / scaleY) + 1) * unitY
 		sliderM.min = item.approachVal * 1
@@ -1844,6 +2029,26 @@ setSlider = function (item) {
 		drawPoint(A)
 		drawPoint(B)
 		drawPoint(C)
+	} else if (item.type == 'turev') {
+		let mostLeft = minX * unitY
+		let mostRight = (minX + Math.round(canvas.width / scaleY) + 1) * unitY
+
+		sliderM.min = mostLeft
+		sliderM.max = mostRight
+		sliderM.step = '0.1'
+		sliderM.value = item.approachVal
+		labelM.innerHTML = 'x = ' + item.approachVal
+
+		//Teğetin grafiği
+		let m = math.evaluate(item.turGraph, { x: item.approachVal })
+		let c = math.evaluate(item.graph, { x: item.approachVal }) - m * item.approachVal
+		let tLine = new mLine(m, c)
+		tLine.graphParse = getDrawableFunction(tLine.graph).parsedFunc
+		tLine.color = 'black'
+		tLine.id = null
+		drawLine(tLine)
+	} else {
+		console.log('Tür bulunamadı.')
 	}
 }
 
@@ -1960,11 +2165,6 @@ function createLineSegment(lineSegmentA, lineSegmentB) {
 	drawCoordinates()
 }
 
-
-
-
-
-
 // Odaklanmasını istediğin input'u kontrol et
 function setActiveInput(id) {
 	activeElementID = id;
@@ -1977,9 +2177,6 @@ function setActiveInput(id) {
 function isMobile() {
 	return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 }
-
-
-
 
 $(document).ready(function () {
 	let objectsContainer = document.getElementById('objectsContainer')
@@ -2311,7 +2508,7 @@ $(document).ready(function () {
 			}
 			console.log("Odaklandı:", e.target.id);
 		}, true); */
-	setActiveInput('-1')
+	//setActiveInput('-1')
 
 	/* 	document.addEventListener("focusout", (e) => {
 			console.log("Input odak kaybetti:", e.target.id);
