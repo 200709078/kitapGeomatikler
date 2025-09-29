@@ -60,15 +60,11 @@
 		<div class="leftWrapper" id="leftWrapper">
 			<div class="reSizer"></div>
 			<div id="scrollWrapper">
-				<div id="sliders">
-					<label class="slideLabel" for="sliderM" id="m">a</label>
-					<input type="range" min="-20" max="20" step="0.1" name="m" id="sliderM" oninput="crossSlider(name)"
-						disabled="true" />
-					<label class="slideLabel" for="sliderN" id="n">b</label>
-					<input type="range" min="-20" max="20" step="0.1" name="n" id="sliderN" oninput="crossSlider(name)"
-						disabled="true" />
+				<div class="expr-block-giris">
+					<input id="giris" placeholder="Giriş" title="Giriş" value="" onkeydown="entryKeyDown(event)">
 				</div>
-				<div class="entryContainer" id="objectsContainer"></div>
+				<hr>
+				<div id="objectsContainer"></div>
 			</div>
 		</div>
 		<div class="fourButtons" id="slideButtons">
@@ -169,7 +165,6 @@
 			</div>
 		</div>
 	</div>
-
 	<script type="text/javascript" src="js/app.js"></script>
 </body>
 

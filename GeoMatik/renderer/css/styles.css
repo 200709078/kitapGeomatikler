@@ -106,6 +106,12 @@ canvas {
 	visibility: hidden;
 }
 
+#leftWrapper,
+#leftWrapper * {
+	font-family: "Arial", sans-serif;
+	font-size: 12px;
+}
+
 .reSizer {
 	width: 3px;
 	top: 0;
@@ -117,59 +123,92 @@ canvas {
 }
 
 #scrollWrapper {
-	background-color: transparent;
-	border: 0px solid darkgray;
-	height: 95%;
-	max-height: 99%;
-	overflow: auto;
-	background-color: transparent;
-	padding-left: 5px;
-	padding-right: 5px;
-}
-
-#sliders {
 	display: flex;
 	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	padding: 8px;
-}
-
-#sliderM,
-#sliderN {
-	font-size: 14px;
+	padding: 10px;
+	gap: 12px;
 	width: 100%;
+	box-sizing: border-box;
 }
 
-.entryContainer {
+#objectsContainer {
+	width: 100%;
+	/* scrollWrapper kadar olacak */
+	max-width: 100%;
+	/* taşmayı önler */
+	border: 0;
+	box-sizing: border-box;
+}
+
+#objectsContainer div hr {
+	margin-top: 5px;
+	margin-bottom: 10px;
+}
+
+.expr-block-giris {
+	position: relative;
+}
+
+.expr-block-giris input {
+	display: block;
+	width: 100%;
+	box-sizing: border-box;
+	margin: 0;
+	background-color: white;
+	border: 0;
+	padding: 5px;
+}
+
+.expr-block {
+	position: relative;
+	margin-bottom: 5px;
+}
+
+.expr-block input,
+.expr-block output {
+	display: block;
+	width: 100%;
+	box-sizing: border-box;
+	margin: 0;
+	background-color: white;
+	border: 0;
+	padding-left: 24px;
+	padding-right: 44px;
+	/* outline: none; */
+}
+
+.expr-block .btn {
+	position: absolute;
+	top: 50%;
 	background-color: transparent;
-}
-
-.entryContainer label {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	flex-direction: row;
-	padding: 2px;
-	margin: 2px;
-}
-
-.entryContainer input {
-	border: none;
-	border-top-left-radius: 10px;
-	border-bottom-left-radius: 10px;
-	height: 20px;
-	outline: none;
-	width: 100%;
-	text-indent: 5px;
-}
-
-.entryContainer .buttonDel {
-	border: none;
+	transform: translateY(-50%);
 	width: 20px;
 	height: 20px;
-	border-top-right-radius: 10px;
-	border-bottom-right-radius: 10px;
+	border: 0;
+	border-radius: 10px;
+	cursor: pointer;
+}
+
+.expr-block .gizle {
+	left: 0px;
+
+	border: 3px solid blue;
+	border-radius: 10px;
+	border-color: rgb(178, 113, 188);
+	background: rgb(178, 113, 188);
+}
+
+.expr-block .duzenle {
+	right: 20px;
+
+	background-image: url(../img/edit.svg);
+	background-size: cover;
+	background-repeat: no-repeat;
+	background-position: center;
+}
+
+.expr-block .sil {
+	right: 0;
 
 	background-image: url(../img/clear.svg);
 	background-size: cover;
@@ -177,43 +216,24 @@ canvas {
 	background-position: center;
 }
 
-.entryContainer .buttonSet {
-	border: none;
-	width: 20px;
-	height: 20px;
-	background-image: url(../img/settings.svg);
-	background-size: cover;
-	background-repeat: no-repeat;
-	background-position: center;
-}
-
-.entryContainer .buttonVisibility {
-	border: 3px solid blue;
-	border-radius: 10px;
-	width: 25px;
-	height: 20px;
-}
-
-.entryContainer .buttonDel:hover {
-	display: block;
+.expr-block .sil:hover {
 	background-color: lightgray;
 }
 
-.entryContainer .buttonSet:hover {
-	display: block;
+.expr-block .duzenle:hover {
 	background-color: lightgray;
 }
 
-.entryContainer .buttonVisibility:hover {
-	display: block;
+.expr-block .gizle:hover {
+	background-color: lightgray;
 }
 
-.entryContainer input:hover {
-	font-weight: bolder;
-}
-
-.entryContainer input:hover+button {
-	display: block;
+.sliders {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	row-gap: 8px;
+	column-gap: 8px;
+	align-items: center;
 }
 
 .fourButtons {
@@ -260,7 +280,7 @@ canvas {
 
 .set-popup {
 	display: none;
-/* 	display: block; */
+	/* 	display: block; */
 	position: absolute;
 	border: 3px solid #f1f1f1;
 	background-color: white;
@@ -281,9 +301,10 @@ canvas {
 	background-color: cadetblue;
 	padding: 8px 12px;
 }
+
 #set-popup .setTitle span {
-    color: white;
-    font-weight: bold;
+	color: white;
+	font-weight: bold;
 }
 
 .setTitle .btn-close:hover {

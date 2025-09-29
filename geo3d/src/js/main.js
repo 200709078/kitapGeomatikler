@@ -12,7 +12,7 @@ const camera = new THREE.PerspectiveCamera(
 
 let startPosition = -20;
 let endPosition = 20;
-camera.position.set(startPosition + 5, 5, 10);
+camera.position.set(startPosition, 5, 10);
 camera.lookAt(startPosition, 0.5, 0);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -133,8 +133,9 @@ function updateTextSprite(sprite, newText) {
 }
 
 function setCameraPosition() {
-  camera.position.x = startPosition + currentRow * (cubeSize + 1) + 5;
+  camera.position.x = startPosition //+ currentRow * (cubeSize + 1) + 5;
   camera.position.y = Math.max(5, nextCount * 0.6);
+  camera.position.z = 10 + currentRow;
   controls.target.set(startPosition, nextCount / 2, 0);
   controls.update();
 }
@@ -204,7 +205,7 @@ function sumCubes() {
   if (currentRow == ticker) {
     toplaBtn.disabled = true;
     crushBtn.disabled = false;
-    destroyBtn.disabled=false;
+    /*     destroyBtn.disabled = false; */
     return;
   }
 }
@@ -213,7 +214,7 @@ function resetScene() {
   kupEkleBtn.disabled = false;
   toplaBtn.disabled = false;
   crushBtn.disabled = true;
-  destroyBtn.disabled=true;
+  /*   destroyBtn.disabled = true; */
   sumText.visible = false;
   ticker = 0;
   nextCount = 3;
@@ -252,9 +253,119 @@ function crushCubes() {
   });
 }
 
-function destroyCubesWithaBall(){
-  console.log('destroy çalıştı')
+function explodeCubes() {
+  const duration = 1000; // animasyon süresi (ms)
+  const startTime = performance.now();
+
+  // her küp için hedef pozisyon ve rotasyon hesapla
+  const cubeStates = [];
+  rows.forEach(row => {
+    row.forEach(cube => {
+      const targetX = (Math.random() - 0.5) * 40;
+      const targetY = Math.random() * 20 + 5;
+      const targetZ = (Math.random() - 0.5) * 20;
+      const targetRotX = Math.random() * Math.PI * 2;
+      const targetRotY = Math.random() * Math.PI * 2;
+      const targetRotZ = Math.random() * Math.PI * 2;
+
+      cubeStates.push({
+        cube,
+        startPos: cube.position.clone(),
+        targetPos: new THREE.Vector3(targetX, targetY, targetZ),
+        startRot: cube.rotation.clone(),
+        targetRot: new THREE.Euler(targetRotX, targetRotY, targetRotZ)
+      });
+    });
+  });
+
+  function animateExplosion(time) {
+    const elapsed = time - startTime;
+    const t = Math.min(elapsed / duration, 1); // 0 → 1 arası
+
+    cubeStates.forEach(state => {
+      // pozisyonu interpolate et
+      state.cube.position.lerpVectors(state.startPos, state.targetPos, t);
+
+      // rotasyonu interpolate et
+      state.cube.rotation.x = state.startRot.x + (state.targetRot.x - state.startRot.x) * t;
+      state.cube.rotation.y = state.startRot.y + (state.targetRot.y - state.startRot.y) * t;
+      state.cube.rotation.z = state.startRot.z + (state.targetRot.z - state.startRot.z) * t;
+    });
+
+    if (t < 1) {
+      requestAnimationFrame(animateExplosion);
+    }
+  }
+
+  requestAnimationFrame(animateExplosion);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* function destroyCubesWithaBall() {
+  console.log('destroy çalıştı')
+} 
+
+//add me start
+function createFallingStack() {
+  const stackGroup = new THREE.Group();
+  const stackHeight = 3;
+  const startX = 0;
+  const startY = 0.5;
+  const startZ = 0;
+  const cubeSpacing = 1;
+
+  // Üst üste küpler
+  for (let i = 0; i < stackHeight; i++) {
+    const cube = createCube(0, i * cubeSpacing, 0, 0xff0000);
+    stackGroup.add(cube);
+  }
+
+  // Grup pozisyonu sahne ortasına
+  stackGroup.position.set(startX, startY, startZ);
+  scene.add(stackGroup);
+
+  // Bir süre bekle
+  setTimeout(() => {
+    const duration = 1000; // ms
+    const targetAngle = Math.PI / 2; // sola yatma
+    const startTime = performance.now();
+
+    function animateStack(time) {
+      const elapsed = time - startTime;
+      const t = Math.min(elapsed / duration, 1);
+
+      // Grup sola yatıyor, küpler yapışık
+      stackGroup.rotation.z = targetAngle * t;
+
+        console.log(stackGroup.rotation)
+
+      if (t < 1) requestAnimationFrame(animateStack);
+    }
+
+    requestAnimationFrame(animateStack);
+  }, 500); // 0.5 saniye bekle
+}
+
+ // denemeBtn ile çağır
+const denemeBtn = document.getElementById("denemeBtn");
+denemeBtn.addEventListener("click", createFallingStack);
+//add me end */
 
 let kupEkleBtn = document.getElementById("kupEkleBtn")
 kupEkleBtn.addEventListener("click", addRows);
@@ -263,9 +374,9 @@ toplaBtn.addEventListener("click", sumCubes);
 let resetSceneBtn = document.getElementById("resetSceneBtn")
 resetSceneBtn.addEventListener("click", resetScene);
 let crushBtn = document.getElementById("crushBtn")
-crushBtn.addEventListener("click", crushCubes);
-let destroyBtn = document.getElementById("destroyBtn");
-destroyBtn.addEventListener("click", destroyCubesWithaBall);
+crushBtn.addEventListener("click", explodeCubes);
+/* let destroyBtn = document.getElementById("destroyBtn");
+destroyBtn.addEventListener("click", destroyCubesWithaBall); */
 
 function animate() {
   requestAnimationFrame(animate);
