@@ -10,10 +10,8 @@ let lineDrawing = false
 let lineA, lineB
 let lineSegmentDrawing = false
 let lineSegmentA, lineSegmentB
-let delPointCount = 0
 let scaleX = 100
 let scaleY = 100
-
 
 let minX = -8
 let minY = -3
@@ -47,11 +45,17 @@ function writeWatchList(wtch, type = null) {
 }
 /* WATCH LIST */
 
+let idCount = -1
+function idCounter() {
+	idCount++
+	return idCount
+}
+
 class mPoint {
-	constructor(x, y, come = null) {
+	constructor(x, y, come = null, setid = true) {
 		if (come == null) come = '(' + x + ',' + y + ')'
 		this.name = createName('point')
-		this.id = arrObjects.length
+		setid ? this.id = idCounter() : this.id = null
 		this.x = x
 		this.y = y
 		this.color = getRandomColor()
@@ -62,10 +66,10 @@ class mPoint {
 	}
 }
 class mLineSegment {
-	constructor(A, B, come = null) {
+	constructor(A, B, come = null, setid = true) {
 		if (come == null) come = 'DoğruParçası(' + A.inputView + ',' + B.inputView + ')'
 		this.name = createName('linesegment')
-		this.id = arrObjects.length
+		setid ? this.id = idCounter() : this.id = null
 		this.A = A
 		this.B = B
 		this.color = getRandomColor()
@@ -77,7 +81,7 @@ class mLineSegment {
 	}
 }
 class mLine {
-	constructor(a, b, A, B, come = null, startX = null, endX = null) {
+	constructor(a, b, A, B, come = null, startX = null, endX = null, setid = true) {
 		if (come == null) come = 'y=' + a + 'x+' + b
 		if (classify(come).subtype == 'vertical') {
 			const denkCount = arrObjects.filter(f => f.name.includes("denk")).length + 1
@@ -85,7 +89,7 @@ class mLine {
 		} else {
 			this.name = createName('line')
 		}
-		this.id = arrObjects.length
+		setid ? this.id = idCounter() : this.id = null
 		this.a = a
 		this.b = b
 		this.A = A
@@ -107,7 +111,7 @@ class mLine {
 class mFunction {
 	constructor(newCome, come, startX = null, endX = null) {
 		this.name = createName('other')
-		this.id = arrObjects.length
+		this.id = idCounter()
 		this.graph = newCome
 		this.startX = startX
 		this.endX = endX
@@ -121,7 +125,7 @@ class mFunction {
 class mSequence {
 	constructor(seq, s, e, come) {
 		this.name = createName('sequence')
-		this.id = arrObjects.length
+		this.id = idCounter()
 		this.graph = seq
 		this.start = s
 		this.end = e
@@ -136,7 +140,7 @@ class mSequence {
 class mLimit {
 	constructor(lim, a, come) {
 		this.name = createName('limit')
-		this.id = arrObjects.length
+		this.id = idCounter()
 		this.graph = lim
 		this.approachVal = a
 		this.color = getRandomColor()
@@ -150,7 +154,7 @@ class mLimit {
 
 function derivative(funcStr, variable = "x") {
 	try {
-		const df = math.derivative(normalizeExpr(funcStr), variable);
+		const df = math.derivative(normalize(funcStr), variable);
 		return df.toString();
 	} catch (err) {
 		return "undefined";
@@ -160,7 +164,7 @@ function derivative(funcStr, variable = "x") {
 class mTurev {
 	constructor(tur, a, come) {
 		this.name = createName('turev')
-		this.id = arrObjects.length
+		this.id = idCounter()
 		this.graph = tur
 		this.turGraph = derivative(classify(come).func)
 		this.approachVal = a
@@ -176,7 +180,7 @@ class mTurev {
 class mSectionalFunctions {
 	constructor(come) {
 		this.name = createName('other')
-		this.id = arrObjects.length
+		this.id = idCounter()
 		this.secFuncs = null
 		this.color = getRandomColor()
 		this.visibility = true
@@ -363,16 +367,6 @@ function drawAll() {
 		ctx.closePath()
 	}
 
-	//objectsContainer.innerHTML = null
-	/* 	console.log(objectsContainer.contains(document.getElementById('-1')))
-		let input = document.createElement('input')
-		input.id = -1
-		input.placeholder = 'Giriş'
-		input.title = 'Giriş'
-		input.addEventListener('click', (e) => inputClick(e, input.id))
-		input.addEventListener('keydown', (e) => inputKeyDown(e, input.id))
-		objectsContainer.appendChild(input) */
-
 	arrObjects.sort(function (a, b) { return a.id - b.id })
 	arrObjects.findLast((item) => {
 		if (item.type === 'point') {
@@ -457,8 +451,6 @@ function drawPoint(point) {
 }
 
 function drawLine(line) {
-	//DÜZELTİLECEK
-	//if (line.id != null) labelCreator(line)
 	if (!line.visibility) return
 
 	let verticalNumber
@@ -700,10 +692,43 @@ function drawLimit(lim) {
 	drawPoint(A)
 	drawPoint(B)
 	drawPoint(C)
+
+	if (lim.id == activeElementID) {
+ 		// Limit noktasının sağında
+		let A = new mPoint(Number(lim.approachVal) + 0.4, 0)
+		let B = new mPoint(Number(lim.approachVal) + 0.4, math.evaluate(lim.graph, { x: A.x }))
+		let C = new mPoint(0, math.evaluate(lim.graph, { x: A.x }))
+		A.inputView = B.inputView = C.inputView = null
+		let vls = new mLineSegment(A, B)
+		let hls = new mLineSegment(B, C)
+		A.color = B.color = C.color = vls.color = hls.color = lim.color
+		vls.lineDash = hls.lineDash = [2, 5]
+		vls.inputView = hls.inputView = null
+		drawLineSegment(vls)
+		drawLineSegment(hls)
+		drawPoint(A)
+		drawPoint(B)
+		drawPoint(C)
+
+		//limit noktasının solunda
+		A = new mPoint(Number(lim.approachVal) - 0.4, 0)
+		B = new mPoint(Number(lim.approachVal) - 0.4, math.evaluate(lim.graph, { x: A.x }))
+		C = new mPoint(0, math.evaluate(lim.graph, { x: A.x }))
+		A.inputView = B.inputView = C.inputView = null
+		vls = new mLineSegment(A, B)
+		hls = new mLineSegment(B, C)
+		A.color = B.color = C.color = vls.color = hls.color = lim.color
+		vls.lineDash = hls.lineDash = [2, 5]
+		vls.inputView = hls.inputView = null
+		drawLineSegment(vls)
+		drawLineSegment(hls)
+		drawPoint(A)
+		drawPoint(B)
+		drawPoint(C) 
+	}
 }
 
 function drawTurev(tur) {
-	//labelCreator(tur)
 	if (!tur.visibility) return
 	ctx.beginPath()
 	ctx.strokeStyle = tur.color
@@ -752,6 +777,15 @@ function drawTurev(tur) {
 	drawPoint(A)
 	drawPoint(B)
 	drawPoint(C)
+
+	//Teğet Doğrusu
+	if (tur.id == activeElementID) {
+		let m = math.evaluate(tur.turGraph, { x: tur.approachVal })
+		let c = math.evaluate(tur.graph, { x: tur.approachVal }) - m * tur.approachVal
+		let tLine = new mLine(m, c, null, null, null, null, null, false)
+		tLine.color = 'black'
+		drawLine(tLine)
+	}
 }
 
 function drawLineSegment(ls) {
@@ -774,10 +808,7 @@ function drawLineSegment(ls) {
 	ctx.closePath()
 }
 function drawSectionalFunctions(sf) {
-	//if (sf.inputView) labelCreator(sf)
 	if (!sf.visibility) return
-
-	//let sfSize
 	if (sf.id == activeElementID) {
 		sf.secFuncs.forEach(func => {
 			func.size = sf.size + 1
@@ -788,8 +819,6 @@ function drawSectionalFunctions(sf) {
 		})
 	}
 	sf.secFuncs.forEach(func => {
-
-		console.log(func)
 		if (func.type == 'line') {
 			drawLine(func)
 		} else if (func.type == 'other') {
@@ -854,23 +883,11 @@ function labelsCreator() {
 		labelB.hidden = false //Değişecek
 		inputRangeB.hidden = false //Değişecek
 
-
-
-
-
-
 		input.addEventListener('click', (e) => objectinputClick(e, input.id));
 		input.addEventListener('keydown', (e) => objectKeyDown(e, input.id));
 		btnSil.addEventListener('click', (e) => objectDelClick(e));
 		btnDuzenle.addEventListener('click', (e) => ObjectSetClick(e));
 		btnGizle.addEventListener('click', (e) => objectVisibilityClick(e));
-
-
-
-
-
-
-
 
 		sliderDiv.appendChild(labelA)
 		sliderDiv.appendChild(inputRangeA)
@@ -888,74 +905,6 @@ function labelsCreator() {
 
 		setObject(item)
 	});
-
-
-
-
-
-
-
-
-	/* 	arrObjects.forEach(item => {
-			//if (item.id == null) return
-			let div = document.createElement('div')
-			let input = document.createElement('input')
-			let buttonDelete = document.createElement('button')
-			let buttonSetting = document.createElement('button')
-			let buttonVisibility = document.createElement('button')
-			input.id = arrObjects.length - objectsContainer.childNodes.length - 1
-			input.title = 'Değiştir'
-			buttonDelete.title = 'Sil'
-			buttonSetting.title = 'Düzenle'
-			item.visibility ? buttonVisibility.title = 'Gizle' : buttonVisibility.title = 'Göster'
-	
-			if (item.type == 'point') {
-				input.value = item.name + item.inputView
-			} else if (item.type == 'line') {
-				if (item.A == null) {
-					input.value = item.name + ':' + item.inputView
-				} else {
-					input.value = item.name + '(x)=Doğru(' + item.A.inputView + ',' + item.B.inputView + ')=' + item.graph
-					if (item.graph == null) input.value = item.name + '=Doğru(' + item.A.inputView + ',' + item.B.inputView + ')=x=' + item.A.x
-				}
-			} else if (item.type == 'linesegment') {
-				input.value = item.name + '=' + item.inputView
-			} else if (item.type == 'sequence') {
-				input.value = item.name + 'ₓ=' + item.inputView
-			} else if (item.type == 'limit') {
-				input.value = item.name + '=' + item.inputView
-			} else if (item.type == 'turev') {
-				input.value = item.name + '=' + item.inputView
-			} else if (item.type == 'sectionalfunctions') {
-				input.value = item.name + '(x)={' + item.inputView + '}'
-			} else if (item.type == 'other') {
-				input.value = item.name + ':' + item.inputView
-			}
-	
-
-
-
-			buttonDelete.classList = 'buttonDel'
-			buttonSetting.classList = 'buttonSet'
-			buttonVisibility.classList = 'buttonVisibility'
-			buttonVisibility.style.borderColor = item.color
-			item.visibility ? buttonVisibility.style.background = item.color : buttonVisibility.style.background = 'transparent'
-	
-			input.addEventListener('click', (e) => inputClick(e, input.id));
-			input.addEventListener('keydown', (e) => objectKeyDown(e, input.id));
-			buttonDelete.addEventListener('click', (e) => delClick(e));
-			buttonSetting.addEventListener('click', (e) => setClick(e));
-			buttonVisibility.addEventListener('click', (e) => visibilityClick(e));
-	
-			div.appendChild(input)
-			div.appendChild(buttonVisibility)
-			div.appendChild(buttonSetting)
-			div.appendChild(buttonDelete)
-			objectsContainer.appendChild(div)
-		}); */
-
-
-
 }
 
 document.querySelector('.buttonGroup').addEventListener('click', e => {
@@ -1015,14 +964,11 @@ function changeCSS(cssFile) {
 }
 
 function objectinputClick(e, id) {
-
 	let elementid = e.target.closest("div").children[0].id
 	let clickedid = elementid.substring(0, elementid.indexOf("-"))
 	activeElementID = clickedid
-	arrObjects.forEach(item => {
-		labelsCreator(item)
-	});
 	drawAll()
+	labelsCreator()
 }
 
 /* CLASSIFY METHOD PROCESS */
@@ -1372,8 +1318,7 @@ function bileskeProcess(funcs) {
 }
 
 function objectKeyDown(evt, id) {
-	//clearSliders()
-	handleParanthesis(evt)
+
 	let allowKeys = '(){}[],=-+.;<>*^/_bçdğjımnşquüvxyzCÇEFGĞHIJKMNOPQTUVWXYZBackspaceArrowLeftArrowRightShiftDelete'
 	if (isNaN(evt.key) && !allowKeys.includes(evt.key)) {
 		evt.preventDefault()
@@ -1683,7 +1628,6 @@ function handleParanthesis(e) {
 		'{': '}'
 	}
 	const closePairs = Object.fromEntries(Object.entries(pairs).map(([o, c]) => [c, o]))
-
 	// --- Açılış parantezi yazma ---
 	if (pairs[e.key]) {
 		e.preventDefault()
@@ -1730,30 +1674,19 @@ function objectDelClick(e) {
 	delCount++
 	let elementid = e.target.closest("div").children[0].id
 	let delid = elementid.substring(0, elementid.indexOf("-"))
+	let deletedObj = arrObjects.find(item => item.id == delid)
 
-	console.log('silinecek eleman ' + delid)
-	return //BURADA KALDIMMMMMMMM
+	undoObjects.push(deletedObj)
+	arrObjects = arrObjects.filter(item => item.id !== Number(delid));
 
-
-
-
-	if (arrObjects[delid].type == 'point') delPointCount++
-	undoObjects.push(arrObjects.splice(delid, 1))
 	activeElementID = null
-
 	activeObject = 'choice'
 	canvas.style.cursor = 'pointer'
-	document.getElementById('btnChoice').classList.remove('active')
-	document.getElementById('btnPoint').classList.remove('active')
-	document.getElementById('btnLine').classList.remove('active')
-	document.getElementById('btnLineSegment').classList.remove('active')
-	document.getElementById('btnCalc').classList.remove('active')
+	document.querySelectorAll('.buttonGroup .button').forEach(b => b.classList.remove('active'))
 	document.getElementById('btnChoice').classList.add('active')
 
-	arrObjects.forEach(item => {
-		labelsCreator(item)
-	});
 	drawAll()
+	labelsCreator()
 }
 
 function clearSliders() {
@@ -1771,13 +1704,7 @@ function ObjectSetClick(e) {
 	let elementid = e.target.closest("div").children[0].id
 	let clickedid = elementid.substring(0, elementid.indexOf("-"))
 	activeElementID = clickedid
-	arrObjects.forEach(item => {
-		labelsCreator(item)
-	});
-
-
-
-
+	labelsCreator()
 
 	return
 	let setForm = document.getElementById("set-popup")
@@ -1800,10 +1727,8 @@ function objectVisibilityClick(e) {
 	} else {
 		arrObjects[activeElementID].visibility = true
 	}
-	arrObjects.forEach(item => {
-		labelsCreator(item)
-	});
 	drawAll()
+	labelsCreator()
 }
 function closeSetClick(evt) {
 	document.getElementById('set-popup').style.display = 'none'
@@ -1925,8 +1850,6 @@ function crossSlider(name) {
 			tLine.color = 'black'
 			tLine.name = null
 			tLine.id = null
-
-			//drawCoordinates()
 			drawLine(tLine)
 		} else {
 			console.log('Tür bulunamadı.')
@@ -1935,7 +1858,6 @@ function crossSlider(name) {
 }
 
 function setObject(item) {
-
 	let input = document.getElementById(item.id + '-input')
 	let output = document.getElementById(item.id + '-output')
 	let sliderA = document.getElementById(item.id + '-sliderA')
@@ -1944,15 +1866,6 @@ function setObject(item) {
 	let labelB = document.getElementById(item.id + '-labelB')
 	labelB.hidden = false
 	sliderB.hidden = false
-
-	sliderA.min = minX * unitY - 1
-	sliderA.max = (minX + Math.round(canvas.width / scaleY) + 1) * unitY
-	sliderB.max = minY * -unitX + 1
-	sliderB.min = (minY + Math.round(canvas.height / scaleX) + 1) * -unitX
-
-
-
-
 
 	input.style.height = '24px'
 	output.innerHTML = ''
@@ -1989,8 +1902,6 @@ function setObject(item) {
 		sliderB.hidden = true
 	} else if (item.type == 'limit') {
 		input.value = item.name + ' = ' + item.inputView
-		labelB.hidden = true
-		sliderB.hidden = true
 	} else if (item.type == 'turev') {
 		input.value = item.name + '=' + item.inputView
 		labelB.hidden = true
@@ -2011,15 +1922,55 @@ function setObject(item) {
 		console.log('Tür bulunamadı.')
 	}
 
+	sliderA.min = minX * unitY - 1
+	sliderA.max = (minX + Math.round(canvas.width / scaleY) + 1) * unitY
+	sliderB.max = -minY * unitX + 1
+	sliderB.min = (minY + Math.round(canvas.height / scaleX) + 1) * -unitX
 
+	if (item.type == 'point') {
+		sliderA.value = item.x
+		labelA.innerHTML = 'a = ' + item.x
+		sliderB.value = item.y
+		labelB.innerHTML = 'b = ' + item.y
+	} else if (item.type == 'line') {
+		sliderA.value = item.a
+		labelA.innerHTML = 'm = ' + item.a
+		sliderB.value = item.b
+		labelB.innerHTML = 'n = ' + item.b
+		if (classify(item.inputView).subtype == 'vertical') {
+			labelA.innerHTML = 'x=' + classify(item.inputView).x
+			sliderA.value = Number(classify(item.inputView).x)
+		}
+	} else if (item.type == 'limit') {
+		let verticalMNumberRight = Number(item.approachVal * 1 + 0.4).toFixed(1)
+		let verticalMNumberLeft = Number(item.approachVal * 1 - 0.4).toFixed(1)
+		let mostLeft = minX * unitY
+		let mostRight = (minX + Math.round(canvas.width / scaleY) + 1) * unitY
 
+		sliderA.min = item.approachVal * 1
+		sliderA.max = mostRight
+		sliderA.step = '0.01'
+		sliderA.value = verticalMNumberRight
+		labelA.innerHTML = sliderA.min + '⁺ = ' + verticalMNumberRight
 
+		sliderB.min = mostLeft
+		sliderB.max = item.approachVal * 1
+		sliderB.step = '0.01'
+		sliderB.value = verticalMNumberLeft
+		labelB.innerHTML = sliderB.max + '⁻ = ' + verticalMNumberLeft
 
-	// SLIDER AYARLAMA KALDI...
+	} else if (item.type == 'turev') {
+		let mostLeft = minX * unitY
+		let mostRight = (minX + Math.round(canvas.width / scaleY) + 1) * unitY
 
-
-
-
+		sliderA.min = mostLeft
+		sliderA.max = mostRight
+		sliderA.step = '0.01'
+		sliderA.value = item.approachVal
+		labelA.innerHTML = 'x = ' + item.approachVal
+	} else {
+		console.log('Tür bulunamadı')
+	}
 
 	if (item.id != activeElementID) {
 		labelA.hidden = true
@@ -2029,95 +1980,6 @@ function setObject(item) {
 	} else {
 		input.style.backgroundColor = 'lightgreen'
 	}
-	/* 	sliderA.disabled = false
-		sliderB.disabled = false
-	
-		if (item.type == 'point') {
-			sliderA.value = item.x
-			labelA.innerHTML = 'a = ' + item.x
-			sliderB.value = item.y
-			labelB.innerHTML = 'b = ' + item.y
-		} else if (item.type == 'line') {
-			if (item.A != null) {
-				clearSliders()
-				return
-			}
-			sliderA.value = item.a
-			labelA.innerHTML = 'm = ' + item.a
-			sliderB.value = item.b
-			labelB.innerHTML = 'n = ' + item.b
-			if (classify(item.inputView).subtype == 'vertical') {
-				labelA.innerHTML = 'x=' + classify(item.inputView).x
-				sliderA.value = Number(classify(item.inputView).x)
-			}
-		} else if (item.type == 'limit') {
-			let verticalMNumberRight = Number(item.approachVal * 1 + 0.4).toFixed(1)
-			let verticalMNumberLeft = Number(item.approachVal * 1 - 0.4).toFixed(1)
-			let mostLeft = minX * unitY
-			let mostRight = (minX + Math.round(canvas.width / scaleY) + 1) * unitY
-			sliderA.min = item.approachVal * 1
-			sliderA.max = mostRight
-			sliderA.step = '0.1'
-			sliderA.value = verticalMNumberRight
-			labelA.innerHTML = sliderA.min + '⁺ = ' + verticalMNumberRight
-	
-			// Limit noktasının sağında
-			let A = new mPoint(Number(item.approachVal) + 0.4, 0)
-			let B = new mPoint(Number(item.approachVal) + 0.4, math.evaluate(item.graph, { x: A.x }))
-			let C = new mPoint(0, math.evaluate(item.graph, { x: A.x }))
-			A.inputView = B.inputView = C.inputView = null
-			let vls = new mLineSegment(A, B)
-			let hls = new mLineSegment(B, C)
-			A.color = B.color = C.color = vls.color = hls.color = item.color
-			vls.lineDash = hls.lineDash = [2, 5]
-			vls.inputView = hls.inputView = null
-			drawLineSegment(vls)
-			drawLineSegment(hls)
-			drawPoint(A)
-			drawPoint(B)
-			drawPoint(C)
-	
-			sliderB.min = mostLeft
-			sliderB.max = item.approachVal * 1
-			sliderB.step = '0.1'
-			sliderB.value = verticalMNumberLeft
-			labelB.innerHTML = sliderB.max + '⁻ = ' + verticalMNumberLeft
-	
-			//limit noktasının solunda
-			A = new mPoint(Number(item.approachVal) - 0.4, 0)
-			B = new mPoint(Number(item.approachVal) - 0.4, math.evaluate(item.graph, { x: A.x }))
-			C = new mPoint(0, math.evaluate(item.graph, { x: A.x }))
-			A.inputView = B.inputView = C.inputView = null
-			vls = new mLineSegment(A, B)
-			hls = new mLineSegment(B, C)
-			A.color = B.color = C.color = vls.color = hls.color = item.color
-			vls.lineDash = hls.lineDash = [2, 5]
-			vls.inputView = hls.inputView = null
-			drawLineSegment(vls)
-			drawLineSegment(hls)
-			drawPoint(A)
-			drawPoint(B)
-			drawPoint(C)
-		} else if (item.type == 'turev') {
-			let mostLeft = minX * unitY
-			let mostRight = (minX + Math.round(canvas.width / scaleY) + 1) * unitY
-	
-			sliderA.min = mostLeft
-			sliderA.max = mostRight
-			sliderA.step = '0.1'
-			sliderA.value = item.approachVal
-			labelA.innerHTML = 'x = ' + item.approachVal
-	
-			//Teğetin grafiği
-			let m = math.evaluate(item.turGraph, { x: item.approachVal })
-			let c = math.evaluate(item.graph, { x: item.approachVal }) - m * item.approachVal
-			let tLine = new mLine(m, c)
-			tLine.color = 'black'
-			tLine.id = null
-			drawLine(tLine)
-		} else {
-			console.log('Tür bulunamadı')
-		} */
 }
 
 function defaultClick(evt) {
@@ -2215,19 +2077,6 @@ function createLineEquation(A, B) {
 		return { x: A.x }
 	}
 }
-function createLineSegment(lineSegmentA, lineSegmentB) {
-	arrObjects.pop()
-	arrObjects.pop()
-	let A = new mPoint(lineSegmentA.x, lineSegmentA.y)
-	arrObjects.push(A)
-	let B = new mPoint(lineSegmentB.x, lineSegmentB.y)
-	arrObjects.push(B)
-	let ls = new mLineSegment(A, B)
-	arrObjects.push(ls)
-	activeElementID = ls.id
-	undoObjects = []
-	delCount = 0
-}
 function isMobile() {
 	return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
 }
@@ -2254,27 +2103,25 @@ $(document).ready(function () {
 
 
 	document.getElementById('undo').addEventListener('click', function (evt) {
-		return
 		activeElementID = null
 		if (arrObjects.length != 0) {
 			if (delCount == 0) {
 				undoObjects.push(arrObjects.pop())
 			} else {
-				arrObjects.push(undoObjects.pop()[0])
+				arrObjects.push(undoObjects.pop())
 				delCount--
 			}
-			drawAll()
-		}
-		if (arrObjects.length == 0) {
+		} else {
 			activeElementID = null
 			activeObject = 'choice'
 			canvas.style.cursor = 'pointer'
-			document.getElementById('m').innerHTML = 'a'
-			document.getElementById('n').innerHTML = 'b'
-			document.getElementById('sliderA').disabled = true
-			document.getElementById('sliderB').disabled = true
+			document.querySelectorAll('.buttonGroup .button').forEach(b => b.classList.remove('active'))
+			document.getElementById('btnChoice').classList.add('active')
 		}
+		drawAll()
+		labelsCreator()
 	}, false)
+
 	document.getElementById('clear').addEventListener('click', function (evt) {
 		if (arrObjects.length != 0) {
 			arrObjects = []
@@ -2293,10 +2140,10 @@ $(document).ready(function () {
 	}, false)
 
 	document.getElementById('redo').addEventListener('click', function (evt) {
-		return
 		if (undoObjects.length != 0 && delCount == 0) {
 			arrObjects.push(undoObjects.pop())
 			drawAll()
+			labelsCreator()
 		}
 	}, false)
 
@@ -2396,59 +2243,48 @@ $(document).ready(function () {
 			undoObjects = []
 			delCount = 0
 			drawAll()
-			arrObjects.forEach(item => {
-				labelsCreator(item)
-			});
+			labelsCreator()
 		}
 	}, false)
 
 	canvas.addEventListener("mousemove", function (evt) {
 		let line
 		if (activeObject === 'line') {
-			let tempPoint = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
+			let tempPoint = new mPoint(getMousePos(evt).x, getMousePos(evt).y, null, false)
 			drawAll()
-			tempPoint.id = null
 			drawPoint(tempPoint)
 			if (lineDrawing) {
-				let lineB = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
+				let lineB = new mPoint(getMousePos(evt).x, getMousePos(evt).y, null, false)
 				if (createLineEquation(lineA, lineB).x) {
-					line = new mLine(createLineEquation(lineA, lineB).m, createLineEquation(lineA, lineB).c, lineA, lineB, 'x=' + createLineEquation(lineA, lineB).x)
+					line = new mLine(createLineEquation(lineA, lineB).m, createLineEquation(lineA, lineB).c, lineA, lineB, 'x=' + createLineEquation(lineA, lineB).x, null, null, false)
 					line.graph = null
 				} else {
-					line = new mLine(createLineEquation(lineA, lineB).m, createLineEquation(lineA, lineB).c, lineA, lineB)
+					line = new mLine(createLineEquation(lineA, lineB).m, createLineEquation(lineA, lineB).c, lineA, lineB, null, null, null, false)
 				}
 				drawAll()
-
-				line.B.id = null
-				line.id = null
 				drawPoint(line.B)
 				drawLine(line)
 			}
 		}
 
+		let ls
 		if (activeObject === 'linesegment') {
-			let tempPoint = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
+			let tempPoint = new mPoint(getMousePos(evt).x, getMousePos(evt).y, null, false)
 			drawAll()
-			tempPoint.id = null
 			drawPoint(tempPoint)
 			if (lineSegmentDrawing) {
-				let ls
-				let lineSegmentB = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
+				let lineSegmentB = new mPoint(getMousePos(evt).x, getMousePos(evt).y, null, false)
 				drawAll()
 
-				lineSegmentB.id = null
 				drawPoint(lineSegmentB)
-
-				ls = new mLineSegment(lineSegmentA, lineSegmentB)
-				ls.id = null
+				ls = new mLineSegment(lineSegmentA, lineSegmentB, null, false)
 				drawLineSegment(ls)
 			}
 		}
 
 		if (activeObject === 'point') {
-			let tempPoint = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
+			let tempPoint = new mPoint(getMousePos(evt).x, getMousePos(evt).y, null, false)
 			drawAll()
-			tempPoint.id = null
 			drawPoint(tempPoint)
 		}
 	}, false)
@@ -2476,7 +2312,6 @@ $(document).ready(function () {
 				}
 				arrObjects.push(line)
 				activeElementID = line.id
-				canvas.style.cursor = 'default'
 
 				lineDrawing = false
 				lineA = lineB = null
@@ -2485,26 +2320,22 @@ $(document).ready(function () {
 
 		if (activeObject === 'linesegment' && evt.button == 0) {
 			if (lineSegmentDrawing == false) {
-				lineSegmentA = getMousePos(evt)
-				let point = new mPoint(lineSegmentA.x, lineSegmentA.y)
-				arrObjects.push(point)
+				lineSegmentA = new mPoint(getMousePos(evt).x, getMousePos(evt).y, null)
+				arrObjects.push(lineSegmentA)
 				lineSegmentDrawing = true
 			} else {
-				lineSegmentB = getMousePos(evt)
-				let point = new mPoint(lineSegmentB.x, lineSegmentB.y)
-				arrObjects.push(point)
+				lineSegmentB = new mPoint(getMousePos(evt).x, getMousePos(evt).y, null)
+				arrObjects.push(lineSegmentB)
+
+				let ls = new mLineSegment(lineSegmentA, lineSegmentB)
+				arrObjects.push(ls)
+				activeElementID = ls.id
 				lineSegmentDrawing = false
-			}
-			if (lineSegmentA != null && lineSegmentB != null) {
-				createLineSegment(lineSegmentA, lineSegmentB)
 				lineSegmentA = lineSegmentB = null
 			}
-			fillSetWindow()
 		}
 		drawAll()
-		arrObjects.forEach(item => {
-			labelsCreator(item)
-		});
+		labelsCreator()
 	}, false)
 
 	canvas.addEventListener("mouseup", function (evt) {
@@ -2539,10 +2370,7 @@ $(document).ready(function () {
 			document.getElementById('btnChoice').classList.add('active')
 
 			drawAll()
-			if (arrObjects.length == 0) objectsContainer.innerHTML = ''
-			arrObjects.forEach(item => {
-				labelsCreator(item)
-			})
+			labelsCreator()
 		}
 	}, false)
 
