@@ -61,7 +61,7 @@
 			<div class="reSizer"></div>
 			<div id="scrollWrapper">
 				<div class="expr-block-giris">
-					<input id="giris" placeholder="Giriş" title="Giriş" value="" onkeydown="entryKeyDown(event)">
+					<input id="giris" placeholder="Giriş" title="Giriş" value="" onkeydown="girisKeyDown(event)" oninput="girisOninput(event)">
 				</div>
 				<hr>
 				<div id="objectsContainer"></div>
@@ -154,14 +154,14 @@
 				<button type="button" class="btn-close" onclick="closeSetClick()">&times;</button>
 			</div>
 			<div class="setContainer">
-				<label for="name">Ad: </label>
-				<input type="text" id="name" autocomplete="off" title="Ad" onkeydown="inputKeyDown(event,id)">
-				<label for="defination">Tanım: </label>
-				<input type="text" id="defination" autocomplete="off" title="Tanım" onkeydown="inputKeyDown(event,id)">
-				<label for="color">Renk: </label>
-				<input type="color" id="color" value="#0000ff" title="Renk" oninput="colorClick()">
-				<label for="size" id="sizeLabel">Boyut: 1</label>
-				<input type="range" min="1" max="6" id="size" title="Boyut" onchange="rangeChanged()">
+				<label for="setname">Ad: </label>
+				<input type="text" id="setname" autocomplete="off" title="Ad" onkeydown="digerKeyDown(event,id)">
+				<label for="setdef">Tanım: </label>
+				<input type="text" id="setdef" autocomplete="off" title="Tanım" onkeydown="digerKeyDown(event,id)">
+				<label for="setcolor">Renk: </label>
+				<input type="color" id="setcolor" value="#0000ff" title="Renk" oninput="setcolorClick()">
+				<label for="setsize" id="setsizelabel">Boyut: 1</label>
+				<input type="range" min="1" max="6" id="setsize" title="Boyut" onchange="setsizeChanged()">
 			</div>
 		</div>
 	</div>

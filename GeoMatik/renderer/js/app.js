@@ -15,11 +15,6 @@ let scaleY = 100
 
 let minX = -8
 let minY = -3
-/* if (innerWidth < innerHeight) {
-	minX = -2
-	toggleCalcIcon(document.getElementById('btnimgCalc'))
-	document.getElementById('leftWrapper').classList.toggle('hide')
-} */
 
 let units = [1 / 10, 1 / 5, 1 / 2, 1, 2, 5, 10, 20]
 let tickX = 3
@@ -143,6 +138,8 @@ class mLimit {
 		this.id = idCounter()
 		this.graph = lim
 		this.approachVal = a
+		this.approachValRight = Number(a) + 0.4
+		this.approachValLeft = a - 0.4
 		this.color = getRandomColor()
 		this.lineDash = []
 		this.visibility = true
@@ -387,44 +384,9 @@ function drawAll() {
 			drawSectionalFunctions(item)
 		} else { console.log('Type bulunamadı.') }
 	})
-	if (activeElementID != null) {
-		//document.getElementById(activeElementID).style.background = 'lightgreen'
-		//setActiveInput(activeElementID)
-	} else {
-		//setActiveInput(-1)
-	}
-}
-
-function fillSetWindow() {
-	if (activeElementID != null) {
-		document.getElementById('name').value = arrObjects[activeElementID].name
-		if (arrObjects[activeElementID].type == 'sequence') document.getElementById('name').value = arrObjects[activeElementID].name + 'ₓ'
-		document.getElementById('name').disabled = false
-		document.getElementById('defination').value = arrObjects[activeElementID].inputView
-		document.getElementById('defination').disabled = false
-		document.getElementById('color').value = arrObjects[activeElementID].color
-		document.getElementById('color').disabled = false
-		document.getElementById('size').value = arrObjects[activeElementID].size
-		document.getElementById('size').disabled = false
-		document.getElementById('sizeLabel').innerHTML = 'Boyut: ' + arrObjects[activeElementID].size
-		document.getElementById('sizeLabel').disabled = false
-	} else {
-		document.getElementById('name').value = null
-		document.getElementById('name').disabled = true
-		document.getElementById('defination').value = null
-		document.getElementById('defination').disabled = true
-		document.getElementById('color').value = "#000000"
-		document.getElementById('color').disabled = true
-		document.getElementById('size').value = null
-		document.getElementById('size').disabled = true
-		document.getElementById('sizeLabel').innerHTML = 'Boyut:'
-		document.getElementById('sizeLabel').disabled = true
-		document.getElementById('set-popup').style.display = 'none'
-	}
 }
 
 function drawPoint(point) {
-	//if (point.inputView) labelCreator(point)
 	if (!point.visibility) return
 	ctx.beginPath()
 	ctx.strokeStyle = 'black'
@@ -539,7 +501,6 @@ function drawLine(line) {
 }
 
 function drawFunction(func) {
-	//if (func.id != null) labelCreator(func)
 	if (!func.visibility) return
 
 	let mostLeft = minX * unitY
@@ -561,14 +522,12 @@ function drawFunction(func) {
 	let firstPoint = true
 	let x = startX
 	while (x < endX) {
-		//let y = f(x)
 		let y = math.evaluate(func.graph, { x: x })
 		if (!isFinite(y)) {
 			firstPoint = true
 			x += step
 			continue
 		}
-		//console.log(x,y)
 		let canvasX = -minX * scaleY + (x * scaleY) / unitY
 		let canvasY = -minY * scaleX - (y * scaleX) / unitX
 
@@ -585,7 +544,6 @@ function drawFunction(func) {
 }
 
 function drawSequence(seq) {
-	//labelCreator(seq)
 	if (!seq.visibility) return
 
 	ctx.beginPath()
@@ -594,9 +552,7 @@ function drawSequence(seq) {
 	seq.id == activeElementID ? sSize = seq.size + 1 : sSize = seq.size - 1
 	ctx.lineWidth = sSize
 	ctx.setLineDash([2, 5])
-
 	let step = 0.01
-
 	let firstPoint = true
 	let x = minX * unitY
 
@@ -629,7 +585,6 @@ function drawSequence(seq) {
 		ctx.strokeStyle = 'black'
 		ctx.fillStyle = seq.color
 		ctx.lineWidth = 1
-		//y = f(x)
 		let y = math.evaluate(seq.graph, { x: x })
 		ctx.arc((-minX + x / unitY) * scaleY, (-minY - y / unitX) * scaleX, seq.size, 0, 2 * Math.PI)
 		text((-minX + x / unitY) * scaleY - 10, (-minY - y / unitX) * scaleX - 5, seq.color, 'center', 'bold 15px arial', seq.name + x)
@@ -640,7 +595,6 @@ function drawSequence(seq) {
 }
 
 function drawLimit(lim) {
-	//labelCreator(lim)
 	if (!lim.visibility) return
 	ctx.beginPath()
 	ctx.strokeStyle = lim.color
@@ -648,9 +602,7 @@ function drawLimit(lim) {
 	lim.id == activeElementID ? limSize = lim.size + 1 : limSize = lim.size
 	ctx.lineWidth = limSize
 	ctx.setLineDash(lim.lineDash)
-
 	let step = 0.01
-
 	let firstPoint = true
 	let x = minX * unitY
 
@@ -694,9 +646,9 @@ function drawLimit(lim) {
 	drawPoint(C)
 
 	if (lim.id == activeElementID) {
- 		// Limit noktasının sağında
-		let A = new mPoint(Number(lim.approachVal) + 0.4, 0)
-		let B = new mPoint(Number(lim.approachVal) + 0.4, math.evaluate(lim.graph, { x: A.x }))
+		// Limit noktasının sağında
+		let A = new mPoint(lim.approachValRight, 0)
+		let B = new mPoint(lim.approachValRight, math.evaluate(lim.graph, { x: A.x }))
 		let C = new mPoint(0, math.evaluate(lim.graph, { x: A.x }))
 		A.inputView = B.inputView = C.inputView = null
 		let vls = new mLineSegment(A, B)
@@ -711,8 +663,8 @@ function drawLimit(lim) {
 		drawPoint(C)
 
 		//limit noktasının solunda
-		A = new mPoint(Number(lim.approachVal) - 0.4, 0)
-		B = new mPoint(Number(lim.approachVal) - 0.4, math.evaluate(lim.graph, { x: A.x }))
+		A = new mPoint(lim.approachValLeft, 0)
+		B = new mPoint(lim.approachValLeft, math.evaluate(lim.graph, { x: A.x }))
 		C = new mPoint(0, math.evaluate(lim.graph, { x: A.x }))
 		A.inputView = B.inputView = C.inputView = null
 		vls = new mLineSegment(A, B)
@@ -724,7 +676,7 @@ function drawLimit(lim) {
 		drawLineSegment(hls)
 		drawPoint(A)
 		drawPoint(B)
-		drawPoint(C) 
+		drawPoint(C)
 	}
 }
 
@@ -789,7 +741,6 @@ function drawTurev(tur) {
 }
 
 function drawLineSegment(ls) {
-	//if (ls.inputView) labelCreator(ls)
 	if (!ls.visibility) return
 	ls.inputView = 'DoğruParçası(' + ls.A.inputView + ',' + ls.B.inputView + ')'
 	//Doğru Parçası
@@ -837,10 +788,8 @@ function labelsCreator() {
 		exprDiv.classList = 'expr-block'
 		let input = document.createElement('input')
 		input.id = item.id + '-input'
-		input.value = item.inputView //Değişecek
 		let output = document.createElement('output')
 		output.id = item.id + '-output'
-		output.innerHTML = 'y=2x-3' //Değişecek
 
 		let btnGizle = document.createElement('button')
 		btnGizle.classList = 'btn gizle'
@@ -857,42 +806,152 @@ function labelsCreator() {
 
 		let labelA = document.createElement('label')
 		labelA.id = item.id + '-labelA'
-		labelA.textContent = 'a' //Değişecek
+
+		labelA.style.width = '50px'
 		labelA.htmlFor = item.id + '-sliderA'
-		let inputRangeA = document.createElement('input')
-		inputRangeA.type = "range"
-		inputRangeA.id = item.id + '-sliderA'
-		inputRangeA.min = -20
-		inputRangeA.max = 20
-		inputRangeA.value = 0 //Değişecek
-		inputRangeA.step = 0.01
+		let sliderA = document.createElement('input')
+		sliderA.type = "range"
+		sliderA.id = item.id + '-sliderA'
+		sliderA.step = 0.01
 
 		let labelB = document.createElement('label')
 		labelB.id = item.id + '-labelB'
-		labelB.textContent = 'b' //Değişecek
+		labelB.style.width = '50px'
 		labelB.htmlFor = item.id + '-sliderB'
-		let inputRangeB = document.createElement('input')
-		inputRangeB.type = "range"
-		inputRangeB.id = item.id + '-sliderB'
-		inputRangeB.min = -20
-		inputRangeB.max = 20
-		inputRangeB.value = 0 //Değişecek
-		inputRangeB.step = 0.01
-		labelA.hidden = false //Değişecek
-		inputRangeA.hidden = false //Değişecek
-		labelB.hidden = false //Değişecek
-		inputRangeB.hidden = false //Değişecek
 
-		input.addEventListener('click', (e) => objectinputClick(e, input.id));
-		input.addEventListener('keydown', (e) => objectKeyDown(e, input.id));
-		btnSil.addEventListener('click', (e) => objectDelClick(e));
-		btnDuzenle.addEventListener('click', (e) => ObjectSetClick(e));
-		btnGizle.addEventListener('click', (e) => objectVisibilityClick(e));
+		let sliderB = document.createElement('input')
+		sliderB.type = "range"
+		sliderB.id = item.id + '-sliderB'
+		sliderB.step = 0.01
+
+		labelA.hidden = false
+		sliderA.hidden = false
+		labelB.hidden = false
+		sliderB.hidden = false
+
+		input.addEventListener('click', () => changeActiveElement(input.id))
+		input.addEventListener('keydown', (e) => digerKeyDown(e, input.id))
+		btnSil.addEventListener('click', (e) => delBtnClick(e))
+		btnDuzenle.addEventListener('click', (e) => ayarBtnClick(e))
+		btnGizle.addEventListener('click', (e) => visibilityBtnClick(e))
+
+		sliderA.addEventListener('input', () => crossSlider())
+		sliderB.addEventListener('input', () => crossSlider())
+
+		input.style.height = '24px'
+		output.innerHTML = ''
+		if (item.type == 'point') {
+			input.value = item.name + item.inputView
+		} else if (item.type == 'line') {
+			if (item.A == null) {
+				input.value = item.name + ':' + item.inputView
+				if (item.a == null) {
+					labelB.hidden = true
+					sliderB.hidden = true
+				}
+			} else {
+				input.value = item.name + '(x) = Doğru(' + item.A.inputView + ',' + item.B.inputView + ')'
+				output.innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = ' + item.graph
+				if (item.a == null) {
+					input.value = item.name + ' = Doğru(' + item.A.inputView + ',' + item.B.inputView + ')'
+					output.innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = ' + item.inputView
+					labelB.hidden = true
+					sliderB.hidden = true
+				}
+			}
+		} else if (item.type == 'linesegment') {
+			input.value = item.name + ' = ' + item.inputView
+			labelA.hidden = true
+			sliderA.hidden = true
+			labelB.hidden = true
+			sliderB.hidden = true
+		} else if (item.type == 'sequence') {
+			input.value = item.name + 'ₓ = ' + item.inputView
+			labelA.hidden = true
+			sliderA.hidden = true
+			labelB.hidden = true
+			sliderB.hidden = true
+		} else if (item.type == 'limit') {
+			input.value = item.name + ' = ' + item.inputView
+		} else if (item.type == 'turev') {
+			input.value = item.name + '=' + item.inputView
+			labelB.hidden = true
+			sliderB.hidden = true
+		} else if (item.type == 'sectionalfunctions') {
+			input.value = item.name + '(x) = {' + item.inputView + '}'
+			labelA.hidden = true
+			sliderA.hidden = true
+			labelB.hidden = true
+			sliderB.hidden = true
+		} else if (item.type == 'other') {
+			input.value = item.name + ':' + item.inputView
+			labelA.hidden = true
+			sliderA.hidden = true
+			labelB.hidden = true
+			sliderB.hidden = true
+		} else {
+			console.log('Tür bulunamadı.')
+		}
+
+		sliderA.min = minX * unitY - 1
+		sliderA.max = (minX + Math.round(canvas.width / scaleY) + 1) * unitY
+		sliderB.max = -minY * unitX + 1
+		sliderB.min = (minY + Math.round(canvas.height / scaleX) + 1) * -unitX
+
+		if (item.type == 'point') {
+			sliderA.value = item.x
+			labelA.innerHTML = 'a = ' + item.x
+			sliderB.value = item.y
+			labelB.innerHTML = 'b = ' + item.y
+		} else if (item.type == 'line') {
+			sliderA.value = item.a
+			labelA.innerHTML = 'm = ' + item.a
+			sliderB.value = item.b
+			labelB.innerHTML = 'n = ' + item.b
+			if (classify(item.inputView).subtype == 'vertical') {
+				labelA.innerHTML = 'x=' + classify(item.inputView).x
+				sliderA.value = Number(classify(item.inputView).x)
+			}
+		} else if (item.type == 'limit') {
+			let verticalMNumberRight = Number(item.approachValRight * 1).toFixed(2)
+			let verticalMNumberLeft = Number(item.approachValLeft * 1).toFixed(2)
+			let mostLeft = minX * unitY
+			let mostRight = (minX + Math.round(canvas.width / scaleY) + 1) * unitY
+
+			sliderA.min = item.approachVal * 1
+			sliderA.max = mostRight
+			sliderA.value = verticalMNumberRight
+			labelA.innerHTML = sliderA.min + '⁺ = ' + verticalMNumberRight
+
+			sliderB.min = mostLeft
+			sliderB.max = item.approachVal * 1
+			sliderB.value = verticalMNumberLeft
+			labelB.innerHTML = sliderB.max + '⁻ = ' + verticalMNumberLeft
+
+		} else if (item.type == 'turev') {
+			let mostLeft = minX * unitY
+			let mostRight = (minX + Math.round(canvas.width / scaleY) + 1) * unitY
+
+			sliderA.min = mostLeft
+			sliderA.max = mostRight
+			sliderA.step = '0.01'
+			sliderA.value = item.approachVal
+			labelA.innerHTML = 'x = ' + item.approachVal
+		}
+
+		if (item.id != activeElementID) {
+			labelA.hidden = true
+			sliderA.hidden = true
+			labelB.hidden = true
+			sliderB.hidden = true
+		} else {
+			input.style.backgroundColor = 'lightgreen'
+		}
 
 		sliderDiv.appendChild(labelA)
-		sliderDiv.appendChild(inputRangeA)
+		sliderDiv.appendChild(sliderA)
 		sliderDiv.appendChild(labelB)
-		sliderDiv.appendChild(inputRangeB)
+		sliderDiv.appendChild(sliderB)
 		exprDiv.appendChild(input)
 		exprDiv.appendChild(output)
 		exprDiv.appendChild(btnGizle)
@@ -902,9 +961,7 @@ function labelsCreator() {
 		emptyDiv.appendChild(sliderDiv)
 		emptyDiv.appendChild(document.createElement('hr'))
 		objectsContainer.prepend(emptyDiv)
-
-		setObject(item)
-	});
+	})
 }
 
 document.querySelector('.buttonGroup').addEventListener('click', e => {
@@ -963,12 +1020,50 @@ function changeCSS(cssFile) {
 	document.getElementsByTagName("head").item(0).children[10].replaceWith(newlink)
 }
 
-function objectinputClick(e, id) {
-	let elementid = e.target.closest("div").children[0].id
-	let clickedid = elementid.substring(0, elementid.indexOf("-"))
+function changeActiveElement(id) {
+	let clickedid = Number(id.substring(0, id.indexOf("-")))
+	if (activeElementID != null) document.getElementById(activeElementID + '-input').style.background = 'white'
+
+	let sliders = document.querySelectorAll("input[type='range']");
+	sliders.forEach(slider => {
+		slider.hidden = true
+	})
+	let labels = document.querySelectorAll("label");
+	labels.forEach(label => {
+		label.hidden = true
+	})
+
 	activeElementID = clickedid
+	document.getElementById(activeElementID + '-input').style.background = 'lightgreen'
+	let activeitem = arrObjects.find(item => item.id == activeElementID)
+
+	document.getElementById(activeElementID + '-labelA').hidden = false
+	document.getElementById(activeElementID + '-sliderA').hidden = false
+	document.getElementById(activeElementID + '-labelB').hidden = false
+	document.getElementById(activeElementID + '-sliderB').hidden = false
+
+	if (activeitem.type == 'turev' || classify(activeitem.inputView).subtype == 'vertical') {
+		document.getElementById(activeElementID + '-labelB').hidden = true
+		document.getElementById(activeElementID + '-sliderB').hidden = true
+	}
+	if (activeitem.type == 'sequence' || activeitem.type == 'linesegment') {
+		document.getElementById(activeElementID + '-labelA').hidden = true
+		document.getElementById(activeElementID + '-sliderA').hidden = true
+		document.getElementById(activeElementID + '-labelB').hidden = true
+		document.getElementById(activeElementID + '-sliderB').hidden = true
+	}
+
+	setname.value = activeitem.name
+	if (activeitem.type == 'sequence') {
+		setname.value = activeitem.name + 'ₓ'
+	}
+	setdef.value = activeitem.inputView
+	setcolor.value = activeitem.color
+	setsizelabel.innerHTML = 'Boyut: ' + activeitem.size
+	setsize.value = activeitem.size
+	setsize.hidden = false
+
 	drawAll()
-	labelsCreator()
 }
 
 /* CLASSIFY METHOD PROCESS */
@@ -1317,7 +1412,7 @@ function bileskeProcess(funcs) {
 	}, "x")
 }
 
-function objectKeyDown(evt, id) {
+function digerKeyDown(evt, id) {
 
 	let allowKeys = '(){}[],=-+.;<>*^/_bçdğjımnşquüvxyzCÇEFGĞHIJKMNOPQTUVWXYZBackspaceArrowLeftArrowRightShiftDelete'
 	if (isNaN(evt.key) && !allowKeys.includes(evt.key)) {
@@ -1380,7 +1475,23 @@ function objectKeyDown(evt, id) {
 	}
 }
 
-function entryKeyDown(event) {
+function girisOninput(e) { //Cep telefonu için
+	const el = e.target
+	const start = el.selectionStart
+	const value = el.value
+	const pairs = { '(': ')', '[': ']', '{': '}' }
+
+	// Son yazılan karakter
+	const lastChar = value[start - 1]
+
+	if (pairs[lastChar]) {
+		// kapanış parantezini otomatik ekle
+		el.value = value.slice(0, start) + pairs[lastChar] + value.slice(start)
+		el.selectionStart = el.selectionEnd = start // imleci araya al
+	}
+}
+
+function girisKeyDown(event) {
 	handleParanthesis(event)
 	let allowKeys = '(){}[],=-+.;<>*^/_bçdğjımnşquüvxyzCÇEFGĞHIJKMNOPQTUVWXYZBackspaceArrowLeftArrowRightShiftDelete'
 	if (isNaN(event.key) && !allowKeys.includes(event.key)) {
@@ -1392,7 +1503,7 @@ function entryKeyDown(event) {
 		come = come.replaceAll('y=', '')
 		come = come.replaceAll('=y', '')
 		if (classify(come).type == 'point') {
-			console.log('entryKeyDown point çalıştı', come)
+			console.log('girisKeyDown point çalıştı', come)
 
 			let point = new mPoint(classify(come).x, classify(come).y, come)
 			arrObjects.push(point)
@@ -1400,11 +1511,11 @@ function entryKeyDown(event) {
 			undoObjects = []
 			delCount = 0
 		} else if (classify(come).type == 'line') {
-			console.log('entryKeyDown line çalıştı', classify(come))
+			console.log('girisKeyDown line çalıştı', classify(come))
 
 			let line
 			if (classify(come).subtype == 'vertical') {
-				console.log('entryKeyDown line-vertical çalıştı', classify(come))
+				console.log('girisKeyDown line-vertical çalıştı', classify(come))
 				line = new mLine(classify(come).m, classify(come).n, null, null, 'x=' + classify(come).x)
 				line.a = null
 				line.b = null
@@ -1416,7 +1527,7 @@ function entryKeyDown(event) {
 			undoObjects = []
 			delCount = 0
 		} else if (classify(come).type == 'sequence') {
-			console.log('entryKeyDown sequence çalıştı', classify(come))
+			console.log('girisKeyDown sequence çalıştı', classify(come))
 
 			if (come.split(",").length - 1 !== 2) {
 				showToast('GİRİŞ', 'Hatalı parametre girişi yaptınız.')
@@ -1441,7 +1552,7 @@ function entryKeyDown(event) {
 				showToast('GİRİŞ', 'Hatalı giriş yaptınız. Fonksiyon bulunamadı.')
 			}
 		} else if (classify(come).type == 'functionOperations') {
-			console.log('entryKeyDown functionOperations çalıştı', classify(come))
+			console.log('girisKeyDown functionOperations çalıştı', classify(come))
 
 			const hepsiVarMi = classify(come).functions.every(name => arrObjects.some(f => f.name === name));
 			if (hepsiVarMi) {
@@ -1458,7 +1569,7 @@ function entryKeyDown(event) {
 				showToast('GİRİŞ', 'Hatalı giriş yaptınız. Fonksiyon bulunamadı.')
 			}
 		} else if (classify(come).type == 'functionCompositions') {
-			console.log('entryKeyDown functionCompositions çalıştı', classify(come))
+			console.log('girisKeyDown functionCompositions çalıştı', classify(come))
 
 			if (come.split(",").length - 1 < 1) {
 				showToast('GİRİŞ', 'Hatalı parametre girişi yaptınız.')
@@ -1488,7 +1599,7 @@ function entryKeyDown(event) {
 				showToast('GİRİŞ', 'Hatalı giriş yaptınız. Fonksiyon bulunamadı.')
 			}
 		} else if (classify(come).type == 'limit') {
-			console.log('entryKeyDown Limit çalıştı', classify(come))
+			console.log('girisKeyDown Limit çalıştı', classify(come))
 
 			if (come.split(",").length - 1 !== 1) {
 				showToast('GİRİŞ', 'Hatalı parametre girişi yaptınız.')
@@ -1514,7 +1625,7 @@ function entryKeyDown(event) {
 				showToast('GİRİŞ', 'Hatalı giriş yaptınız. Fonksiyon bulunamadı.')
 			}
 		} else if (classify(come).type == 'turev') {
-			console.log('entryKeyDown Türev çalıştı', classify(come))
+			console.log('girisKeyDown Türev çalıştı', classify(come))
 
 			if (come.split(",").length - 1 !== 1) {
 				showToast('GİRİŞ', 'Hatalı parametre girişi yaptınız.')
@@ -1541,7 +1652,7 @@ function entryKeyDown(event) {
 			}
 
 		} else if (classify(come).type == 'linesegment') {
-			console.log('entryKeyDown linesegment çalıştı', classify(come))
+			console.log('girisKeyDown linesegment çalıştı', classify(come))
 
 			if (come.split(",").length - 1 !== 3) {
 				showToast('GİRİŞ', 'Hatalı parametre girişi yaptınız.')
@@ -1670,7 +1781,7 @@ function handleParanthesis(e) {
 }
 
 let delCount = 0
-function objectDelClick(e) {
+function delBtnClick(e) {
 	delCount++
 	let elementid = e.target.closest("div").children[0].id
 	let delid = elementid.substring(0, elementid.indexOf("-"))
@@ -1689,56 +1800,36 @@ function objectDelClick(e) {
 	labelsCreator()
 }
 
-function clearSliders() {
-	document.getElementById('m').innerHTML = 'a'
-	document.getElementById('n').innerHTML = 'b'
-	let sliderA = document.getElementById('sliderA')
-	let sliderB = document.getElementById('sliderB')
-	sliderA.disabled = true
-	sliderB.disabled = true
-	sliderA.value = (sliderA.min + sliderA.max) / 2
-	sliderB.value = (sliderB.min + sliderB.max) / 2
-}
-
-function ObjectSetClick(e) {
+function ayarBtnClick(e) {
 	let elementid = e.target.closest("div").children[0].id
-	let clickedid = elementid.substring(0, elementid.indexOf("-"))
-	activeElementID = clickedid
-	labelsCreator()
-
-	return
+	changeActiveElement(elementid)
 	let setForm = document.getElementById("set-popup")
-	if (setForm.style.display != 'block') { setForm.style.display = 'block' }
-
-	let idSet = evt.target.parentNode.childNodes[0].id
-	if (activeElementID != null) {
-		document.getElementById(activeElementID).style.background = 'white'
-	}
-	activeElementID = idSet
-	document.getElementById(activeElementID).style.background = 'lightgreen'
-	fillSetWindow()
+	if (setForm.style.display != 'block') setForm.style.display = 'block'
 }
-function objectVisibilityClick(e) {
+function visibilityBtnClick(e) {
 	let elementid = e.target.closest("div").children[0].id
-	let clickedid = elementid.substring(0, elementid.indexOf("-"))
-	activeElementID = clickedid
-	if (arrObjects[activeElementID].visibility == true) {
-		arrObjects[activeElementID].visibility = false
+	changeActiveElement(elementid)
+	let activeitem = arrObjects.find(item => item.id == activeElementID)
+	if (activeitem.visibility == true) {
+		activeitem.visibility = false
+		e.target.style.background = 'transparent'
 	} else {
-		arrObjects[activeElementID].visibility = true
+		activeitem.visibility = true
+		e.target.style.background = activeitem.color
 	}
 	drawAll()
-	labelsCreator()
 }
 function closeSetClick(evt) {
 	document.getElementById('set-popup').style.display = 'none'
 }
-function rangeChanged() {
-	arrObjects[activeElementID].size = document.getElementById('size').value
-	document.getElementById('sizeLabel').innerHTML = 'Boyut: ' + arrObjects[activeElementID].size
+function setsizeChanged() {
+	arrObjects.find(item => item.id == activeElementID).size = document.getElementById('setsize').value
+	setsizelabel.innerHTML = 'Boyut: ' + arrObjects.find(item => item.id == activeElementID).size
+	drawAll()
 }
-function colorClick() {
-	arrObjects[activeElementID].color = document.getElementById('color').value
+function setcolorClick() {
+	arrObjects.find(item => item.id == activeElementID).color = setcolor.value
+	drawAll()
 }
 
 function getMousePos(evt) {
@@ -1766,55 +1857,40 @@ function getMousePos(evt) {
 	return { x: xx * unitY, y: yy * unitX }
 }
 
-function crossSlider(name) {
-	let slider = document.getElementById('slider' + name.toUpperCase())
-	let sliderLabel = document.getElementById(name)
+function crossSlider() {
 	if (activeElementID != null) {
-		if (arrObjects[activeElementID].type == 'point') {
-			if (name == 'm') {
-				sliderLabel.innerHTML = 'a = ' + slider.value
-				arrObjects[activeElementID].x = slider.value
-			} else {
-				sliderLabel.innerHTML = 'b = ' + slider.value
-				arrObjects[activeElementID].y = slider.value
-			}
-			arrObjects[activeElementID].inputView = '(' + arrObjects[activeElementID].x + ',' + arrObjects[activeElementID].y + ')'
-		} else if (arrObjects[activeElementID].type == 'line' && classify(arrObjects[activeElementID].inputView).subtype != 'vertical') {
-			if (name == 'm') {
-				sliderLabel.innerHTML = 'm = ' + slider.value
-				arrObjects[activeElementID].a = slider.value
-				arrObjects[activeElementID].b = document.getElementById('sliderB').value
-				arrObjects[activeElementID].graph = slider.value + '*x+' + document.getElementById('sliderB').value
-			} else {
-				sliderLabel.innerHTML = 'n = ' + slider.value
-				arrObjects[activeElementID].a = document.getElementById('sliderA').value
-				arrObjects[activeElementID].b = slider.value
-				arrObjects[activeElementID].graph = document.getElementById('sliderA').value + '*x+' + slider.value
-			}
-			arrObjects[activeElementID].inputView = 'y=' + normalizeExpr(arrObjects[activeElementID].a + 'x+' + arrObjects[activeElementID].b)
-		} else if (arrObjects[activeElementID].type == 'line' && classify(arrObjects[activeElementID].inputView).subtype == 'vertical') {
-			if (name == 'm') {
-				sliderLabel.innerHTML = 'x= ' + Number(slider.value)
-				arrObjects[activeElementID].inputView = 'x= ' + Number(slider.value)
-			}
-		} else if (arrObjects[activeElementID].type == 'limit') {
+		let sliderA = document.getElementById(activeElementID + '-sliderA')
+		let sliderB = document.getElementById(activeElementID + '-sliderB')
+		let labelA = document.getElementById(activeElementID + '-labelA')
+		let labelB = document.getElementById(activeElementID + '-labelB')
+		let input = document.getElementById(activeElementID + '-input')
+		let output = document.getElementById(activeElementID + '-output')
+		let item = arrObjects.find(item => item.id == activeElementID)
 
-			let sliderA = document.getElementById('sliderA')
-			let sliderB = document.getElementById('sliderB')
-			if (name == 'm') {
-				sliderLabel.innerHTML = arrObjects[activeElementID].approachVal + '⁺ = ' + Number(slider.value).toFixed(1)
-			} else {
-				sliderLabel.innerHTML = arrObjects[activeElementID].approachVal + '⁻ = ' + Number(slider.value).toFixed(1)
-			}
+		if (item.type == 'point') {
+			labelA.innerHTML = 'a = ' + sliderA.value
+			item.x = sliderA.value
+			labelB.innerHTML = 'b = ' + sliderB.value
+			item.y = sliderB.value
+			item.inputView = '(' + item.x + ',' + item.y + ')'
+			input.value = item.name + item.inputView
+		} else if (item.type == 'turev') {
+			labelA.innerHTML = 'x = ' + sliderA.value
+			item.approachVal = sliderA.value
+			item.inputView = "Türev(" + item.graph + "," + item.approachVal + ")"
+		} else if (item.type == 'limit') {
+			item.approachValRight = sliderA.value
+			sliderA.innerHTML = item.approachValRight + '⁺ = ' + Number(sliderA.value).toFixed(2)
+			item.approachValLeft = sliderB.value
+			sliderB.innerHTML = item.approachVal + '⁻ = ' + Number(sliderB.value).toFixed(2)
 
-			// Limit noktasının sağında
 			let A = new mPoint(Number(sliderA.value), 0)
-			let B = new mPoint(Number(sliderA.value), math.evaluate(arrObjects[activeElementID].graph, { x: A.x }))
-			let C = new mPoint(0, math.evaluate(arrObjects[activeElementID].graph, { x: A.x }))
+			let B = new mPoint(Number(sliderA.value), math.evaluate(item.graph, { x: A.x }))
+			let C = new mPoint(0, math.evaluate(item.graph, { x: A.x }))
 			A.inputView = B.inputView = C.inputView = null
 			let vls = new mLineSegment(A, B)
 			let hls = new mLineSegment(B, C)
-			A.color = B.color = C.color = vls.color = hls.color = arrObjects[activeElementID].color
+			A.color = B.color = C.color = vls.color = hls.color = item.color
 			vls.lineDash = hls.lineDash = [2, 5]
 			vls.inputView = hls.inputView = null
 			drawLineSegment(vls)
@@ -1822,164 +1898,23 @@ function crossSlider(name) {
 			drawPoint(A)
 			drawPoint(B)
 			drawPoint(C)
-
-			//limit noktasının solunda
-			A = new mPoint(Number(sliderB.value), 0)
-			B = new mPoint(Number(sliderB.value), math.evaluate(arrObjects[activeElementID].graph, { x: A.x }))
-			C = new mPoint(0, math.evaluate(arrObjects[activeElementID].graph, { x: A.x }))
-			A.inputView = B.inputView = C.inputView = null
-			vls = new mLineSegment(A, B)
-			hls = new mLineSegment(B, C)
-			A.color = B.color = C.color = vls.color = hls.color = arrObjects[activeElementID].color
-			vls.lineDash = hls.lineDash = [2, 5]
-			vls.inputView = hls.inputView = null
-			drawLineSegment(vls)
-			drawLineSegment(hls)
-			drawPoint(A)
-			drawPoint(B)
-			drawPoint(C)
-		} else if (arrObjects[activeElementID].type == 'turev') {
-			sliderLabel.innerHTML = 'x = ' + slider.value
-			arrObjects[activeElementID].approachVal = slider.value
-			arrObjects[activeElementID].inputView = "Türev(" + arrObjects[activeElementID].graph + "," + arrObjects[activeElementID].approachVal + ")"
-
-			//Teğetin grafiği
-			let m = math.evaluate(arrObjects[activeElementID].turGraph, { x: arrObjects[activeElementID].approachVal })
-			let c = math.evaluate(arrObjects[activeElementID].graph, { x: arrObjects[activeElementID].approachVal }) - m * arrObjects[activeElementID].approachVal
-			let tLine = new mLine(m, c)
-			tLine.color = 'black'
-			tLine.name = null
-			tLine.id = null
-			drawLine(tLine)
+		} else if (item.type == 'line' && classify(item.inputView).subtype != 'vertical') {
+			labelA.innerHTML = 'm = ' + sliderA.value
+			labelB.innerHTML = 'n = ' + sliderB.value
+			item.a = sliderA.value
+			item.b = sliderB.value
+			item.inputView = 'y=' + sliderA.value + 'x+' + sliderB.value
+			input.value = item.name + ':' + item.inputView
+			item.graph = normalize(sliderA.value + '*x+' + sliderB.value)
+		} else if (item.type == 'line' && classify(item.inputView).subtype == 'vertical') {
+			labelA.innerHTML = 'x= ' + Number(sliderA.value)
+			item.inputView = 'x= ' + Number(sliderA.value)
+			input.value = item.name + ':' + item.inputView
 		} else {
 			console.log('Tür bulunamadı.')
 		}
 	}
-}
-
-function setObject(item) {
-	let input = document.getElementById(item.id + '-input')
-	let output = document.getElementById(item.id + '-output')
-	let sliderA = document.getElementById(item.id + '-sliderA')
-	let labelA = document.getElementById(item.id + '-labelA')
-	let sliderB = document.getElementById(item.id + '-sliderB')
-	let labelB = document.getElementById(item.id + '-labelB')
-	labelB.hidden = false
-	sliderB.hidden = false
-
-	input.style.height = '24px'
-	output.innerHTML = ''
-	if (item.type == 'point') {
-		input.value = item.name + item.inputView
-	} else if (item.type == 'line') {
-		if (item.A == null) {
-			input.value = item.name + ':' + item.inputView
-			if (item.a == null) {
-				labelB.hidden = true
-				sliderB.hidden = true
-			}
-		} else {
-			input.value = item.name + '(x) = Doğru(' + item.A.inputView + ',' + item.B.inputView + ')'
-			output.innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = ' + item.graph
-			if (item.a == null) {
-				input.value = item.name + ' = Doğru(' + item.A.inputView + ',' + item.B.inputView + ')'
-				output.innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = ' + item.inputView
-				labelB.hidden = true
-				sliderB.hidden = true
-			}
-		}
-	} else if (item.type == 'linesegment') {
-		input.value = item.name + ' = ' + item.inputView
-		labelA.hidden = true
-		sliderA.hidden = true
-		labelB.hidden = true
-		sliderB.hidden = true
-	} else if (item.type == 'sequence') {
-		input.value = item.name + 'ₓ = ' + item.inputView
-		labelA.hidden = true
-		sliderA.hidden = true
-		labelB.hidden = true
-		sliderB.hidden = true
-	} else if (item.type == 'limit') {
-		input.value = item.name + ' = ' + item.inputView
-	} else if (item.type == 'turev') {
-		input.value = item.name + '=' + item.inputView
-		labelB.hidden = true
-		sliderB.hidden = true
-	} else if (item.type == 'sectionalfunctions') {
-		input.value = item.name + '(x) = {' + item.inputView + '}'
-		labelA.hidden = true
-		sliderA.hidden = true
-		labelB.hidden = true
-		sliderB.hidden = true
-	} else if (item.type == 'other') {
-		input.value = item.name + ':' + item.inputView
-		labelA.hidden = true
-		sliderA.hidden = true
-		labelB.hidden = true
-		sliderB.hidden = true
-	} else {
-		console.log('Tür bulunamadı.')
-	}
-
-	sliderA.min = minX * unitY - 1
-	sliderA.max = (minX + Math.round(canvas.width / scaleY) + 1) * unitY
-	sliderB.max = -minY * unitX + 1
-	sliderB.min = (minY + Math.round(canvas.height / scaleX) + 1) * -unitX
-
-	if (item.type == 'point') {
-		sliderA.value = item.x
-		labelA.innerHTML = 'a = ' + item.x
-		sliderB.value = item.y
-		labelB.innerHTML = 'b = ' + item.y
-	} else if (item.type == 'line') {
-		sliderA.value = item.a
-		labelA.innerHTML = 'm = ' + item.a
-		sliderB.value = item.b
-		labelB.innerHTML = 'n = ' + item.b
-		if (classify(item.inputView).subtype == 'vertical') {
-			labelA.innerHTML = 'x=' + classify(item.inputView).x
-			sliderA.value = Number(classify(item.inputView).x)
-		}
-	} else if (item.type == 'limit') {
-		let verticalMNumberRight = Number(item.approachVal * 1 + 0.4).toFixed(1)
-		let verticalMNumberLeft = Number(item.approachVal * 1 - 0.4).toFixed(1)
-		let mostLeft = minX * unitY
-		let mostRight = (minX + Math.round(canvas.width / scaleY) + 1) * unitY
-
-		sliderA.min = item.approachVal * 1
-		sliderA.max = mostRight
-		sliderA.step = '0.01'
-		sliderA.value = verticalMNumberRight
-		labelA.innerHTML = sliderA.min + '⁺ = ' + verticalMNumberRight
-
-		sliderB.min = mostLeft
-		sliderB.max = item.approachVal * 1
-		sliderB.step = '0.01'
-		sliderB.value = verticalMNumberLeft
-		labelB.innerHTML = sliderB.max + '⁻ = ' + verticalMNumberLeft
-
-	} else if (item.type == 'turev') {
-		let mostLeft = minX * unitY
-		let mostRight = (minX + Math.round(canvas.width / scaleY) + 1) * unitY
-
-		sliderA.min = mostLeft
-		sliderA.max = mostRight
-		sliderA.step = '0.01'
-		sliderA.value = item.approachVal
-		labelA.innerHTML = 'x = ' + item.approachVal
-	} else {
-		console.log('Tür bulunamadı')
-	}
-
-	if (item.id != activeElementID) {
-		labelA.hidden = true
-		sliderA.hidden = true
-		labelB.hidden = true
-		sliderB.hidden = true
-	} else {
-		input.style.backgroundColor = 'lightgreen'
-	}
+	drawAll()
 }
 
 function defaultClick(evt) {
@@ -2011,20 +1946,6 @@ function defaultClick(evt) {
 function buttonMove(e) {
 	document.getElementById('coor').innerHTML = e.name
 }
-
-/* function checkDirection() {
-	if (innerHeight < innerWidth) {
-		changeCSS("styleVertical.css")
-		document.getElementById('btnimgCalc').src = "img/left.svg"
-		minX = -8
-		minY = -3
-	} else {
-		changeCSS("styleHorizontal.css")
-		document.getElementById('btnimgCalc').src = "img/down.svg"
-		minX = -3
-		minY = -3
-	}
-} */
 showToast = function (title, msg) {
 	let x = document.getElementById("snackbar")
 	document.getElementById('snackTitle').innerHTML = title
@@ -2086,6 +2007,11 @@ $(document).ready(function () {
 	// document.addEventListener('contextmenu', event => event.preventDefault())
 
 	let objectsContainer = document.getElementById('objectsContainer')
+	let setname = document.getElementById('name')
+	let setdef = document.getElementById('setdef')
+	let setcolor = document.getElementById('setcolor')
+	let setsizelabel = document.getElementById('setsizelabel')
+	let setsize = document.getElementById('setsize')
 	drawAll()
 	window.onresize = function () {
 		canvas.width = innerWidth
