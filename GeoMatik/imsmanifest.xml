@@ -12,8 +12,8 @@
   </metadata>
 
   <contentObject>
-    <title>1. TEMA - NİCELİKLER ve DEĞİŞİMLER (1. KISIM) - GEOMATİK</title>
-    <description>1. TEMA - NİCELİKLER ve DEĞİŞİMLER (1. KISIM) - GEOMATİK</description>
+    <title>GEOMATIK</title>
+    <description>GEOMATIK</description>
     <width>0</width>
     <height>0</height>
     <language>en</language>
@@ -22,9 +22,9 @@
 
   <organizations default="GEOMATIK">
     <organization identifier="GEOMATIK">
-      <title>1. TEMA - NİCELİKLER ve DEĞİŞİMLER (1. KISIM) - GEOMATİK</title>
+      <title>GEOMATIK</title>
       <item identifier="item_geomatik" identifierref="resource_geomatik">
-        <title>1. TEMA - NİCELİKLER ve DEĞİŞİMLER (1. KISIM) - GEOMATİK</title>
+        <title>GEOMATIK</title>
       </item>
     </organization>
   </organizations>
@@ -33,22 +33,23 @@
       href="renderer/index.html">
       <file href="renderer/index.html" />
 
-      <file href="renderer/css/styleHorizontal.css" />
-      <file href="renderer/css/styleVertical.css" />
+      <file href="renderer/css/styles.css" />
 
       <file href="renderer/img/choice.svg" />
       <file href="renderer/img/clear.svg" />
       <file href="renderer/img/default.svg" />
       <file href="renderer/img/down.svg" />
+      <file href="renderer/img/edit.svg" />
       <file href="renderer/img/favicon.svg" />
+      <file href="renderer/img/help.svg" />
       <file href="renderer/img/left.svg" />
       <file href="renderer/img/line_blue.svg" />
+      <file href="renderer/img/linesegment_blue.svg" />
       <file href="renderer/img/minus.svg" />
       <file href="renderer/img/plus.svg" />
       <file href="renderer/img/point_blue.svg" />
       <file href="renderer/img/redo.svg" />
       <file href="renderer/img/right.svg" />
-      <file href="renderer/img/settings.svg" />
       <file href="renderer/img/undo.svg" />
       <file href="renderer/img/up.svg" />
       <file href="renderer/img/zoomplus.svg" />

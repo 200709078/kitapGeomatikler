@@ -806,8 +806,7 @@ function labelsCreator() {
 
 		let labelA = document.createElement('label')
 		labelA.id = item.id + '-labelA'
-
-		labelA.style.width = '50px'
+		//labelA.style.width = '70px'
 		labelA.htmlFor = item.id + '-sliderA'
 		let sliderA = document.createElement('input')
 		sliderA.type = "range"
@@ -816,7 +815,7 @@ function labelsCreator() {
 
 		let labelB = document.createElement('label')
 		labelB.id = item.id + '-labelB'
-		labelB.style.width = '50px'
+		//labelB.style.width = '70px'
 		labelB.htmlFor = item.id + '-sliderB'
 
 		let sliderB = document.createElement('input')
@@ -1795,16 +1794,17 @@ function delBtnClick(e) {
 	canvas.style.cursor = 'pointer'
 	document.querySelectorAll('.buttonGroup .button').forEach(b => b.classList.remove('active'))
 	document.getElementById('btnChoice').classList.add('active')
+	document.getElementById('set-popup').style.display = 'none'
 
 	drawAll()
 	labelsCreator()
 }
 
 function ayarBtnClick(e) {
+	let setform = document.getElementById('set-popup')
 	let elementid = e.target.closest("div").children[0].id
 	changeActiveElement(elementid)
-	let setForm = document.getElementById("set-popup")
-	if (setForm.style.display != 'block') setForm.style.display = 'block'
+	if (setform.style.display != 'block') setform.style.display = 'block'
 }
 function visibilityBtnClick(e) {
 	let elementid = e.target.closest("div").children[0].id
@@ -1820,7 +1820,8 @@ function visibilityBtnClick(e) {
 	drawAll()
 }
 function closeSetClick(evt) {
-	document.getElementById('set-popup').style.display = 'none'
+	let setform = document.getElementById('set-popup')
+	setform.style.display = 'none'
 }
 function setsizeChanged() {
 	arrObjects.find(item => item.id == activeElementID).size = document.getElementById('setsize').value
@@ -1880,8 +1881,10 @@ function crossSlider() {
 			item.inputView = "Türev(" + item.graph + "," + item.approachVal + ")"
 		} else if (item.type == 'limit') {
 			item.approachValRight = sliderA.value
+			labelA.innerHTML = sliderA.min + '⁺ = ' + sliderA.value
 			sliderA.innerHTML = item.approachValRight + '⁺ = ' + Number(sliderA.value).toFixed(2)
 			item.approachValLeft = sliderB.value
+			labelB.innerHTML = sliderB.max + '⁻ = ' + sliderB.value
 			sliderB.innerHTML = item.approachVal + '⁻ = ' + Number(sliderB.value).toFixed(2)
 
 			let A = new mPoint(Number(sliderA.value), 0)
@@ -2007,11 +2010,6 @@ $(document).ready(function () {
 	// document.addEventListener('contextmenu', event => event.preventDefault())
 
 	let objectsContainer = document.getElementById('objectsContainer')
-	let setname = document.getElementById('name')
-	let setdef = document.getElementById('setdef')
-	let setcolor = document.getElementById('setcolor')
-	let setsizelabel = document.getElementById('setsizelabel')
-	let setsize = document.getElementById('setsize')
 	drawAll()
 	window.onresize = function () {
 		canvas.width = innerWidth
@@ -2060,6 +2058,7 @@ $(document).ready(function () {
 			canvas.style.cursor = 'pointer'
 			document.querySelectorAll('.buttonGroup .button').forEach(b => b.classList.remove('active'))
 			document.getElementById('btnChoice').classList.add('active')
+			document.getElementById('set-popup').style.display = 'none'
 			drawAll()
 			objectsContainer.innerHTML = ''
 		}
