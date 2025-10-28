@@ -806,7 +806,6 @@ function labelsCreator() {
 
 		let labelA = document.createElement('label')
 		labelA.id = item.id + '-labelA'
-		//labelA.style.width = '70px'
 		labelA.htmlFor = item.id + '-sliderA'
 		let sliderA = document.createElement('input')
 		sliderA.type = "range"
@@ -815,7 +814,6 @@ function labelsCreator() {
 
 		let labelB = document.createElement('label')
 		labelB.id = item.id + '-labelB'
-		//labelB.style.width = '70px'
 		labelB.htmlFor = item.id + '-sliderB'
 
 		let sliderB = document.createElement('input')
@@ -945,6 +943,7 @@ function labelsCreator() {
 			sliderB.hidden = true
 		} else {
 			input.style.backgroundColor = 'lightgreen'
+			output.style.backgroundColor = 'lightgreen'
 		}
 
 		sliderDiv.appendChild(labelA)
@@ -988,8 +987,8 @@ document.querySelector('.buttonGroup').addEventListener('click', e => {
 			document.getElementById('leftWrapper').classList.toggle('hide')
 			break
 		case 'help':
-			activeObject = 'choice'
-			showToast('GEOMATİK', 'HENÜZ YAPIM AŞAMASINDA...')
+			document.getElementById('help-popup').style.display = 'flex';
+			const giris = document.getElementById('giris').value = ''
 			break
 	}
 	if (btn.dataset.toast) {
@@ -1006,22 +1005,30 @@ function toggleCalcIcon(imgEl) {
 	imgEl.src = next
 }
 
-function changeCSS(cssFile) {
-	var newlink = document.createElement("link")
-	newlink.setAttribute("rel", "stylesheet")
-	newlink.setAttribute("type", "text/css")
-
-	if ("css/" + cssFile == "css/styleHorizontal.css") {
-		newlink.setAttribute("href", "css/styleVertical.css")
-	} else {
-		newlink.setAttribute("href", "css/styleHorizontal.css")
-	}
-	document.getElementsByTagName("head").item(0).children[10].replaceWith(newlink)
+function closeHelp() {
+	activeObject = 'choice'
+	canvas.style.cursor = 'pointer'
+	document.querySelectorAll('.buttonGroup .button').forEach(b => b.classList.remove('active'))
+	document.getElementById('btnChoice').classList.add('active')
+	document.getElementById('help-popup').style.display = 'none';
 }
+
+// Yardım örnek tıklama
+document.querySelectorAll('.example').forEach(el => {
+	el.addEventListener('click', () => {
+		const giris = document.getElementById('giris')
+		if (giris) {
+			giris.value = el.textContent.trim()
+			giris.focus()
+			closeHelp()
+		}
+	})
+})
 
 function changeActiveElement(id) {
 	let clickedid = Number(id.substring(0, id.indexOf("-")))
 	if (activeElementID != null) document.getElementById(activeElementID + '-input').style.background = 'white'
+	if (activeElementID != null) document.getElementById(activeElementID + '-output').style.background = 'white'
 
 	let sliders = document.querySelectorAll("input[type='range']");
 	sliders.forEach(slider => {
@@ -1034,6 +1041,7 @@ function changeActiveElement(id) {
 
 	activeElementID = clickedid
 	document.getElementById(activeElementID + '-input').style.background = 'lightgreen'
+	document.getElementById(activeElementID + '-output').style.background = 'lightgreen'
 	let activeitem = arrObjects.find(item => item.id == activeElementID)
 
 	document.getElementById(activeElementID + '-labelA').hidden = false
@@ -1057,6 +1065,9 @@ function changeActiveElement(id) {
 		setname.value = activeitem.name + 'ₓ'
 	}
 	setdef.value = activeitem.inputView
+	if (activeitem.A != null && activeitem.B != null) {
+		setdef.value = 'Doğru(' + activeitem.A.inputView + ',' + activeitem.B.inputView + ')'
+	}
 	setcolor.value = activeitem.color
 	setsizelabel.innerHTML = 'Boyut: ' + activeitem.size
 	setsize.value = activeitem.size
@@ -1110,12 +1121,7 @@ function normalize(str) {
 }
 
 function classify(inputRaw) {
-
-
-	//PARÇALI FONKSİYON {OLARAK} KABUL EDİLECEK
-
-
-	const norm = inputRaw.trim()
+	const norm = inputRaw.replace(/\s+/g, '')
 	// ---- Noktalar ----
 	const pointRe = /^\s*\(\s*([+-]?\d+(?:\.\d+)?)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*\)\s*$/
 	const pMatch = norm.match(pointRe)
@@ -1321,6 +1327,12 @@ function classify(inputRaw) {
 	}
 
 	// ---- SectionalFunctions ----
+
+	//PARÇALI FONKSİYON {OLARAK} KABUL EDİLECEK
+
+
+
+
 	if (/,/.test(normalize(norm))) { // en az bir ',' varsa işle
 		const segments = normalize(norm).split(";").map(s => s.trim()).filter(s => s.length > 0);
 		const functions = [];
@@ -1491,6 +1503,8 @@ function girisOninput(e) { //Cep telefonu için
 }
 
 function girisKeyDown(event) {
+	let setform = document.getElementById('set-popup')
+	setform.style.display = 'none'
 	handleParanthesis(event)
 	let allowKeys = '(){}[],=-+.;<>*^/_bçdğjımnşquüvxyzCÇEFGĞHIJKMNOPQTUVWXYZBackspaceArrowLeftArrowRightShiftDelete'
 	if (isNaN(event.key) && !allowKeys.includes(event.key)) {

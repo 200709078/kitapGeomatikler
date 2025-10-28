@@ -17,10 +17,6 @@
 </head>
 
 <body>
-	<div id="snackbar">
-		<h4 id="snackTitle">Nokta</h4>
-		<div id="snackContent">Konum seçin</div>
-	</div>
 	<div id="centerWrapper">
 		<canvas id="canvas"></canvas>
 		<script type="text/javascript" src="js/func.js"></script>
@@ -53,15 +49,13 @@
 				<img id="btnimgHelp" src="img/help.svg">
 				<span>Yardım</span>
 			</button>
-			<!-- WATCH LIST  -->
-			<span id="watchList" style="font-size: .8cap; color: red;"></span>
-			<!-- WATCH LIST -->
 		</div>
 		<div class="leftWrapper" id="leftWrapper">
 			<div class="reSizer"></div>
 			<div id="scrollWrapper">
 				<div class="expr-block-giris">
-					<input id="giris" placeholder="Giriş" title="Giriş" value="" onkeydown="girisKeyDown(event)" oninput="girisOninput(event)">
+					<input id="giris" placeholder="Giriş" title="Giriş" value="" onkeydown="girisKeyDown(event)"
+						oninput="girisOninput(event)">
 				</div>
 				<hr>
 				<div id="objectsContainer"></div>
@@ -165,6 +159,73 @@
 			</div>
 		</div>
 	</div>
+	<div id="snackbar">
+		<h4 id="snackTitle">Nokta</h4>
+		<div id="snackContent">Konum seçin</div>
+	</div>
+	<!-- Yardım Penceresi -->
+	<div class="help-popup" id="help-popup">
+		<div class="help-content">
+			<div id="help-header">
+				<h2>📘 GeoMatik Yardım</h2>
+				<button class="help-close" onclick="document.getElementById('help-popup').style.display='none'">&times;</button>
+			</div>
+
+			<div class="help-section">
+<h3>Giriş Alanı Komutları</h3>
+
+<h4>Nokta</h4>
+<pre>(apsis, ordinat)
+<code class="example">(-1, 2)</code></pre>
+
+<h4>Doğru</h4>
+<pre>ax + b
+<code class="example">2x-3</code>
+Doğru(Nokta, Nokta)
+<code class="example">Doğru((-1,1),(2,3))</code></pre>
+
+<h4>Doğru Parçası</h4>
+<pre>DoğruParçası(Nokta, Nokta)
+<code class="example">DoğruParçası((1,1),(-1,2))</code></pre>
+
+<h4>Trigonometrik İfadeler</h4>
+<pre>sin(...), cos(...), tan(...), cot(...)
+<code class="example">sin(-x+4)</code><code class="example">cos(3x-1)</code><code class="example">tan(1/x)</code><code class="example">cot(x+1)</code></pre>
+
+<h4>Üstel İfadeler</h4>
+<pre>(Taban)^(Üs)
+<code class="example">2^(x-1)</code><code class="example">(1/2)^sin(x)</code><code class="example">E^(x-1)</code></pre>
+
+<h4>Logaritmik İfadeler</h4>
+<pre>log(...),log(...,Taban), log_Taban(...), ln(...), ln(...,Taban), ln_Taban(...)
+<code class="example">log(4-x^2)</code><code class="example">log(2x-3,5)</code><code class="example">log_5(2x-3)</code><code class="example">ln(2x-4)</code><code class="example">ln(3-x,2)</code><code class="example">ln_2(3-x)</code></pre>
+
+<h4>Dizi</h4>
+<pre>Dizi(Fonksiyon,Başlangıç,Bitiş)
+<code class="example">Dizi(x^2-4,-1,2)</code></pre>
+
+<h4>Limit</h4>
+<pre>Limit(Fonksiyon,Apsis)
+<code class="example">Limit(sin(2x-1),2)</code></pre>
+
+<h4>Türev</h4>
+<pre>Türev(Fonksiyon,Apsis)
+<code class="example">Türev(sin(2x-1),2)</code></pre>
+
+<h4>Fonksiyon İşlemleri</h4>
+<pre><code class="example">2f/(1-3x)</code><code class="example">f+2(3x-4)</code><code class="example">3f-4g</code><code class="example">f*g</code></pre>
+
+<h4>Bileşke Fonksiyon</h4>
+<pre>BileşkeFonksiyon(Fonksiyon,Fonksiyon,...)
+<code class="example">BileşkeFonksiyon(3x-4,2x^-3)</code></pre>
+
+<h4>Parçalı Fonksiyon</h4>
+<pre>{Fonksiyon,Aralık;Fonksiyon,Aralık;...}
+<code class="example">{2x+1,x&lt;0; x^2,x>=0}</code></pre>
+			</div>
+		</div>
+	</div>
+<!-- Yardım Penceresi Son -->
 	<script type="text/javascript" src="js/app.js"></script>
 </body>
 

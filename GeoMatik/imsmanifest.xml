@@ -1,24 +1,18 @@
 <?xml version="1.0" standalone="no"?>
 <manifest identifier="com.scorm.golfsamples.contentpackaging.singlesco.12" version="1"
   xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2"
-  xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_rootv1p2"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://www.imsproject.org/xsd/imscp_rootv1p1p2 imscp_rootv1p1p2.xsd
-                      http://www.imsglobal.org/xsd/imsmd_rootv1p2p1 imsmd_rootv1p2p1.xsd
-                      http://www.adlnet.org/xsd/adlcp_rootv1p2 adlcp_rootv1p2.xsd">
-  <metadata>
-    <schema>ADL SCORM</schema>
-    <schemaversion>1.2</schemaversion>
-  </metadata>
-
-  <contentObject>
-    <title>GEOMATIK</title>
-    <description>GEOMATIK</description>
-    <width>0</width>
-    <height>0</height>
-    <language>en</language>
-    <referenceImage>geomatik.png</referenceImage>
-  </contentObject>
+  xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_rootv1p2">
+<metadata>
+  <schema>ADL SCORM</schema>
+  <schemaversion>1.2</schemaversion>
+  <lom>
+    <general>
+      <title><string language="tr">GEOMATIK</string></title>
+      <description><string language="tr">geoMATIK</string></description>
+      <language>tr</language>
+    </general>
+  </lom>
+</metadata>
 
   <organizations default="GEOMATIK">
     <organization identifier="GEOMATIK">
@@ -57,9 +51,8 @@
       <file href="renderer/js/app.js" />
       <file href="renderer/js/func.js" />
       <file href="renderer/js/jquery.js" />
-
+      
       <file href="renderer/sound/clear.mp3" />
-
     </resource>
   </resources>
 </manifest>
