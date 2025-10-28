@@ -1,0 +1,33 @@
+<?xml version="1.0" standalone="no"?>
+<manifest identifier="com.scorm.golfsamples.contentpackaging.singlesco.12" version="1"
+  xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2"
+  xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_rootv1p2">
+<metadata>
+  <schema>ADL SCORM</schema>
+  <schemaversion>1.2</schemaversion>
+  <lom>
+    <general>
+      <title><string language="tr">Geo3D</string></title>
+      <description><string language="tr">Geo3D</string></description>
+      <language>tr</language>
+    </general>
+  </lom>
+</metadata>
+
+  <organizations default="MADEMATIK">
+    <organization identifier="MADEMATIK">
+      <title>mADEMatik</title>
+      <item identifier="item_madematik" identifierref="resource_madematik">
+        <title>mADEMatik</title>
+      </item>
+    </organization>
+  </organizations>
+  <resources>
+    <resource identifier="resource_madematik" type="webcontent" adlcp:scormtype="sco" href="index.html">
+      <file href="index.html" />
+      <file href="assets/favicon-DUKFKGwI.svg" />
+      <file href="assets/index-B4LaJCQy.js" />
+      <file href="index-C856NEuL.css" />
+    </resource>
+  </resources>
+</manifest>

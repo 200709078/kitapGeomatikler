@@ -300,23 +300,6 @@ function explodeCubes() {
   requestAnimationFrame(animateExplosion);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /* function destroyCubesWithaBall() {
   console.log('destroy çalıştı')
 } 
