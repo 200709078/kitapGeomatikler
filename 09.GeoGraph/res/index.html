@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="tr" lang="tr">
+
+<head>
+	<title>GRAFİK - GEOMATİK</title>
+	<meta http-equiv="Content-Type" content="text/html" charset="UTF-8" />
+	<meta name="description" content="..." />
+	<meta name="keywords" content="Graph, functions, axis, javascript, canvas" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="author" content="..." />
+	<link rel="stylesheet" href="css/style.css" type="text/css" />
+	<link rel="shortcut icon" href="img/favicon.svg" />
+
+	<!-- 	<script src="js/chart.js"></script>
+	<script src="js/index.umd.min.js"></script> -->
+
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.1.2/chart.umd.js"></script>
+
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+	<script src="https://unpkg.com/@sgratzl/chartjs-chart-boxplot@3.6.0/build/index.umd.min.js"></script>
+
+</head>
+
+<body>
+	<div id="bodyWrapper">
+		<div id="titleWrapper">TABLOLAMA PROGRAMI</div>
+		<div id="tableWrapper">
+			<table id="table">
+				<tr>
+					<td>x</td>
+					<td><input class="cinput" type="text" value="A" onfocus="this.select();" /></td>
+					<td><input class="cinput" type="text" value="B" onfocus="this.select();" /></td>
+					<td><input class="cinput" type="text" value="C" onfocus="this.select();" /></td>
+					<td><input class="cinput" type="text" value="D" onfocus="this.select();" /></td>
+					<td><input class="cinput" type="text" value="E" onfocus="this.select();" /></td>
+					<td><input class="cinput" type="text" value="F" onfocus="this.select();" /></td>
+					<td><input class="cinput" type="text" value="G" onfocus="this.select();" /></td>
+				</tr>
+				<tr>
+					<td>y</td>
+					<td><input class="cinput" type="text" value="7" onfocus="this.select();" /></td>
+					<td><input class="cinput" type="text" value="5" onfocus="this.select();" /></td>
+					<td><input class="cinput" type="text" value="6" onfocus="this.select();" /></td>
+					<td><input class="cinput" type="text" value="4" onfocus="this.select();" /></td>
+					<td><input class="cinput" type="text" value="4" onfocus="this.select();" /></td>
+					<td><input class="cinput" type="text" value="3" onfocus="this.select();" /></td>
+					<td><input class="cinput" type="text" value="1" onfocus="this.select();" /></td>
+				</tr>
+			</table>
+		</div>
+		<div id="radioWrapper">
+			Grafik Türleri:
+			<input type="radio" name="chrtType" value="bar" id="Sütun" checked>
+			<label itemtype="text" for="Sütun">Sütun</label>
+			<input type="radio" name="chrtType" value="line" id="Çizgi">
+			<label for="Çizgi">Çizgi</label>
+<!-- 			<input type="radio" name="chrtType" value="scatter" id="Dağılım">
+			<label for="Dağılım">Dağılım</label> -->
+			<input type="radio" name="chrtType" value="pie" id="Pasta">
+			<label for="Pasta">Pasta</label>
+<!-- 			<input type="radio" name="chrtType" value="boxplot" id="Kutu">
+			<label for="Kutu">Kutu</label> -->
+		</div>
+		<canvas id="canvas">
+<!-- 			<span style="background-color: blue;">AAA</span> -->
+		</canvas>
+
+<!-- 		<select onchange="hideRegLine(this)">
+			<option value="1" selected>Göster</option>
+			<option value="0">Gizle</option>
+		</select> -->
+
+	</div>
+	<script src="js/graph.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,58 @@
+<?xml version="1.0" standalone="no"?>
+<manifest identifier="com.scorm.golfsamples.contentpackaging.singlesco.12" version="1"
+  xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2"
+  xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_rootv1p2">
+<metadata>
+  <schema>ADL SCORM</schema>
+  <schemaversion>1.2</schemaversion>
+  <lom>
+    <general>
+      <title><string language="tr">GEOMATIK</string></title>
+      <description><string language="tr">geoMATIK</string></description>
+      <language>tr</language>
+    </general>
+  </lom>
+</metadata>
+
+  <organizations default="GEOMATIK">
+    <organization identifier="GEOMATIK">
+      <title>GeoMatik</title>
+      <item identifier="item_geomatik" identifierref="resource_geomatik">
+        <title>GeoMatik</title>
+      </item>
+    </organization>
+  </organizations>
+  <resources>
+    <resource identifier="resource_geomatik" type="webcontent" adlcp:scormtype="sco"
+      href="renderer/index.html">
+      <file href="renderer/index.html" />
+
+      <file href="renderer/css/styles.css" />
+
+      <file href="renderer/img/choice.svg" />
+      <file href="renderer/img/clear.svg" />
+      <file href="renderer/img/default.svg" />
+      <file href="renderer/img/down.svg" />
+      <file href="renderer/img/edit.svg" />
+      <file href="renderer/img/favicon.svg" />
+      <file href="renderer/img/help.svg" />
+      <file href="renderer/img/left.svg" />
+      <file href="renderer/img/line_blue.svg" />
+      <file href="renderer/img/linesegment_blue.svg" />
+      <file href="renderer/img/minus.svg" />
+      <file href="renderer/img/plus.svg" />
+      <file href="renderer/img/point_blue.svg" />
+      <file href="renderer/img/redo.svg" />
+      <file href="renderer/img/right.svg" />
+      <file href="renderer/img/undo.svg" />
+      <file href="renderer/img/up.svg" />
+      <file href="renderer/img/zoomplus.svg" />
+
+      <file href="renderer/js/app.js" />
+      <file href="renderer/js/func.js" />
+      <file href="renderer/js/jquery.js" />
+      
+      <file href="renderer/sound/clear.mp3" />
+    </resource>
+  </resources>
+</manifest>

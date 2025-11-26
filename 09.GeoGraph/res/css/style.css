@@ -1,0 +1,93 @@
+body {
+    margin: 0px auto;
+    padding: 0px;
+    font-style: normal;
+    width: 800px;
+    height: 600px;
+    background: white;
+    user-select: none;
+}
+
+html {
+    font-family: arial;
+}
+
+#bodyWrapper {
+    position: relative;
+    width: 100%;
+    margin: auto;
+    background-color: white;
+    border: 0px;
+    border-top: 2px solid black;
+    border-bottom: 2px solid black;
+    border-left: 2px solid black;
+    border-right: 2px solid black;
+}
+
+#titleWrapper {
+    position: relative;
+    margin: auto;
+    padding: 5px;
+    background-color: wheat;
+    font-size: larger;
+    font-weight: bolder;
+    text-align: center;
+    border: 0px;
+    border-bottom: 2px solid black;
+}
+
+#tableWrapper {
+    position: relative;
+    margin: auto;
+    background-color: white;
+    border: 0px;
+    border-bottom: 2px solid black;
+}
+
+#table {
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    background-color: white;
+    border: 1px solid black;
+}
+
+th,
+td {
+    border: 1px solid black;
+    width: 92px;
+    text-align: center;
+}
+
+.cinput {
+    width: 100%;
+    padding: 12px 20px;
+    margin: 8px 0;
+    box-sizing: border-box;
+    border: 0px solid #555;
+    outline: none;
+    text-align: center;
+}
+
+.cinput:focus {
+    background-color: lightblue;
+}
+
+#radioWrapper {
+    position: relative;
+    margin: auto;
+    text-align: left;
+    background-color: wheat;
+    padding: 5px;
+    border: 0px;
+    border-bottom: 1px solid black;
+    border-bottom-style: dashed;
+}
+
+#canvas {
+    display: block;
+    width: 80%;
+    background-color: white;
+    margin: auto;
+}
