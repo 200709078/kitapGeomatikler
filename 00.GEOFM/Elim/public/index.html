@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Euler Sayısı ve (1+1/n)^n</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+
+<body>
+    <h1>Euler Sayısı</h1>
+    <div class="result">
+        <p><span id="eValue">\[e = 2.71828183...\]</span></p>
+    </div>
+    <div class="formula">
+        \[
+        \hat e(n) = \left(1+\frac{1}{n}\right)^n
+        \]
+    </div>
+    <div class="controls">
+        <label><span id="nValue">1</span></label>
+        <input type="range" id="nSlider" min="1" max="150" value="1">
+        <button id="autoBtn" title="Otomatik">
+            <img id="autoIcon" src="icons/play.svg" alt="Play" />
+        </button>
+    </div>
+    <div class="result">
+        <p><span id="eHat">\[\hat e = 2.00000000...\]</span></p>
+    </div>
+    <canvas id="numberLine" width="400" height="120"></canvas>
+    <script src="app.js"></script>
+</body>
+
+</html>

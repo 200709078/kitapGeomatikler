@@ -1120,257 +1120,7 @@ function normalize(str) {
 	return str
 }
 
-// START CLASSIFY METHOD
-function classify(input) {
-	const ERR = "Hatalı giriş yaptınız."
-	try {
-		if (typeof input !== 'string') return { type: "point", x: null, y: null, err: ERR }
-
-		let s = input.replace(/\s+/g, '')
-			.replace(/√/g, 'sqrt')
-			.replace(/×/g, '*')
-			.replace(/÷/g, '/')
-			.replace(/\u2212/g, '-')
-
-		// --- A: Top-level '=' arama (dikey doğru için)
-		let depth = 0
-		let eqIndex = -1
-		for (let i = 0; i < s.length; i++) {
-			const ch = s[i]
-			if (ch === '(') depth++
-			else if (ch === ')') depth--
-			else if (ch === '=' && depth === 0) { eqIndex = i; break; }
-		}
-		if (eqIndex !== -1) {
-			const left = s.slice(0, eqIndex)
-			const right = s.slice(eqIndex + 1)
-			if (left.length === 0 || right.length === 0) return { type: "verticalline", x: null, err: ERR };
-			if (left === 'x' || right === 'x') {
-				const expr = (left === 'x') ? right : left
-				let val
-				try { val = math.evaluate(expr); } catch (e) { return { type: "verticalline", x: null, err: ERR }; }
-				if (math.typeOf(val) === 'Complex') return { type: "verticalline", x: null, err: ERR };
-				const toNumberIfPossible = (v) => {
-					if (typeof v === 'number') return v
-					const t = math.typeOf(v)
-					if (t === 'BigNumber' && v.isFinite()) return v.toNumber()
-					if (t === 'Fraction') return v.valueOf()
-					return NaN
-				};
-				const num = toNumberIfPossible(val)
-				if (!isFinite(num) || Number.isNaN(num)) return { type: "verticalline", x: null, err: ERR }
-				const round2 = (n) => Number(Number(n).toFixed(2))
-				return { type: "verticalline", x: round2(num), err: null }
-			}
-			// '=' var ama taraflardan hiçbiri 'x' değilse devam et
-		}
-
-		// --- B: Parantezli nokta kontrolü
-		if (s.startsWith('(') && s.endsWith(')')) {
-			const inner = s.slice(1, -1)
-			depth = 0
-			let splitIndex = -1
-			for (let i = 0; i < inner.length; i++) {
-				const ch = inner[i]
-				if (ch === '(') depth++
-				else if (ch === ')') depth--
-				else if (ch === ',' && depth === 0) { splitIndex = i; break; }
-			}
-			if (splitIndex === -1) return { type: "point", x: null, y: null, err: ERR };
-			const leftExpr = inner.slice(0, splitIndex);
-			const rightExpr = inner.slice(splitIndex + 1);
-			if (leftExpr.length === 0 || rightExpr.length === 0) return { type: "point", x: null, y: null, err: ERR };
-			let xVal, yVal;
-			try { xVal = math.evaluate(leftExpr); yVal = math.evaluate(rightExpr); } catch (e) { return { type: "point", x: null, y: null, err: ERR }; }
-			if (math.typeOf(xVal) === 'Complex' || math.typeOf(yVal) === 'Complex') return { type: "point", x: null, y: null, err: ERR };
-			const toNumberIfPossible = (v) => {
-				if (typeof v === 'number') return v;
-				const t = math.typeOf(v);
-				if (t === 'BigNumber' && v.isFinite()) return v.toNumber();
-				if (t === 'Fraction') return v.valueOf();
-				return NaN;
-			};
-			const xNum = toNumberIfPossible(xVal);
-			const yNum = toNumberIfPossible(yVal);
-			if (!isFinite(xNum) || !isFinite(yNum) || Number.isNaN(xNum) || Number.isNaN(yNum)) return { type: "point", x: null, y: null, err: ERR };
-			const round2 = (n) => Number(Number(n).toFixed(2));
-			return { type: "point", x: round2(xNum), y: round2(yNum), err: null };
-		}
-
-		// --- C: Parantezli değil, '=' de yok -> line, other veya yatay sabit denemesi
-		let node;
-		try { node = math.parse(s); } catch (e) { return { type: "line", m: null, n: null, err: ERR }; }
-
-		// Sembolleri toplayan yardımcı
-		const collectSymbols = (n, set) => {
-			switch (n.type) {
-				case 'SymbolNode':
-					set.add(n.name);
-					break;
-				case 'FunctionNode':
-					n.args.forEach(a => collectSymbols(a, set));
-					break;
-				case 'OperatorNode':
-				case 'ParenthesisNode':
-				case 'AccessorNode':
-				case 'IndexNode':
-				case 'ArrayNode':
-				case 'ConditionalNode':
-				case 'BlockNode':
-					if (n.args) n.args.forEach(a => collectSymbols(a, set));
-					if (n.content) collectSymbols(n.content, set);
-					if (n.condition) collectSymbols(n.condition, set);
-					if (n.trueExpr) collectSymbols(n.trueExpr, set);
-					if (n.falseExpr) collectSymbols(n.falseExpr, set);
-					break;
-				case 'ConstantNode':
-					break;
-				default:
-					if (n.items) n.items.forEach(i => collectSymbols(i, set));
-					if (n.args) n.args.forEach(a => collectSymbols(a, set));
-					if (n.content) collectSymbols(n.content, set);
-			}
-		};
-
-		const symbols = new Set();
-		collectSymbols(node, symbols);
-
-		// İzin verilen sabit semboller (whitelist)
-		const allowedConstants = new Set([
-			'E', 'e', 'pi', 'phi', 'tau', 'LN2', 'LN10', 'LOG10E', 'SQRT2'
-		]);
-
-		const hasX = symbols.has('x');
-		const otherSymbols = Array.from(symbols).filter(sy => sy !== 'x' && !allowedConstants.has(sy));
-		if (otherSymbols.length > 0) {
-			return { type: hasX ? "line" : "line", m: null, n: null, err: ERR };
-		}
-
-		// helper: güvenli şekilde f(x) hesapla, finite değilse hata fırlatır
-		function evalSafeExpr(exprStr, xVal) {
-			const v = math.evaluate(exprStr, { x: xVal });
-			if (math.typeOf(v) === 'Complex') throw new Error('complex');
-			if (typeof v !== 'number') {
-				const t = math.typeOf(v);
-				if (t === 'BigNumber' && v.isFinite()) return v.toNumber();
-				if (t === 'Fraction') return v.valueOf();
-				throw new Error('not-number');
-			}
-			if (!isFinite(v) || Number.isNaN(v)) throw new Error('not-finite');
-			return v;
-		}
-
-		// Eğer ifade 'x' içeriyorsa önce lineer mi diye kontrol et (güvenli örnekleme)
-		if (hasX) {
-			const candidates = [0, 1, 2, 3, -1, -2, 0.5, 1.5, 10];
-			const vals = [];
-			for (let i = 0; i < candidates.length && vals.length < 3; i++) {
-				try {
-					const yv = evalSafeExpr(s, candidates[i]);
-					vals.push({ x: candidates[i], y: yv });
-				} catch (e) {
-					continue;
-				}
-			}
-
-			// Üç geçerli nokta yoksa other olarak kabul et (A seçeneği)
-			if (vals.length < 3) {
-				try {
-					const simplified = math.simplify(node).toString();
-					const checkNode = math.parse(simplified);
-					const checkSymbols = new Set();
-					collectSymbols(checkNode, checkSymbols);
-					const bad = Array.from(checkSymbols).filter(sym => sym !== 'x' && !allowedConstants.has(sym));
-					if (bad.length > 0) return { type: "other", func: null, err: ERR };
-					return { type: "other", func: `x => ${simplified}`, err: null };
-				} catch (e) {
-					return { type: "other", func: null, err: ERR };
-				}
-			}
-
-			// Üç geçerli noktayla lineerlik testi
-			const n0 = vals[0].y;
-			const n1 = vals[1].y;
-			const n2 = vals[2].y;
-			const a = n1 - n0;
-			const a2 = n2 - n1;
-			const EPS = 1e-9;
-			if (Math.abs(a - a2) <= EPS) {
-				const round2 = (num) => Number(Number(num).toFixed(2));
-				return { type: "line", m: round2(a), n: round2(n0), err: null };
-			}
-
-			// Lineer değilse other olarak döndür (normalize edilmiş ifade)
-			try {
-				const simplified = math.simplify(node).toString();
-				const checkNode = math.parse(simplified);
-				const checkSymbols = new Set();
-				collectSymbols(checkNode, checkSymbols);
-				const bad = Array.from(checkSymbols).filter(sym => sym !== 'x' && !allowedConstants.has(sym));
-				if (bad.length > 0) return { type: "other", func: null, err: ERR };
-				return { type: "other", func: `x => ${simplified}`, err: null };
-			} catch (e) {
-				return { type: "other", func: null, err: ERR };
-			}
-		}
-
-		// 'x' yoksa yatay doğru (y = n)
-		try {
-			const val = math.evaluate(s);
-			if (math.typeOf(val) === 'Complex') return { type: "line", m: null, n: null, err: ERR };
-			const toNumberIfPossible = (v) => {
-				if (typeof v === 'number') return v;
-				const t = math.typeOf(v);
-				if (t === 'BigNumber' && v.isFinite()) return v.toNumber();
-				if (t === 'Fraction') return v.valueOf();
-				return NaN;
-			};
-			const num = toNumberIfPossible(val);
-			if (!isFinite(num) || Number.isNaN(num)) return { type: "line", m: null, n: null, err: ERR };
-			const round2 = (n) => Number(Number(n).toFixed(2));
-			return { type: "line", m: 0, n: round2(num), err: null };
-		} catch (e) {
-			return { type: "line", m: null, n: null, err: ERR };
-		}
-
-	} catch (e) {
-		return { type: "point", x: null, y: null, err: "Hatalı giriş yaptınız." };
-	}
-}
-
-// --- Test satırları
-console.log("x^(log10(100))", classify("x^(log10(100))"))
-console.log("1/x", classify("1/x"))
-console.log("-sin(x)+cos(ln(x^2))", classify("-sin(x)+cos(ln(x^2))"))
-console.log("log10(x)", classify("log10(x)"))
-console.log("E^(x^2-4)", classify("E^(x^2-4)"));
-console.log("y+3x", classify("y+3x"));
-console.log("-4", classify("-4"))
-console.log("-k", classify("-k"))
-console.log("x=4.2", classify("x=4.2"))
-console.log("(-1,2.3)", classify("(-1,2.3)"))
-console.log("-4x+5", classify("-4x+5"))
-console.log("-x", classify("-x"))
-console.log("3-2x", classify("3-2x"))
-console.log("x", classify("x"))
-console.log("-√4x+ln(E)", classify("-√4x+ln(E)"))
-console.log("-kx+5", classify("-kx+5"));
-console.log("log10(100)", classify("log10(100)"))
-console.log("-sin(pi/6)", classify("-sin(pi/6)"))
-console.log("-log(E,E)=x", classify("-log(E,E)=x"))
-console.log("x=-4xk", classify("x=-4xk"))
-console.log("(-1,2.3)", classify("(-1,2.3)"))
-console.log("(E^0,log10(100))", classify("(E^0,log10(100))"))
-console.log("(-1,2.3)", classify("(-1,2.3)"))
-console.log("(E^0,log(125,5))", classify("(E^0,log(125,5))"))
-console.log("(xx,-4)", classify("(xx,-4)"))
-console.log("(1/3, 2/3)", classify("(1/3, 2/3)"))
-console.log("(sin(pi/2),cos(0))", classify("(sin(pi/2),cos(0))"))
-console.log("(sqrt(4), 2)", classify("(sqrt(4), 2)"))
-console.log("(max(4,-1), min(2,log10(10)))", classify("(max(4,-1), min(2,log10(10)))"))
-//END CLASSIFY METHOD PROCESS
-
-function classifyOLD(inputRaw) {
+function classify(inputRaw) {
 	const norm = inputRaw.replace(/\s+/g, '')
 	// ---- Noktalar ----
 	const pointRe = /^\s*\(\s*([+-]?\d+(?:\.\d+)?)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*\)\s*$/
@@ -1446,12 +1196,12 @@ function classifyOLD(inputRaw) {
 		}
 	}
 
-	// ---- Limit(f,2) ----
+	// ---- Limit(f,c) ----
 	const limitRe = /^\s*Limit\s*\(\s*(.+)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*\)\s*$/i
 	const limitMatch = normalize(norm).match(limitRe)
 	if (limitMatch) {
 		const func = limitMatch[1] // f
-		const approachVal = limitMatch[2] // 2
+		const approachVal = limitMatch[2] // c
 		return {
 			type: "limit",
 			func,
@@ -1459,12 +1209,12 @@ function classifyOLD(inputRaw) {
 		}
 	}
 
-	// ---- Türev(f,2) ----
+	// ---- Türev(f,c) ----
 	const turevRe = /^\s*Türev\s*\(\s*(.+)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*\)\s*$/i
 	const turevMatch = normalize(norm).match(turevRe)
 	if (turevMatch) {
 		const func = turevMatch[1] // f
-		const approachVal = turevMatch[2] // 2
+		const approachVal = turevMatch[2] // c
 		return {
 			type: "turev",
 			func,
@@ -1577,12 +1327,6 @@ function classifyOLD(inputRaw) {
 	}
 
 	// ---- SectionalFunctions ----
-
-	//PARÇALI FONKSİYON {OLARAK} KABUL EDİLECEK
-
-
-
-
 	if (/,/.test(normalize(norm))) { // en az bir ',' varsa işle
 		const segments = normalize(norm).split(";").map(s => s.trim()).filter(s => s.length > 0);
 		const functions = [];
@@ -1674,13 +1418,14 @@ function bileskeProcess(funcs) {
 }
 
 function digerKeyDown(evt, id) {
-
 	let allowKeys = '(){}[],=-+.;<>*^/_bçdğjımnşquüvxyzCÇEFGĞHIJKMNOPQTUVWXYZBackspaceArrowLeftArrowRightShiftDelete'
 	if (isNaN(evt.key) && !allowKeys.includes(evt.key)) {
 		evt.preventDefault()
 	}
 	if (evt.key === 'Enter') {
 		console.log(id, ' id li giriş.')
+
+
 
 
 

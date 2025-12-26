@@ -1,0 +1,56 @@
+body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    background-color: #f4f6f8;
+}
+
+h1 {
+    text-align: center;
+}
+
+.formula {
+    text-align: center;
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+.controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+#autoBtn {
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 4px;
+}
+
+#autoBtn img {
+    width: 24px;
+    height: 24px;
+}
+
+.result {
+    text-align: center;
+    font-size: xx-large;
+    margin-bottom: 20px;
+}
+#eValue{
+    color: red;
+}
+#eHat{
+    color: blue;
+}
+#nValue {
+    display: inline-block;
+    width: 60px;
+    text-align: left;
+}
+
+canvas {
+    display: block;
+    margin: 0 auto;
+    border: 1px solid #ccc;
+}

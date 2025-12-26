@@ -1,0 +1,31 @@
+Bir grafik çizim uygulaması için nodeJS (mathJS) ile yazılmış bir classify(input) metodu lazım. Bu metod gelen string in içerisindeki bütün boşlukları temizledikten sonra aşağıdaki gibi nesneler döndürmeli.
+1) nokta girişi:(reel sayı, reel sayı). Koordinatlar hesaplanabilir değerler de olabilir.
+(-1,2.3)	->{type:"point",x:-1,y:2.3,err:null}
+(E^0,log(100))	->{type:"point",x:1,y:2,err:null}
+(xx,-4)		->{type:"point",x:null,y:null,err:"Hatalı giriş yaptınız."}
+
+2) x eksenine dik doğru: x=reel sayı (hesaplanabilir bir değer de olabilir.)
+x=4.2		-> {type:"verticalline",x:4.2,err:null}
+-ln(E)=x	-> {type:"verticalline",x:-1,err:null}
+x=-4xk		-> {type:"verticalline",x:null,err:"Hatalı giriş yaptınız."}
+
+3) y eksenine dik doğru: reel sayı (hesaplanabilir bir değer de olabilir.)
+-4		-> {type:"line",m:0,n:-4,err:null}
+x^(log(1))	-> {type:"line",m:0,n:1,err:null}
+-k		-> {type:"line",m:null,n:null,err:"Hatalı giriş yaptınız."}
+
+4) Doğru girişi: ax+b (a reel sayı, b reel sayı) (a ile b hesaplanabilir değerler de olabilir.)
+-4x+5		-> {type:"line",m:-4,n:5,err:null}
+-x		-> {type:"line",m:-1,n:0,err:null}
+3-2x		-> {type:"line",m:-2,n:3,err:null}
+-4x+5		-> {type:"line",m:-4,n:5,err:null}
+-√4x+ln(E)	-> {type:"line",m:-2,n:1,err:null}
+x		-> {type:"line",m:1,n:0,err:null}
+-kx+5		-> {type:"line",m:null,n:null,err:"Hatalı giriş yaptınız."}
+5) Grafiği çizilebilen diğer fonksiyonlar: Grafiği çizilebilen diğer fonksiyonlar geriye fonksiyonun normalize edilmiş halini func olarak döndürebilir. İfadenin grafiği çizilemiyorsa hata döndürmeli. (İfade sadece x e bağlı olacak.)
+-sin(x)+cos(ln(x^2))	-> {type:"other",func:... çizilebilir,err:null}
+E^(x^2-4)		-> {type:"other",fuc:...,err:null}
+y+3x			-> {type:"other",fuc:null,err:"Hatalı giriş yaptınız."}
+
+ANLAŞILMAYAN BİR YER VARSA AÇIKLIĞA KAVUŞTURALIM. DAHA SONRA KODLAMAYA GEÇELİM.
+NODEJS TE WEB UYGULAMASI GİBİ DE YAPABİLİRSİN. SOLDA GİRİŞ İÇİN TEK BİR INPUT. UNPUTA GİRİŞ YAPIP ENTERE BASTIĞIMDA SAĞDA DÖNDÜRÜLEN NESNEYİ GÖSTEREBİLİR.
