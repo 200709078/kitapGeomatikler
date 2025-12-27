@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="tr" lang="tr">
+
+<head>
+    <title>GeoMatik</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8">
+    <meta name="keywords" content="Graph, avCELL, tablolama">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="made by mADEMatik">
+    <meta name="author" content="made by mADEMatik">
+    <link rel="stylesheet" href="style.css" type="text/css" />
+</head>
+
+<body>
+    <h1>avCELL</h1>
+    <!-- CONTROL PANEL -->
+    <section id="control-panel">
+        <button id="add-row-btn" class="icon-btn" title="Satır Ekle">
+            <img src="icons/addrowend.svg" />
+        </button>
+
+        <button id="remove-row-btn" class="icon-btn" title="Satır Sil">
+            <img src="icons/delrowend.svg" />
+        </button>
+
+        <button id="add-col-btn" class="icon-btn" title="Sütun Ekle">
+            <img src="icons/addcolend.svg" />
+        </button>
+
+        <button id="remove-col-btn" class="icon-btn" title="Sütun Sil">
+            <img src="icons/delcolend.svg" />
+        </button>
+
+    </section>
+    <!-- TABLE AREA -->
+    <section id="table-area">
+        <table id="data-table">
+            <!-- ADIM 2'de doldurulacak -->
+        </table>
+    </section>
+
+    <!-- CHART TYPE SELECTION -->
+    <section id="chart-type" hidden>
+        <label>
+            <input type="radio" name="chartType" value="bar" checked />
+            Sütun
+        </label>
+        <label>
+            <input type="radio" name="chartType" value="pie" />
+            Pasta
+        </label>
+        <label>
+            <input type="radio" name="chartType" value="line" />
+            Doğru
+        </label>
+    </section>
+
+    <!-- CHART AREA -->
+    <section id="chart-area" hidden>
+        <canvas id="chartCanvas"></canvas>
+    </section>
+    <script src="app.js"></script>
+</body>
+
+</html>

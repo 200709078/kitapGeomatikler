@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg
+    width="800px"
+    height="800px"
+    viewBox="0 0 40 50"
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+>
+
+    <!-- ALT SATIR ARKA PLAN (KIRMIZI) -->
+    <clipPath id="tableClip">
+        <rect x="1" y="1" width="34" height="24" rx="4" ry="4"/>
+    </clipPath>
+
+    <rect
+        x="1" y="13"
+        width="34" height="12"
+        fill="#e53935"
+        clip-path="url(#tableClip)"
+    />
+
+    <!-- DIŞ ÇERÇEVE (SADECE DIŞ KÖŞELER YUVARLAK) -->
+    <rect
+        x="1" y="1"
+        width="34" height="24"
+        rx="4" ry="4"
+        stroke="#000000"
+        stroke-width="1.5"
+        fill="none"
+    />
+
+    <!-- DİKEY SÜTUN AYIRICILARI (3 SÜTUN) -->
+    <line x1="12" y1="1" x2="12" y2="25"
+          stroke="#000000" stroke-width="1.5"/>
+
+    <line x1="23" y1="1" x2="23" y2="25"
+          stroke="#000000" stroke-width="1.5"/>
+
+    <!-- YATAY SATIR AYIRICI (2 SATIR) -->
+    <line x1="1" y1="13" x2="35" y2="13"
+          stroke="#000000" stroke-width="1.5"/>
+
+    <!-- TABLO ALTI ARTİ (+) — KIRMIZI -->
+    <!-- Yatay merkez: x = 18 -->
+    <line
+        x1="14" y1="33"
+        x2="22" y2="33"
+        stroke="#e53935"
+        stroke-width="1.5"
+        stroke-linecap="round"
+    />
+
+</svg>
