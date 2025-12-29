@@ -1,6 +1,6 @@
 body {
   font-family: Arial, sans-serif;
-  padding: 20px;
+  padding: 0 px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -12,10 +12,10 @@ section {
 }
 
 #control-panel {
-    display: flex;
-    gap: 8px;
-    justify-content: center;
-    margin-bottom: 12px;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 12px;
 }
 
 #data-table {
@@ -69,4 +69,16 @@ td.editing {
 
 .icon-btn:active {
   background-color: #e0e0e0;
+}
+
+.range-selected {
+  background-color: #dbeafe;
+}
+
+#data-table {
+  user-select: none;
+}
+
+td.editing {
+  user-select: text;
 }
