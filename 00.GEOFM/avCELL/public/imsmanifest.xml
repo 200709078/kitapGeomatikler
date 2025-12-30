@@ -1,0 +1,43 @@
+<?xml version="1.0" standalone="no"?>
+<manifest identifier="com.scorm.golfsamples.contentpackaging.singlesco.12" version="1"
+  xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2"
+  xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_rootv1p2">
+  <metadata>
+    <schema>ADL SCORM</schema>
+    <schemaversion>1.2</schemaversion>
+    <lom>
+      <general>
+        <title>
+          <string language="tr">avCELL</string>
+        </title>
+        <description>
+          <string language="tr">avCELL</string>
+        </description>
+        <language>tr</language>
+      </general>
+    </lom>
+  </metadata>
+
+  <organizations default="GEOMATIK">
+    <organization identifier="GEOMATIK">
+      <title>avCELL</title>
+      <item identifier="item_geomatik" identifierref="resource_geomatik">
+        <title>avCELL</title>
+      </item>
+    </organization>
+  </organizations>
+  <resources>
+    <resource identifier="resource_geomatik" type="webcontent" adlcp:scormtype="sco"
+      href="index.html">
+      <file href="app.js" />
+      <file href="index.html" />
+      <file href="style.css" />
+
+      <file href="icons/addcolend.svg" />
+      <file href="icons/addrowend.svg" />
+      <file href="icons/clear.svg" />
+      <file href="icons/delcolend.svg" />
+      <file href="icons/delrowend.svg" />
+    </resource>
+  </resources>
+</manifest>

@@ -13,6 +13,10 @@ let internalClipboard = null;
 let tableData = [];
 let isEditing = false;
 let editBackupValue = "";
+let chartInstance = null;
+let lastValidSelectionRange = null;
+let lastValidChartData = null;
+
 function normalizeSelectedCell() {
     if (!selectedCell) return;
     if (selectedCell.row >= rowCount) {
@@ -67,7 +71,7 @@ function renderTable() {
 
         for (let c = 0; c < colCount; c++) {
             const td = document.createElement("td");
-            // 🔴 KRİTİK: data binding
+            // data binding
             td.dataset.row = r;
             td.dataset.col = c;
 
@@ -99,6 +103,33 @@ function renderTable() {
                 }
             }
 
+            // CHART RANGE STATE (grafiğe bağlı alan)
+            if (lastValidSelectionRange) {
+                const minRow = Math.min(
+                    lastValidSelectionRange.start.row,
+                    lastValidSelectionRange.end.row
+                );
+                const maxRow = Math.max(
+                    lastValidSelectionRange.start.row,
+                    lastValidSelectionRange.end.row
+                );
+                const minCol = Math.min(
+                    lastValidSelectionRange.start.col,
+                    lastValidSelectionRange.end.col
+                );
+                const maxCol = Math.max(
+                    lastValidSelectionRange.start.col,
+                    lastValidSelectionRange.end.col
+                );
+
+                if (
+                    r >= minRow && r <= maxRow &&
+                    c >= minCol && c <= maxCol
+                ) {
+                    td.classList.add("chart-range");
+                }
+            }
+
             // EVENT LISTENERS
             td.addEventListener("click", (e) => {
                 if (isEditing) {
@@ -117,12 +148,14 @@ function renderTable() {
 
                 renderTable();
                 td.focus();
+                updateChartFromSelection();
             });
 
             td.addEventListener("dblclick", () => {
                 selectedCell = { row: r, col: c };
                 renderTable();
                 enterEditMode(r, c);
+                updateChartFromSelection();
             });
 
             tr.appendChild(td);
@@ -140,6 +173,7 @@ addRowBtn.addEventListener("click", () => {
     }));
     tableData.push(newRow);
     renderTable();
+    updateChartFromSelection();
 });
 removeRowBtn.addEventListener("click", () => {
     if (rowCount > MIN_ROW_SIZE) {
@@ -147,6 +181,7 @@ removeRowBtn.addEventListener("click", () => {
         tableData.pop();
         normalizeSelectedCell();
         renderTable();
+        updateChartFromSelection();
     }
 });
 addColBtn.addEventListener("click", () => {
@@ -158,6 +193,7 @@ addColBtn.addEventListener("click", () => {
         })
     );
     renderTable();
+    updateChartFromSelection();
 });
 removeColBtn.addEventListener("click", () => {
     if (colCount > MIN_COL_SIZE) {
@@ -165,6 +201,7 @@ removeColBtn.addEventListener("click", () => {
         tableData.forEach(row => row.pop());
         normalizeSelectedCell();
         renderTable();
+        updateChartFromSelection();
     }
 });
 function placeCursorAtEnd(element) {
@@ -229,8 +266,6 @@ function getRangeValues(range) {
 
     return values;
 }
-
-
 
 function getCellsInRange(range) {
     const [start, end] = range.split(":");
@@ -320,7 +355,6 @@ function evaluateFormula(formula, currentRow, currentCol) {
     );
 
     // TEKİL HÜCRELERİ ÇÖZ
-
     expr = expr.replace(/([A-Z]+[0-9]+)/gi, (match) => {
         const index = cellRefToIndex(match.toUpperCase());
         if (!index) return 0;
@@ -409,7 +443,6 @@ function exitEditMode(save = true) {
     isEditing = false;
     editBackupValue = "";
 
-    /* Hesaplama */
     if (tableData[row][col].formula) {
         tableData[row][col].value =
             evaluateFormula(
@@ -420,7 +453,40 @@ function exitEditMode(save = true) {
     }
 
     recalculateAll();
+
+    if (
+        lastValidSelectionRange &&
+        isCellInRange(row, col, lastValidSelectionRange)
+    ) {
+        const chartType = document.querySelector(
+            'input[name="chartType"]:checked'
+        ).value;
+
+        if (
+            lastValidSelectionRange &&
+            isCellInRange(row, col, lastValidSelectionRange)
+        ) {
+            const updatedChartData =
+                getChartDataFromRange(lastValidSelectionRange);
+
+            if (updatedChartData) {
+                lastValidChartData = updatedChartData;
+
+                const chartType = document.querySelector(
+                    'input[name="chartType"]:checked'
+                ).value;
+
+                drawChart(
+                    updatedChartData.labels,
+                    updatedChartData.values,
+                    chartType
+                );
+            }
+        }
+
+    }
     renderTable();
+    updateChartFromSelection();
 }
 
 window.addEventListener("keydown", (e) => {
@@ -435,19 +501,13 @@ window.addEventListener("keydown", (e) => {
             const maxCol = Math.max(selectionRange.start.col, selectionRange.end.col);
 
             internalClipboard = [];
-
             for (let r = minRow; r <= maxRow; r++) {
                 const row = [];
                 for (let c = minCol; c <= maxCol; c++) {
-                    //row.push(tableData[r][c]);
                     row.push({
                         value: tableData[r][c].value,
                         formula: tableData[r][c].formula
                     });
-
-                    //değişti
-
-
                 }
                 internalClipboard.push(row);
             }
@@ -478,9 +538,9 @@ window.addEventListener("keydown", (e) => {
                 }
             }
         }
-
         recalculateAll();
         renderTable();
+        updateChartFromSelection();
         e.preventDefault();
         return;
     }
@@ -497,6 +557,7 @@ window.addEventListener("keydown", (e) => {
                 col
             };
             renderTable();
+            updateChartFromSelection();
             return;
         }
         if (e.key === "Escape") {
@@ -504,7 +565,7 @@ window.addEventListener("keydown", (e) => {
             exitEditMode(false);
             return;
         }
-        return; // edit-mode'da diğer tuşlara karışma
+        return;
     }
 
     // SELECTION MODE → Delete / Backspace ile hücreyi temizle
@@ -520,6 +581,7 @@ window.addEventListener("keydown", (e) => {
         };
         recalculateAll();
         renderTable();
+        updateChartFromSelection();
         return;
     }
 
@@ -540,7 +602,6 @@ window.addEventListener("keydown", (e) => {
 
     // SADECE ok tuşlarına izin ver
     if (!navigationKeys.includes(e.key)) {
-        // Yazı, backspace, enter, tab vs. -> şu anlık engelle
         e.preventDefault();
         return;
     }
@@ -575,8 +636,203 @@ window.addEventListener("keydown", (e) => {
             selectionRange = null;
         }
         renderTable();
+        updateChartFromSelection();
     }
 });
 // INIT
 initData();
 renderTable();
+updateChartFromSelection();
+
+//DRAW CHART
+function getChartDataFromRange(range) {
+    if (!range) return null;
+
+    const minRow = Math.min(range.start.row, range.end.row);
+    const maxRow = Math.max(range.start.row, range.end.row);
+    const minCol = Math.min(range.start.col, range.end.col);
+
+    const labels = [];
+    const values = [];
+
+    for (let r = minRow; r <= maxRow; r++) {
+        const xCell = tableData[r][minCol];
+        const yCell = tableData[r][minCol + 1];
+
+        const yVal = Number(yCell.value);
+        if (isNaN(yVal)) return null;
+
+        labels.push(xCell.value);
+        values.push(yVal);
+    }
+
+    return { labels, values };
+}
+
+function isCellInRange(row, col, range) {
+    if (!range) return false;
+
+    const minRow = Math.min(range.start.row, range.end.row);
+    const maxRow = Math.max(range.start.row, range.end.row);
+    const minCol = Math.min(range.start.col, range.end.col);
+    const maxCol = Math.max(range.start.col, range.end.col);
+
+    return (
+        row >= minRow && row <= maxRow &&
+        col >= minCol && col <= maxCol
+    );
+}
+
+function getChartDataFromSelection() {
+    if (!selectionRange) return null;
+
+    const minRow = Math.min(selectionRange.start.row, selectionRange.end.row);
+    const maxRow = Math.max(selectionRange.start.row, selectionRange.end.row);
+    const minCol = Math.min(selectionRange.start.col, selectionRange.end.col);
+    const maxCol = Math.max(selectionRange.start.col, selectionRange.end.col);
+
+    // en az 2x2
+    if ((maxRow - minRow + 1) < 2 || (maxCol - minCol + 1) < 2) {
+        return null;
+    }
+
+    const labels = [];
+    const values = [];
+
+    for (let r = minRow; r <= maxRow; r++) {
+        const xCell = tableData[r][minCol];
+        const yCell = tableData[r][minCol + 1];
+
+        const xVal = xCell.value;
+        const yVal = Number(yCell.value);
+
+        // Y ekseni kesin sayısal olmalı
+        if (isNaN(yVal)) return null;
+
+        labels.push(xVal);
+        values.push(yVal);
+    }
+
+    return { labels, values };
+}
+
+function updateChartFromSelection() {
+    const chartArea = document.getElementById("chart-area");
+    const chartTypeArea = document.getElementById("chart-type");
+
+    const chartData = getChartDataFromSelection();
+
+    // Geçersiz seçim → grafiği silme!
+    if (!chartData) {
+        if (!lastValidChartData) {
+            chartArea.hidden = true;
+            chartTypeArea.hidden = true;
+        }
+        return;
+    }
+
+    // Geçerli seçim → yeni grafik alanı
+    lastValidChartData = chartData;
+    lastValidSelectionRange = JSON.parse(JSON.stringify(selectionRange));
+
+    chartArea.hidden = false;
+    chartTypeArea.hidden = false;
+
+    const chartType = document.querySelector(
+        'input[name="chartType"]:checked'
+    ).value;
+
+    drawChart(
+        chartData.labels,
+        chartData.values,
+        chartType
+    );
+}
+
+function drawChart(labels, values, type) {
+    const chartArea = document.getElementById("chart-area");
+    const chartTypeArea = document.getElementById("chart-type");
+    const canvas = document.getElementById("chartCanvas");
+
+    chartArea.hidden = false;
+    chartTypeArea.hidden = false;
+
+    if (chartInstance) {
+        chartInstance.destroy();
+    }
+
+    chartInstance = new Chart(canvas, {
+        type: type,
+        data: {
+            labels: labels,
+            datasets: [{
+                label: type.toUpperCase() + ' GRAPH',
+                data: values,
+                backgroundColor: [
+                    "rgba(54, 162, 235, 0.6)",
+                    "rgba(255, 99, 132, 0.6)",
+                    "rgba(255, 206, 86, 0.6)",
+                    "rgba(75, 192, 192, 0.6)"
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: type === "pie" ? {} : {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+document.querySelectorAll('input[name="chartType"]').forEach(radio => {
+    radio.addEventListener("change", () => {
+        if (!lastValidSelectionRange) return;
+
+        const chartType = document.querySelector(
+            'input[name="chartType"]:checked'
+        ).value;
+
+        const updatedChartData =
+            getChartDataFromRange(lastValidSelectionRange);
+
+        if (!updatedChartData) return;
+
+        lastValidChartData = updatedChartData;
+
+        drawChart(
+            updatedChartData.labels,
+            updatedChartData.values,
+            chartType
+        );
+    });
+
+});
+
+//CLEAR CHART
+const clearChartBtn = document.getElementById("clear-chart-btn");
+function clearChart() {
+    const chartArea = document.getElementById("chart-area");
+    const chartTypeArea = document.getElementById("chart-type");
+
+    if (chartInstance) {
+        chartInstance.destroy();
+        chartInstance = null;
+    }
+
+    lastValidChartData = null;
+    lastValidSelectionRange = null;
+
+    chartArea.hidden = true;
+    chartTypeArea.hidden = true;
+
+    renderTable();
+}
+clearChartBtn.addEventListener("click", () => {
+    clearChart();
+});
+

@@ -7,10 +7,6 @@ body {
   background-color: #f9f9f9;
 }
 
-section {
-  margin-bottom: 20px;
-}
-
 #control-panel {
   display: flex;
   gap: 8px;
@@ -20,15 +16,40 @@ section {
 
 #data-table {
   border-collapse: collapse;
+  user-select: none;
 }
 
-#data-table td,
-#data-table th {
-  border: 1px solid #999;
-  padding: 6px;
-  min-width: 80px;
+th {
+  background-color: #f2f2f2;
   text-align: center;
+  border: 1px solid #bfbfbf;
+  padding: 4px 6px;
 }
+
+th:first-child {
+  min-width: 40px;
+}
+
+td {
+  border: 1px solid #d0d0d0;
+  padding: 4px 6px;
+  background-color: #ffffff;
+  min-width: 60px;
+}
+
+td.selected {
+  outline: 2px solid #0078d7;
+}
+
+td.range-selected {
+  background-color: #d9ebff;
+}
+
+td.chart-range {
+  background-color: #d6f5d6;
+  /* açık yeşil */
+}
+
 
 #chart-area {
   max-width: 600px;
@@ -42,6 +63,52 @@ td.selected {
 td.editing {
   outline: 2px solid #2563eb;
   background-color: #eef2ff;
+}
+
+#chart-type {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 15px;
+}
+
+#chart-type label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+#chart-type[hidden] {
+  display: none !important;
+}
+
+#clear-chart-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  background: none;
+  border: 1px solid #ccc;
+  padding: 6px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+#clear-chart-btn:hover {
+  background-color: #f0f0f0;
+}
+
+#clear-chart-btn:active {
+  background-color: #e0e0e0;
+}
+
+#clear-chart-btn img {
+  display: block;
+  width: 20px;
+  height: 20px;
+  stroke: #333;
+  stroke-width: 2;
+  fill: none;
 }
 
 .icon-btn {
@@ -75,10 +142,10 @@ td.editing {
   background-color: #dbeafe;
 }
 
-#data-table {
-  user-select: none;
-}
-
 td.editing {
   user-select: text;
+}
+
+td.chart-range {
+  background-color: #d4f7d4;
 }

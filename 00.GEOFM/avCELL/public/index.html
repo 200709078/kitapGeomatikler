@@ -13,25 +13,21 @@
 </head>
 
 <body>
-    <h1>avCELL</h1>
     <!-- CONTROL PANEL -->
     <section id="control-panel">
+        <h2>avCELL</h2>
         <button id="add-row-btn" class="icon-btn" title="Satır Ekle">
             <img src="icons/addrowend.svg" />
         </button>
-
         <button id="remove-row-btn" class="icon-btn" title="Satır Sil">
             <img src="icons/delrowend.svg" />
         </button>
-
         <button id="add-col-btn" class="icon-btn" title="Sütun Ekle">
             <img src="icons/addcolend.svg" />
         </button>
-
         <button id="remove-col-btn" class="icon-btn" title="Sütun Sil">
             <img src="icons/delcolend.svg" />
         </button>
-
     </section>
     <!-- TABLE AREA -->
     <section id="table-area">
@@ -49,12 +45,16 @@
         <label>
             <input type="radio" name="chartType" value="line" />Doğru
         </label>
+        <button id="clear-chart-btn" type="button" title="Temizle">
+            <img src="icons/clear.svg" />
+        </button>
     </section>
 
     <!-- CHART AREA -->
     <section id="chart-area" hidden>
         <canvas id="chartCanvas"></canvas>
     </section>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="app.js"></script>
 </body>
 

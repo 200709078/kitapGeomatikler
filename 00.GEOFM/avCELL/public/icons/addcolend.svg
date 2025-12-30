@@ -2,12 +2,12 @@
 <svg
     width="800px"
     height="800px"
-    viewBox="0 0 40 50"
+    viewBox="0 0 40 40"
     xmlns="http://www.w3.org/2000/svg"
     fill="none"
 >
 
-    <!-- SAĞ SÜTUN ARKA PLAN (KIRMIZI) -->
+    <!-- SAĞ SÜTUN ARKA PLAN (MAVİ) -->
     <clipPath id="tableClip">
         <rect x="1" y="1" width="28" height="34" rx="4" ry="4"/>
     </clipPath>
@@ -15,7 +15,7 @@
     <rect
         x="15" y="1"
         width="14" height="34"
-        fill="#e53935"
+        fill="#2563eb"
         clip-path="url(#tableClip)"
     />
 
@@ -52,12 +52,12 @@
         stroke-width="1.5"
     />
 
-    <!-- TABLO DIŞI ARTİ (+) — KIRMIZI, DİKEY MERKEZDE -->
+    <!-- TABLO DIŞI ARTİ (+) — MAVİ, DİKEY MERKEZDE -->
     <!-- Merkez: y = 18 -->
     <line
         x1="36" y1="14"
         x2="36" y2="22"
-        stroke="#e53935"
+        stroke="#2563eb"
         stroke-width="1.5"
         stroke-linecap="round"
     />
@@ -65,7 +65,7 @@
     <line
         x1="32" y1="18"
         x2="40" y2="18"
-        stroke="#e53935"
+        stroke="#2563eb"
         stroke-width="1.5"
         stroke-linecap="round"
     />
