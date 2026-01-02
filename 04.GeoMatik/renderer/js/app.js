@@ -16,7 +16,7 @@ let scaleY = 100
 let minX = -8
 let minY = -3
 
-let units = [1 / 10, 1 / 5, 1 / 2, 1, 2, 5, 10, 20]
+let units = [1 / 10, 1 / 5, 1 / 2, 1, 2, 5, 10, 20, 50, 100, 200, 500,1000,2000,5000,10000,20000,50000]
 let tickX = 3
 let unitX = units[tickX]
 let tickY = 3
