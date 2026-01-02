@@ -14,8 +14,8 @@ let tableData = [];
 let isEditing = false;
 let editBackupValue = "";
 let chartInstance = null;
-let lastValidSelectionRange = null;
-let lastValidChartData = null;
+let chartConfig = null; // { xRange, yRange, type }
+
 
 function normalizeSelectedCell() {
     if (!selectedCell) return;
@@ -103,32 +103,16 @@ function renderTable() {
                 }
             }
 
-            // CHART RANGE STATE (grafiğe bağlı alan)
-            if (lastValidSelectionRange) {
-                const minRow = Math.min(
-                    lastValidSelectionRange.start.row,
-                    lastValidSelectionRange.end.row
-                );
-                const maxRow = Math.max(
-                    lastValidSelectionRange.start.row,
-                    lastValidSelectionRange.end.row
-                );
-                const minCol = Math.min(
-                    lastValidSelectionRange.start.col,
-                    lastValidSelectionRange.end.col
-                );
-                const maxCol = Math.max(
-                    lastValidSelectionRange.start.col,
-                    lastValidSelectionRange.end.col
-                );
-
-                if (
-                    r >= minRow && r <= maxRow &&
-                    c >= minCol && c <= maxCol
-                ) {
-                    td.classList.add("chart-range");
+            // CHART HIGHLIGHT STATE (chartConfig varsa)
+            if (chartConfig) {
+                if (isCellInRange(r, c, chartConfig.xRange)) {
+                    td.classList.add("chart-x");
+                }
+                if (isCellInRange(r, c, chartConfig.yRange)) {
+                    td.classList.add("chart-y");
                 }
             }
+
 
             // EVENT LISTENERS
             td.addEventListener("click", (e) => {
@@ -148,14 +132,12 @@ function renderTable() {
 
                 renderTable();
                 td.focus();
-                updateChartFromSelection();
             });
 
             td.addEventListener("dblclick", () => {
                 selectedCell = { row: r, col: c };
                 renderTable();
                 enterEditMode(r, c);
-                updateChartFromSelection();
             });
 
             tr.appendChild(td);
@@ -173,7 +155,6 @@ addRowBtn.addEventListener("click", () => {
     }));
     tableData.push(newRow);
     renderTable();
-    updateChartFromSelection();
 });
 removeRowBtn.addEventListener("click", () => {
     if (rowCount > MIN_ROW_SIZE) {
@@ -181,7 +162,6 @@ removeRowBtn.addEventListener("click", () => {
         tableData.pop();
         normalizeSelectedCell();
         renderTable();
-        updateChartFromSelection();
     }
 });
 addColBtn.addEventListener("click", () => {
@@ -193,7 +173,6 @@ addColBtn.addEventListener("click", () => {
         })
     );
     renderTable();
-    updateChartFromSelection();
 });
 removeColBtn.addEventListener("click", () => {
     if (colCount > MIN_COL_SIZE) {
@@ -201,7 +180,6 @@ removeColBtn.addEventListener("click", () => {
         tableData.forEach(row => row.pop());
         normalizeSelectedCell();
         renderTable();
-        updateChartFromSelection();
     }
 });
 function placeCursorAtEnd(element) {
@@ -453,43 +431,24 @@ function exitEditMode(save = true) {
     }
 
     recalculateAll();
-
-    if (
-        lastValidSelectionRange &&
-        isCellInRange(row, col, lastValidSelectionRange)
-    ) {
-        const chartType = document.querySelector(
-            'input[name="chartType"]:checked'
-        ).value;
-
-        if (
-            lastValidSelectionRange &&
-            isCellInRange(row, col, lastValidSelectionRange)
-        ) {
-            const updatedChartData =
-                getChartDataFromRange(lastValidSelectionRange);
-
-            if (updatedChartData) {
-                lastValidChartData = updatedChartData;
-
-                const chartType = document.querySelector(
-                    'input[name="chartType"]:checked'
-                ).value;
-
-                drawChart(
-                    updatedChartData.labels,
-                    updatedChartData.values,
-                    chartType
-                );
-            }
-        }
-
-    }
     renderTable();
-    updateChartFromSelection();
+    if (chartConfig) {
+        renderChartFromInputs();
+    }
+
 }
 
 window.addEventListener("keydown", (e) => {
+    // Eğer focus bir input veya textarea'daysa tablo klavyesi çalışmasın
+    if (
+        document.activeElement &&
+        (
+            document.activeElement.tagName === "INPUT" ||
+            document.activeElement.tagName === "TEXTAREA"
+        )
+    ) {
+        return;
+    }
     // CTRL + C
     if (e.ctrlKey && e.code === "KeyC") {
         if (isEditing || !selectedCell) return;
@@ -540,7 +499,6 @@ window.addEventListener("keydown", (e) => {
         }
         recalculateAll();
         renderTable();
-        updateChartFromSelection();
         e.preventDefault();
         return;
     }
@@ -557,7 +515,6 @@ window.addEventListener("keydown", (e) => {
                 col
             };
             renderTable();
-            updateChartFromSelection();
             return;
         }
         if (e.key === "Escape") {
@@ -581,7 +538,6 @@ window.addEventListener("keydown", (e) => {
         };
         recalculateAll();
         renderTable();
-        updateChartFromSelection();
         return;
     }
 
@@ -636,13 +592,11 @@ window.addEventListener("keydown", (e) => {
             selectionRange = null;
         }
         renderTable();
-        updateChartFromSelection();
     }
 });
 // INIT
 initData();
 renderTable();
-updateChartFromSelection();
 
 //DRAW CHART
 function getChartDataFromRange(range) {
@@ -651,7 +605,6 @@ function getChartDataFromRange(range) {
     const minRow = Math.min(range.start.row, range.end.row);
     const maxRow = Math.max(range.start.row, range.end.row);
     const minCol = Math.min(range.start.col, range.end.col);
-
     const labels = [];
     const values = [];
 
@@ -716,39 +669,6 @@ function getChartDataFromSelection() {
     return { labels, values };
 }
 
-function updateChartFromSelection() {
-    const chartArea = document.getElementById("chart-area");
-    const chartTypeArea = document.getElementById("chart-type");
-
-    const chartData = getChartDataFromSelection();
-
-    // Geçersiz seçim → grafiği silme!
-    if (!chartData) {
-        if (!lastValidChartData) {
-            chartArea.hidden = true;
-            chartTypeArea.hidden = true;
-        }
-        return;
-    }
-
-    // Geçerli seçim → yeni grafik alanı
-    lastValidChartData = chartData;
-    lastValidSelectionRange = JSON.parse(JSON.stringify(selectionRange));
-
-    chartArea.hidden = false;
-    chartTypeArea.hidden = false;
-
-    const chartType = document.querySelector(
-        'input[name="chartType"]:checked'
-    ).value;
-
-    drawChart(
-        chartData.labels,
-        chartData.values,
-        chartType
-    );
-}
-
 function drawChart(labels, values, type) {
     const chartArea = document.getElementById("chart-area");
     const chartTypeArea = document.getElementById("chart-type");
@@ -766,7 +686,7 @@ function drawChart(labels, values, type) {
         data: {
             labels: labels,
             datasets: [{
-                label: type.toUpperCase() + ' GRAPH',
+                label: "", //type.toUpperCase() + ' GRAPH',
                 data: values,
                 backgroundColor: [
                     "rgba(54, 162, 235, 0.6)",
@@ -791,48 +711,109 @@ function drawChart(labels, values, type) {
 
 document.querySelectorAll('input[name="chartType"]').forEach(radio => {
     radio.addEventListener("change", () => {
-        if (!lastValidSelectionRange) return;
+        if (!chartConfig) return;
 
-        const chartType = document.querySelector(
+        chartConfig.type = document.querySelector(
             'input[name="chartType"]:checked'
         ).value;
 
-        const updatedChartData =
-            getChartDataFromRange(lastValidSelectionRange);
+        renderChartFromInputs();
+    });
+});
 
-        if (!updatedChartData) return;
 
-        lastValidChartData = updatedChartData;
+["chart-x-range", "chart-y-range"].forEach(id => {
+    document.getElementById(id).addEventListener("input", () => {
+        if (chartConfig) renderChartFromInputs();
+    });
+});
 
-        drawChart(
-            updatedChartData.labels,
-            updatedChartData.values,
-            chartType
-        );
+document.getElementById("clear-chart-btn")
+    .addEventListener("click", () => {
+        chartConfig = null;
+        //document.getElementById("chart-x-range").value = "";
+        //document.getElementById("chart-y-range").value = "";
+
+        if (chartInstance) {
+            chartInstance.destroy();
+            chartInstance = null;
+        }
+
+        document.getElementById("chart-area").hidden = true;
+        document.getElementById("chart-type").hidden = true;
+        renderTable();
     });
 
-});
+function parseRangeInput(input) {
+    const match = input.match(/^([A-Z]+\d+):([A-Z]+\d+)$/i);
+    if (!match) return null;
 
-//CLEAR CHART
-const clearChartBtn = document.getElementById("clear-chart-btn");
-function clearChart() {
-    const chartArea = document.getElementById("chart-area");
-    const chartTypeArea = document.getElementById("chart-type");
+    return {
+        start: cellRefToIndex(match[1].toUpperCase()),
+        end: cellRefToIndex(match[2].toUpperCase())
+    };
+}
 
-    if (chartInstance) {
-        chartInstance.destroy();
-        chartInstance = null;
+function getCellsFromRange(range) {
+    const minRow = Math.min(range.start.row, range.end.row);
+    const maxRow = Math.max(range.start.row, range.end.row);
+    const minCol = Math.min(range.start.col, range.end.col);
+    const maxCol = Math.max(range.start.col, range.end.col);
+
+    const cells = [];
+    for (let r = minRow; r <= maxRow; r++) {
+        for (let c = minCol; c <= maxCol; c++) {
+            cells.push({ row: r, col: c });
+        }
+    }
+    return cells;
+}
+function buildChartData(xRange, yRange) {
+    const xCells = getCellsFromRange(xRange);
+    const yCells = getCellsFromRange(yRange);
+
+    if (xCells.length !== yCells.length) return null;
+
+    const labels = [];
+    const values = [];
+
+    for (let i = 0; i < xCells.length; i++) {
+        const x = tableData[xCells[i].row][xCells[i].col].value;
+        const y = Number(
+            tableData[yCells[i].row][yCells[i].col].value
+        );
+
+        if (isNaN(y)) return null;
+
+        labels.push(x);
+        values.push(y);
     }
 
-    lastValidChartData = null;
-    lastValidSelectionRange = null;
+    return { labels, values };
+}
+function renderChartFromInputs() {
+    const xInput = document.getElementById("chart-x-range").value.trim();
+    const yInput = document.getElementById("chart-y-range").value.trim();
 
-    chartArea.hidden = true;
-    chartTypeArea.hidden = true;
+    const xRange = parseRangeInput(xInput);
+    const yRange = parseRangeInput(yInput);
 
+    if (!xRange || !yRange) return;
+
+    const data = buildChartData(xRange, yRange);
+    if (!data) return;
+
+    chartConfig = {
+        xRange,
+        yRange,
+        type: document.querySelector('input[name="chartType"]:checked').value
+    };
+
+    drawChart(data.labels, data.values, chartConfig.type);
+    document.getElementById("chart-area").hidden = false;
+    document.getElementById("chart-type").hidden = false;
+    document.getElementById("chart-inputs").hidden = false;
     renderTable();
 }
-clearChartBtn.addEventListener("click", () => {
-    clearChart();
-});
-
+document.getElementById("draw-chart-btn")
+    .addEventListener("click", renderChartFromInputs);

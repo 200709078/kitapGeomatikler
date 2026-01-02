@@ -110,6 +110,34 @@ td.editing {
   stroke-width: 2;
   fill: none;
 }
+#draw-chart-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  background: none;
+  border: 1px solid #ccc;
+  padding: 6px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+#draw-chart-btn:hover {
+  background-color: #f0f0f0;
+}
+
+#draw-chart-btn:active {
+  background-color: #e0e0e0;
+}
+
+#draw-chart-btn img {
+  display: block;
+  width: 20px;
+  height: 20px;
+  stroke: #333;
+  stroke-width: 2;
+  fill: none;
+}
 
 .icon-btn {
   background: none;
@@ -148,4 +176,23 @@ td.editing {
 
 td.chart-range {
   background-color: #d4f7d4;
+}
+
+td.chart-x {
+  background-color: #d9fdd3;
+}
+
+td.chart-y {
+  background-color: #a7e9a1;
+}
+
+#chart-inputs {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+#chart-inputs input {
+  width: 160px;
 }

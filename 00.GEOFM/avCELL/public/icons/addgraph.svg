@@ -1,0 +1,28 @@
+<svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 200 200"
+    width="200"
+    height="200"
+>
+    <!-- Barlar -->
+    <rect x="20"  y="100" width="20" height="80" rx="4" />
+    <rect x="60"  y="80"  width="20" height="100" rx="4" />
+    <rect x="100" y="120" width="20" height="60" rx="4" />
+    <rect x="140" y="90"  width="20" height="90" rx="4" />
+
+    <!-- Yukarı yönlü ok -->
+    <polyline
+        points="30,90 70,50 110,100 145,75"
+        fill="none"
+        stroke="red"
+        stroke-width="10"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+    />
+
+    <!-- Ok ucu -->
+    <polygon
+        points="135,70 147,85 154,68"
+        fill="red"
+    />
+</svg>
