@@ -33,6 +33,7 @@
       <file href="index.html" />
       <file href="style.css" />
 
+      <file href="icons/favicon.svg" />
       <file href="icons/pause.svg" />
       <file href="icons/play.svg" />
     </resource>

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="tr" lang="tr">
+
+<head>
+	<title>GeoMatik</title>
+	<meta charset="UTF-8">
+	<meta http-equiv="Content-Type" content="text/html" charset="UTF-8">
+	<meta name="keywords" content="Graph, functions, axis, javascript, canvas">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="description" content="made by mADEMatik">
+	<meta name="author" content="made by mADEMatik">
+	<script type="text/javascript" src="js/jquery.js"></script>
+	<script src="https://jsuites.net/v5/jsuites.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/mathjs@14.0.0/lib/browser/math.js"></script>
+	<link rel="shortcut icon" href="img/favicon.svg" />
+	<link rel="stylesheet" href="css/styles.css" type="text/css" />
+</head>
+
+<body>
+	<div id="centerWrapper">
+		<canvas id="canvas"></canvas>
+		<script type="text/javascript" src="js/func.js"></script>
+		<div class="buttonGroup">
+			<button class="button active" id="btnChoice" data-action="choice" data-cursor="pointer"
+				data-toast="Taşı|Düzlemi tutarak kaydırınız.">
+				<img src="img/choice.svg">
+				<span>Taşı</span>
+			</button>
+			<button class="button" id="btnPoint" data-action="point" data-cursor="crosshair"
+				data-toast="Nokta|Konum seçiniz.">
+				<img src="img/point_blue.svg">
+				<span>Nokta</span>
+			</button>
+			<button class="button" id="btnLine" data-action="line" data-cursor="crosshair"
+				data-toast="Doğru|Farklı iki nokta seçiniz.">
+				<img src="img/line_blue.svg">
+				<span>Doğru</span>
+			</button>
+			<button class="button" id="btnLineSegment" data-action="linesegment" data-cursor="crosshair"
+				data-toast="Doğru Parçası|Farklı iki nokta seçiniz.">
+				<img src="img/linesegment_blue.svg">
+				<span>Doğru Parçası</span>
+			</button>
+			<button class="button" id="btnCalc" data-action="calc" data-cursor="pointer">
+				<img id="btnimgCalc" src="img/left.svg">
+				<span>Cebir</span>
+			</button>
+			<button class="button" id="btnHelp" data-action="help" data-cursor="pointer">
+				<img id="btnimgHelp" src="img/help.svg">
+				<span>Yardım</span>
+			</button>
+		</div>
+		<div class="leftWrapper" id="leftWrapper">
+			<div class="reSizer"></div>
+			<div id="scrollWrapper">
+				<div class="expr-block-giris">
+					<input id="giris" placeholder="Giriş" title="Giriş" value="" onkeydown="girisKeyDown(event)"
+						oninput="girisOninput(event)">
+				</div>
+				<hr>
+				<div id="objectsContainer"></div>
+			</div>
+		</div>
+		<div class="fourButtons" id="slideButtons">
+			<div></div>
+			<div>
+				<button type="button" id="up" title="Yukarı Kaydır">
+					<img src="img/up.svg">
+				</button>
+			</div>
+			<div></div>
+			<div>
+				<button type="button" id="left" title="Sola Kaydır">
+					<img src="img/left.svg">
+				</button>
+			</div>
+			<div>
+				<button type="button" class="default" name="slideDef" title="Standart Görünüme Geç"
+					onclick="defaultClick(this)">
+					<img src="img/default.svg">
+				</button>
+			</div>
+			<div>
+				<button type="button" id="right" title="Sağa Kaydır">
+					<img src="img/right.svg">
+				</button>
+			</div>
+			<div></div>
+			<div>
+				<button type="button" id="down" title="Aşağı Kaydır">
+					<img src="img/down.svg">
+				</button>
+			</div>
+			<div></div>
+		</div>
+
+		<div class="fourButtons" id="zoomButtons">
+			<div></div>
+			<div>
+				<button type="button" id="plusY" title="Uzaklaştır (y)" name="y" onmousemove="buttonMove(this)">
+					&plus;
+				</button>
+			</div>
+			<div></div>
+			<div>
+				<button type="button" id="minusX" title="Yakınlaştır (x)" name="x" onmousemove="buttonMove(this)">
+					&minus;
+				</button>
+			</div>
+			<div>
+				<button type="button" id="coor" class="default" name="zoomDef" title="Standart Görünüm"
+					onclick="defaultClick(this)">x</button>
+			</div>
+			<div>
+				<button type="button" id="plusX" title="Uzaklaştır (x)" name="x" onmousemove="buttonMove(this)">
+					&plus;
+				</button>
+			</div>
+			<div></div>
+			<div>
+				<button type="button" id="minusY" title="Yakınlaştır (y)" name="y" onmousemove="buttonMove(this)">
+					&minus;
+				</button>
+			</div>
+			<div></div>
+		</div>
+		<div class="fourButtons" id="ucrButtons">
+			<div>
+				<button type="button" id="undo" title="Geri Al">
+					<img src="img/undo.svg">
+				</button>
+			</div>
+			<div>
+				<button type="button" id="clear" title="Temizle">
+					<img src="img/clear.svg">
+				</button>
+			</div>
+			<div>
+				<button type="button" id="redo" title="Yinele">
+					<img src="img/redo.svg">
+				</button>
+			</div>
+		</div>
+
+		<div class="set-popup" id="set-popup">
+			<div class="setTitle">
+				<span>Ayarlar</span>
+				<button type="button" class="btn-close" onclick="closeSetClick()">&times;</button>
+			</div>
+			<div class="setContainer">
+				<label for="setname">Ad: </label>
+				<input type="text" id="setname" autocomplete="off" title="Ad" onkeydown="digerKeyDown(event,id)">
+				<label for="setdef">Tanım: </label>
+				<input type="text" id="setdef" autocomplete="off" title="Tanım" onkeydown="digerKeyDown(event,id)">
+				<label for="setcolor">Renk: </label>
+				<input type="color" id="setcolor" value="#0000ff" title="Renk" oninput="setcolorClick()">
+				<label for="setsize" id="setsizelabel">Boyut: 1</label>
+				<input type="range" min="1" max="6" id="setsize" title="Boyut" onchange="setsizeChanged()">
+			</div>
+		</div>
+	</div>
+	<div id="snackbar">
+		<h4 id="snackTitle">Nokta</h4>
+		<div id="snackContent">Konum seçin</div>
+	</div>
+	<!-- Yardım Penceresi -->
+	<div class="help-popup" id="help-popup">
+		<div class="help-content">
+			<div id="help-header">
+				<h2>📘 GeoMatik Yardım</h2>
+				<button class="help-close" onclick="document.getElementById('help-popup').style.display='none'">&times;</button>
+			</div>
+
+			<div class="help-section">
+<h3>Giriş Alanı Komutları</h3>
+
+<h4>Nokta</h4>
+<pre>(apsis, ordinat)
+<code class="example">(-1, 2)</code></pre>
+
+<h4>Doğru</h4>
+<pre>ax + b
+<code class="example">2x-3</code>
+Doğru(Nokta, Nokta)
+<code class="example">Doğru((-1,1),(2,3))</code></pre>
+
+<h4>Doğru Parçası</h4>
+<pre>DoğruParçası(Nokta, Nokta)
+<code class="example">DoğruParçası((1,1),(-1,2))</code></pre>
+
+<h4>Trigonometrik İfadeler</h4>
+<pre>sin(...), cos(...), tan(...), cot(...)
+<code class="example">sin(-x+4)</code><code class="example">cos(3x-1)</code><code class="example">tan(1/x)</code><code class="example">cot(x+1)</code></pre>
+
+<h4>Üstel İfadeler</h4>
+<pre>(Taban)^(Üs)
+<code class="example">2^(x-1)</code><code class="example">(1/2)^sin(x)</code><code class="example">E^(x-1)</code></pre>
+
+<h4>Logaritmik İfadeler</h4>
+<pre>log(...),log(...,Taban), log_Taban(...), ln(...), ln(...,Taban), ln_Taban(...)
+<code class="example">log(4-x^2)</code><code class="example">log(2x-3,5)</code><code class="example">log_5(2x-3)</code><code class="example">ln(2x-4)</code><code class="example">ln(3-x,2)</code><code class="example">ln_2(3-x)</code></pre>
+
+<h4>Dizi</h4>
+<pre>Dizi(Fonksiyon,Başlangıç,Bitiş)
+<code class="example">Dizi(x^2-4,-1,2)</code></pre>
+
+<h4>Limit</h4>
+<pre>Limit(Fonksiyon,Apsis)
+<code class="example">Limit(sin(2x-1),2)</code></pre>
+
+<h4>Türev</h4>
+<pre>Türev(Fonksiyon,Apsis)
+<code class="example">Türev(sin(2x-1),2)</code></pre>
+
+<h4>Fonksiyon İşlemleri</h4>
+<pre><code class="example">2f/(1-3x)</code><code class="example">f+2(3x-4)</code><code class="example">3f-4g</code><code class="example">f*g</code></pre>
+
+<h4>Bileşke Fonksiyon</h4>
+<pre>BileşkeFonksiyon(Fonksiyon,Fonksiyon,...)
+<code class="example">BileşkeFonksiyon(3x-4,2x^-3)</code></pre>
+
+<h4>Parçalı Fonksiyon</h4>
+<pre>{Fonksiyon,Aralık;Fonksiyon,Aralık;...}
+<code class="example">{2x+1,x&lt;0; x^2,x>=0}</code></pre>
+			</div>
+		</div>
+	</div>
+<!-- Yardım Penceresi Son -->
+	<script type="text/javascript" src="js/app.js"></script>
+</body>
+
+</html>
