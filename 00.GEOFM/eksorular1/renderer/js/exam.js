@@ -10,7 +10,7 @@ const sorularSirali_T = [
             { text: "Paranın sadece madenî olması", correct: false },
             { text: "Takas usulünün yasaklanması", correct: false },
         ],
-        aciklama: ["BÜTÇE POLİTİKALARI", "Bakanlığın politikaları paranın piyasadaki miktarını ve akışını belirleyerek alışverişlerin (değişim aracı işlevinin) devamlılığını sağlar. Bu nedenle doğru cevap <strong>'Paranın değişim aracı olma işlevinin sürdürülebilirliği'</strong>dir."]
+        aciklama: ["BÜTÇE POLİTİKALARI", "Bakanlığın politikaları paranın piyasadaki miktarını ve akışını belirleyerek alışverişlerin (değişim aracı işlevinin) devamlılığını sağlar. Bu nedenle doğru cevap <strong>Paranın değişim aracı olma işlevinin sürdürülebilirliği</strong>dir."]
     },
     {
         soru: 'Ekonomi ve finans arasındaki farkları analiz eden bir öğrenci, aşağıdaki eşleştirmelerden hangisini "Finans" kategorisine dahil etmelidir?',
@@ -23,7 +23,7 @@ const sorularSirali_T = [
             { text: "Tüketicilerin meyve fiyatlarına olan talebi", correct: false },
             { text: "İşsizlik oranlarının ülke genelindeki dağılımı", correct: false },
         ],
-        aciklama: ["FAİZ YÖNETİMİ", "Yatırım, kredi ve faiz yönetimi finansın; üretim, tüketim, arz ve talep ise genel ekonominin temel konularıdır. Bu nedenle doğru cevap <strong>'Şirketin yatırım projeleri için kredi çekmesi ve faiz yönetimi'</strong>dir."]
+        aciklama: ["FAİZ YÖNETİMİ", "Yatırım, kredi ve faiz yönetimi finansın; üretim, tüketim, arz ve talep ise genel ekonominin temel konularıdır. Bu nedenle doğru cevap <strong>Şirketin yatırım projeleri için kredi çekmesi ve faiz yönetimi</strong>dir."]
     },
     {
         soru: 'Aşağıdakilerden hangisi "finansal okuryazar" bir bireyin toplumsal ekonomik kararlara olan etkilerinden biri olabilir?',
@@ -36,7 +36,7 @@ const sorularSirali_T = [
             { text: "Kayıt dışı ekonomiyi desteklemek", correct: false },
             { text: "Bütçe planlaması yapmadan kredi kullanmak", correct: false },
         ],
-        aciklama: ["FİNANSAL OKURYAZARLIK", "Finansal okuryazarlık, bireyin sadece kendisi için değil bilinçli kararlarıyla toplam ekonomi için de olumlu sonuçlar yaratmasını sağlar. Bu nedenle doğru cevap <strong>'Bilinçli tasarruf ve yatırım kararlarıyla ekonomik istikrara katkı sağlamak'</strong>tır."]
+        aciklama: ["FİNANSAL OKURYAZARLIK", "Finansal okuryazarlık, bireyin sadece kendisi için değil bilinçli kararlarıyla toplam ekonomi için de olumlu sonuçlar yaratmasını sağlar. Bu nedenle doğru cevap <strong>Bilinçli tasarruf ve yatırım kararlarıyla ekonomik istikrara katkı sağlamak</strong>tır."]
     },
     {
         soru: 'Temassız ödeme sistemlerinin ve e-para uygulamalarının hızla yaygınlaşması, paranın hangi işlevinin teknolojik dönüşümle sürdürüldüğünü kanıtlar?',
@@ -49,7 +49,7 @@ const sorularSirali_T = [
             { text: "Servet biriktirme aracı ", correct: false },
             { text: "Fiyat belirleme gücü", correct: false },
         ],
-        aciklama: ["TEMASSIZ ÖDEME", "Dijital ve mobil ödemeler, fiziksel para yerine dijital verilerin el değiştirmesiyle 'ödeme ve değişim' işlemini gerçekleştirir. Bu nedenle doğru cevap <strong>'Ödeme ve değişim aracı'</strong>dır."]
+        aciklama: ["TEMASSIZ ÖDEME", "Dijital ve mobil ödemeler, fiziksel para yerine dijital verilerin el değiştirmesiyle 'ödeme ve değişim' işlemini gerçekleştirir. Bu nedenle doğru cevap <strong>Ödeme ve değişim aracı</strong>dır."]
     },
     {
         soru: 'Türkiye Cumhuriyet Merkez Bankası’nın (TCMB) temel görevlerinden biri olan "faiz oranlarını ayarlayarak fiyat istikrarını sağlamaya çalışması" doğrudan paranın hangi özelliğiyle ilgilidir?',
@@ -62,7 +62,7 @@ const sorularSirali_T = [
             { text: "Takas ekonomisine geri dönüşü sağlamak", correct: false },
             { text: "Sadece dijital ödemeleri zorunlu kılmak", correct: false },
         ],
-        aciklama: ["TCMB", "Merkez Bankası'nın faiz ve para politikası, paranın satın alma gücünü (değerini) korumayı hedefler. Bu nedenle doğru cevap <strong>'Paranın değerini korumak ve güvenilirliğini sağlamak'</strong>tır."]
+        aciklama: ["TCMB", "Merkez Bankası'nın faiz ve para politikası, paranın satın alma gücünü (değerini) korumayı hedefler. Bu nedenle doğru cevap <strong>Paranın değerini korumak ve güvenilirliğini sağlamak</strong>tır."]
     },
     {
         soru: 'Bir mağazaya giren Elif, bir ayakkabının etiketinde "2500 TL" yazdığını görüyor. Paranın bu etiketteki rolü aşağıdakilerden hangisidir?',
@@ -75,7 +75,7 @@ const sorularSirali_T = [
             { text: "Değer saklama aracı", correct: false },
             { text: "Yatırım aracı", correct: false },
         ],
-        aciklama: ["ETİKET FİYATI", "Etiket fiyatı, malın değerini ortak bir birimle (TL) ölçmeye yarar. Bu, 'değer ölçüsü' işlevidir. Bu nedenle doğru cevap <strong>'Değer ölçüsü (hesap birimi) aracı'</strong>dır."]
+        aciklama: ["ETİKET FİYATI", "Etiket fiyatı, malın değerini ortak bir birimle (TL) ölçmeye yarar. Bu, 'değer ölçüsü' işlevidir. Bu nedenle doğru cevap <strong>Değer ölçüsü (hesap birimi) aracı</strong>dır."]
     },
     {
         soru: 'Ekonomik kriz veya yüksek enflasyon dönemlerinde paranın satın alma gücü düştüğü için bireyler tasarruflarını döviz veya altına yönlendirirler." Bu durum paranın hangi işlevinin zayıfladığını gösterir?',
@@ -88,7 +88,7 @@ const sorularSirali_T = [
             { text: "Değer saklama aracı", correct: true },
             { text: "Hesap birimi", correct: false },
         ],
-        aciklama: ["ENFLASYON", "Enflasyon paranın değerini eritir. Eğer para gelecekteki satın alma gücünü koruyamıyorsa 'değer saklama' işlevi bozulmuş demektir. Bu nedenle doğru cevap <strong>'değer saklama aracı'</strong>dır."]
+        aciklama: ["ENFLASYON", "Enflasyon paranın değerini eritir. Eğer para gelecekteki satın alma gücünü koruyamıyorsa 'değer saklama' işlevi bozulmuş demektir. Bu nedenle doğru cevap <strong>Değer saklama aracı</strong>dır."]
     },
     {
         soru: 'Bir öğrenci elindeki harçlığın bir kısmıyla kantinden tost alıyor. Harçlığın kalan kısmını ise kumbarasına atıyor. Bu örnekte paranın hangi iki işlevi sırasıyla kullanılmıştır?',
@@ -101,7 +101,7 @@ const sorularSirali_T = [
             { text: "Değer saklama aracı – Değişim aracı", correct: false },
             { text: "Değer ölçüsü – Değişim aracı", correct: false },
         ],
-        aciklama: ["ALIŞVERİŞ", "Tost almak bir değişim/alışveriş işlemidir (değişim aracı). Parayı biriktirmek ise gelecekte kullanmak üzere değerini korumaktır (değer saklama). Bu nedenle doğru cevap <strong>'Değişim aracı – Değer saklama aracı'</strong>dır"]
+        aciklama: ["ALIŞVERİŞ", "Tost almak bir değişim/alışveriş işlemidir (değişim aracı). Parayı biriktirmek ise gelecekte kullanmak üzere değerini korumaktır (değer saklama). Bu nedenle doğru cevap <strong>Değişim aracı – Değer saklama aracı</strong>dır"]
     },
     {
         soru: 'Ekonomi ve finans kavramları arasındaki ilişki düşünüldüğünde aşağıdakilerden hangisi finansın temel uğraş alanlarından biri olan "bütçe" kavramını en iyi açıklar?',
@@ -114,7 +114,7 @@ const sorularSirali_T = [
             { text: "Piyasadaki arz ve talep dengesinin kendiliğinden oluşması", correct: false },
             { text: "Ham maddelerin işlenerek tüketiciye ulaştırılması süreci", correct: false },
         ],
-        aciklama: ["EKONOMİ VE FİNANS", "Ekonomi, kaynakların yönetimiyle ilgilenirken finans paranın yönetimiyle ilgilenir. Bütçe, paranın (gelir-gider) planlanması sürecidir. Bu nedenle doğru cevap <strong>'Belirli bir dönem için gelir ve giderlerin tahmin edilmesi ve dengelenmesi'</strong>dir"]
+        aciklama: ["EKONOMİ VE FİNANS", "Ekonomi, kaynakların yönetimiyle ilgilenirken finans paranın yönetimiyle ilgilenir. Bütçe, paranın (gelir-gider) planlanması sürecidir. Bu nedenle doğru cevap <strong>Belirli bir dönem için gelir ve giderlerin tahmin edilmesi ve dengelenmesi</strong>dir"]
     }
 ]
 

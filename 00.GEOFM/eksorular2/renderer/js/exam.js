@@ -49,7 +49,7 @@ const sorularSirali_T = [
             { text: "8 ay", correct: false },
             { text: "10 ay", correct: false },
         ],
-        aciklama: ["AMORTİSMAN", "Amortisman süresi maliyetin ek gelire bölünmesiyle bulunur.<br>Yatırım maliyeti: 2000 TL<br>Aylık sağlanan ek gelir: 500 TL<br>Geri dönüş süresi: 2000/500 = 4 aydır. "]
+        aciklama: ["AMORTİSMAN", "Amortisman süresi maliyetin ek gelire bölünmesiyle bulunur.<br>Yatırım maliyeti: 2000 TL<br>Aylık sağlanan ek gelir: 500 TL<br>Geri dönüş süresi: 2000/500 = 4 aydır."]
     },
     {
         soru: "Bir tabletin fiyatı 6000 TL'dir. Bir öğrenci bu tableti almak için her ay 600 TL biriktirmektedir. Ancak 4. ayın sonunda tabletin fiyatına %25 zam gelmiştir. Öğrencinin başlangıçta planladığı gibi 10. ayın sonunda bu tableti alabilmesi için kalan 6 ay boyunca aylık tasarrufunu kaç TL artırması gerekir?",
