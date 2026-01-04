@@ -6,20 +6,20 @@ const sorularSirali_T = [
         secenekler: [
             { text: "14 000 TL", correct: false },
             { text: "14 500 TL", correct: false },
-            { text: "15 000 TL", correct: true },
+            { text: "15 000 TL <span style='color: #ff0008ff;'>*</style>", correct: true },
             { text: "15 500 TL", correct: false },
             { text: "16 000 TL", correct: false },
         ],
-        aciklama: ["YATIRIMCI", "İkiye bölünmüş portföyün toplam getirisi<br>Bankadaki 5000 TL: 5000 * 1,40 = 7000 TL olur.<br>Altındaki 5000 TL: 5000 * 1,60 = 8000 TL olur.<br>Toplam para: 7000 + 8000 = 15 000 TL olur."]
+        aciklama: ["YATIRIMCI", "İkiye bölünmüş portföyün toplam getirisi<br>Bankadaki 5000 TL:<br> 5000 * 1,40 = 7000 TL olur.<br>Altındaki 5000 TL:<br> 5000 * 1,60 = 8000 TL olur.<br>Toplam para: 7000 + 8000 = 15 000 TL olur."]
     },
     {
-        soru: "Bir bütçede 'Öncelikli İhtiyaçlar' (gıda, kira) %60, 'İstekler' (sinema, lüks tüketim) %30 ve 'Tasarruf' %10 paya sahiptir. Geliri 20 000 TL olan bir kişi, 'İstekler' kategorisinden %20 oranında kısıntı yapıp bu miktarı 'Tasarruf' kategorisine aktarırsa yeni tasarruf miktarı kaç TL olur?",
+        soru: "Bir bütçede 'Öncelikli İhtiyaçlar' (gıda, kira) %60, 'İstekler' (sinema, lüks tüketim) %30 ve 'Tasarruf' %10 paya sahiptir. Geliri 20 000 TL olan bir kişi, 'İstekler' kategorisinden %20 oranında kısıntı yapıp bu miktarı 'Tasarruf' kategorisine aktarırsa son durumda tasarruf miktarı kaç TL olur?",
         tipi: "cs",
         puan: 10,
         secenekler: [
             { text: "2000 TL", correct: false },
             { text: "2600 TL", correct: false },
-            { text: "3200 TL", correct: true },
+            { text: "3200 TL <span style='color: #ff0008ff;'>*</style>", correct: true },
             { text: "4000 TL", correct: false },
             { text: "4500 TL", correct: false },
         ],
@@ -30,7 +30,7 @@ const sorularSirali_T = [
         tipi: "cs",
         puan: 10,
         secenekler: [
-            { text: "Geriye para kalmaz 100 TL borç oluşur.", correct: true },
+            { text: "Geriye para kalmaz 100 TL borç oluşur. <span style='color: #ff0008ff;'>*</style>", correct: true },
             { text: "100 TL kalır.", correct: false },
             { text: "200 TL kalır.", correct: false },
             { text: "350 TL kalır.", correct: false },
@@ -44,12 +44,12 @@ const sorularSirali_T = [
         puan: 10,
         secenekler: [
             { text: "2 ay", correct: false },
-            { text: "4 ay", correct: true },
+            { text: "4 ay <span style='color: #ff0008ff;'>*</style>", correct: true },
             { text: "6 ay", correct: false },
             { text: "8 ay", correct: false },
             { text: "10 ay", correct: false },
         ],
-        aciklama: ["AMORTİSMAN", "Amortisman süresi maliyetin ek gelire bölünmesiyle bulunur.<br>Yatırım maliyeti: 2000 TL<br>Aylık sağlanan ek gelir: 500 TL<br>Geri dönüş süresi: 2000/500 = 4 aydır."]
+        aciklama: ["AMORTİSMAN", "Amortisman süresi maliyetin ek gelire bölünmesiyle bulunur.<br>Yatırım maliyeti: 2000 TL<br>Aylık sağlanan ek gelir: 500 TL<br>Geri dönüş süresi (Amortisman): 2000/500 = 4 aydır."]
     },
     {
         soru: "Bir tabletin fiyatı 6000 TL'dir. Bir öğrenci bu tableti almak için her ay 600 TL biriktirmektedir. Ancak 4. ayın sonunda tabletin fiyatına %25 zam gelmiştir. Öğrencinin başlangıçta planladığı gibi 10. ayın sonunda bu tableti alabilmesi için kalan 6 ay boyunca aylık tasarrufunu kaç TL artırması gerekir?",
@@ -57,12 +57,12 @@ const sorularSirali_T = [
         puan: 10,
         secenekler: [
             { text: "150 TL", correct: false },
-            { text: "250 TL", correct: true },
+            { text: "250 TL <span style='color: #ff0008ff;'>*</style>", correct: true },
             { text: "300 TL", correct: false },
             { text: "450 TL", correct: false },
             { text: "600 TL", correct: false },
         ],
-        aciklama: ["TASARRUF", "4 ay sonunda biriken: 4 * 600 = 2400 TL<br>Tabletin zamlı fiyatı: 6000 * 1, 25 = 7500 TL<br>Kalan ödeme: 7500 - 2400 = 5100 TL<br>Kalan süre: 10 ay - 4 ay = 6 ay<br>Gereken aylık tasarruf: 5.100 / 6 = 850 TL<br>Ek tasarruf artışı: 850 - 600 = 250 TL olur."]
+        aciklama: ["TASARRUF", "4 ay sonunda biriken: 4 * 600 = 2400 TL<br>Tabletin zamlı fiyatı: 6000 * 1,25 = 7500 TL<br>Kalan ödeme: 7500 - 2400 = 5100 TL<br>Kalan süre: 10 - 4 = 6 ay<br>Gereken aylık tasarruf: 5100 / 6 = 850 TL<br>Ek tasarruf artışı: 850 - 600 = 250 TL olur."]
     },
     {
         soru: "Yıllık enflasyon oranının %50 olduğu bir ekonomide bir kişi parasını bir yıl boyunca %20 getiri sağlayan bir yatırım aracında değerlendirmiştir. Bu kişinin yıl sonundaki 'reel (gerçek) alım gücü' değişimi yüzde kaçtır?",
@@ -72,7 +72,7 @@ const sorularSirali_T = [
             { text: "%30 artmıştır.", correct: false },
             { text: "%30 azalmıştır.", correct: false },
             { text: "%25 azalmıştır.", correct: false },
-            { text: "%20 azalmıştır.", correct: true },
+            { text: "%20 azalmıştır. <span style='color: #ff0008ff;'>*</style>", correct: true },
             { text: "%10 artmıştır.", correct: false },
         ],
         aciklama: ["REEL GETİRİ", "Reel getiri enflasyon oranına göre düzeltilmiş alım gücüdür.Formül: [(1 + Nominal Getiri) / (1 + Enflasyon Oranı)] - 1<br>Hesap: (1,20 / 1,50) - 1<br>Sonuç: 0,80 - 1 = -0,20 olur. Alım gücü %20 azalmıştır."]
@@ -82,7 +82,7 @@ const sorularSirali_T = [
         tipi: "cs",
         puan: 10,
         secenekler: [
-            { text: "80 TL bütçe fazlası verir.", correct: true },
+            { text: "80 TL bütçe fazlası verir. <span style='color: #ff0008ff;'>*</style>", correct: true },
             { text: "120 TL bütçe fazlası verir.", correct: false },
             { text: "Bütçe tam dengededir (0).", correct: false },
             { text: "40 TL bütçe açığı verir.", correct: false },
@@ -97,7 +97,7 @@ const sorularSirali_T = [
         secenekler: [
             { text: "1500 TL", correct: false },
             { text: "1650 TL", correct: false },
-            { text: "1655 TL", correct: true },
+            { text: "1655 TL <span style='color: #ff0008ff;'>*</style>", correct: true },
             { text: "1700 TL", correct: false },
             { text: "1815 TL", correct: false },
         ],
@@ -109,12 +109,12 @@ const sorularSirali_T = [
         puan: 10,
         secenekler: [
             { text: "1200 TL", correct: false },
-            { text: "1350 TL", correct: true },
+            { text: "1350 TL <span style='color: #ff0008ff;'>*</style>", correct: true },
             { text: "1500 TL", correct: false },
             { text: "1800 TL", correct: false },
             { text: "2250 TL", correct: false },
         ],
-        aciklama: ["BİRİKİM", "30000 TL toplam gelir üzerinden hesaplama<br>Temel giderler (%40): 30 000 * 0,40 = 12 000 TL<br>Kalan para: 30 000 – 12 000 = 18 000 TL<br>Eğitim gideri (1/4): 18 000 / 4 = 4500 TL<br>Son kalan: 18 000 - 4500 = 13 500 TL<br>Birikim (%10): 13.500 * 0,10 = 1350 TL olur."]
+        aciklama: ["BİRİKİM", "30 000 TL toplam gelir üzerinden hesaplama<br>Temel giderler (%40): 30 000 * 0,40 = 12 000 TL<br>Kalan para: 30 000 – 12 000 = 18 000 TL<br>Eğitim gideri (1/4): 18 000 / 4 = 4500 TL<br>Son kalan: 18 000 - 4500 = 13 500 TL<br>Birikim (%10): 13.500 * 0,10 = 1350 TL olur."]
     },
     {
         soru: "Bir öğrencinin aylık harçlığı x TL'dir. Bu öğrenci harçlığının 1/3’ünü temel ihtiyaçlarına, kalan paranın %20'sini ise eğlenceye harcamaktadır. En son kalan paranın yarısını bir hayır kurumuna bağışlayan bu öğrencinin elinde 400 TL kaldığına göre bu öğrencinin toplam aylık harçlığı (x) kaç TL'dir",
@@ -122,7 +122,7 @@ const sorularSirali_T = [
         puan: 10,
         secenekler: [
             { text: "1200 TL", correct: false },
-            { text: "1500 TL", correct: true },
+            { text: "1500 TL <span style='color: #ff0008ff;'>*</style>", correct: true },
             { text: "1800 TL", correct: false },
             { text: "2000 TL", correct: false },
             { text: "2400 TL", correct: false },
@@ -173,7 +173,7 @@ const secSound = new Audio("sound/sec.mp3")
 document.addEventListener('contextmenu', event => event.preventDefault())
 
 function denemeBaslat() {
-    sorular = arrayKaristir(sorularSirali_T)
+    sorular = sorularSirali_T //arrayKaristir(sorularSirali_T)
     aktifSoruIndex = 0
     aktifSecimIndex = -1
     topPuan = 0
@@ -251,7 +251,8 @@ function soruGoster() {
     if (aktifSoru.tipi == 'cs' || aktifSoru.tipi == 'dy') {
         soru.innerHTML = "<b>" + (soruNo + 1) + ")</b> " + aktifSoru.soru + "<br>(" + aktifSoru.puan + " puan)"
         let say = 65
-        arrayKaristir(aktifSoru.secenekler).forEach(secenek => {
+        //arrayKaristir(aktifSoru.secenekler).forEach(secenek => {
+        aktifSoru.secenekler.forEach(secenek => {
             const button = document.createElement("button")
             if (aktifSoru.tipi == "dy") {
                 button.innerHTML = secenek.text

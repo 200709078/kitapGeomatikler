@@ -6,7 +6,7 @@ const sorularSirali_T = [
         secenekler: [
             { text: "Paranın tarihsel kökeni", correct: false },
             { text: "Paranın fiziksel tasarımı", correct: false },
-            { text: "Paranın değişim aracı olma işlevinin sürdürülebilirliği", correct: true },
+            { text: "Paranın değişim aracı olma işlevinin sürdürülebilirliği <span style='color: #ff0008ff;'>*</style>", correct: true },
             { text: "Paranın sadece madenî olması", correct: false },
             { text: "Takas usulünün yasaklanması", correct: false },
         ],
@@ -19,7 +19,7 @@ const sorularSirali_T = [
         secenekler: [
             { text: "Buğday üretim miktarının artırılması", correct: false },
             { text: "Bir fabrikanın yıllık enerji tüketimi", correct: false },
-            { text: "Şirketin yatırım projeleri için kredi çekmesi ve faiz yönetimi", correct: true },
+            { text: "Şirketin yatırım projeleri için kredi çekmesi ve faiz yönetimi <span style='color: #ff0008ff;'>*</style>", correct: true },
             { text: "Tüketicilerin meyve fiyatlarına olan talebi", correct: false },
             { text: "İşsizlik oranlarının ülke genelindeki dağılımı", correct: false },
         ],
@@ -31,7 +31,7 @@ const sorularSirali_T = [
         puan: 10,
         secenekler: [
             { text: "Sadece kendi tüketimini düşünerek aşırı stok yapmak", correct: false },
-            { text: "Bilinçli tasarruf ve yatırım kararlarıyla ekonomik istikrara katkı sağlamak", correct: true },
+            { text: "Bilinçli tasarruf ve yatırım kararlarıyla ekonomik istikrara katkı sağlamak <span style='color: #ff0008ff;'>*</style>", correct: true },
             { text: "Ödeme ve değişim aracı", correct: false },
             { text: "Kayıt dışı ekonomiyi desteklemek", correct: false },
             { text: "Bütçe planlaması yapmadan kredi kullanmak", correct: false },
@@ -45,7 +45,7 @@ const sorularSirali_T = [
         secenekler: [
             { text: "Değer saklama aracı", correct: false },
             { text: "Değer ölçüsü", correct: false },
-            { text: "Ödeme ve değişim aracı", correct: true },
+            { text: "Ödeme ve değişim aracı <span style='color: #ff0008ff;'>*</style>", correct: true },
             { text: "Servet biriktirme aracı ", correct: false },
             { text: "Fiyat belirleme gücü", correct: false },
         ],
@@ -57,7 +57,7 @@ const sorularSirali_T = [
         puan: 10,
         secenekler: [
             { text: "Paranın fiziksel dayanıklılığını artırmak", correct: false },
-            { text: "Paranın değerini korumak ve güvenilirliğini sağlamak", correct: true },
+            { text: "Paranın değerini korumak ve güvenilirliğini sağlamak <span style='color: #ff0008ff;'>*</style>", correct: true },
             { text: "Kâğıt para basım maliyetini düşürmek", correct: false },
             { text: "Takas ekonomisine geri dönüşü sağlamak", correct: false },
             { text: "Sadece dijital ödemeleri zorunlu kılmak", correct: false },
@@ -71,11 +71,24 @@ const sorularSirali_T = [
         secenekler: [
             { text: "Değişim aracı", correct: false },
             { text: "Ödeme aracı", correct: false },
-            { text: "Değer ölçüsü (hesap birimi) aracı", correct: true },
+            { text: "Değer ölçüsü (hesap birimi) aracı <span style='color: #ff0008ff;'>*</style>", correct: true },
             { text: "Değer saklama aracı", correct: false },
             { text: "Yatırım aracı", correct: false },
         ],
         aciklama: ["ETİKET FİYATI", "Etiket fiyatı, malın değerini ortak bir birimle (TL) ölçmeye yarar. Bu, 'değer ölçüsü' işlevidir. Bu nedenle doğru cevap <strong>Değer ölçüsü (hesap birimi) aracı</strong>dır."]
+    },
+    {
+        soru: 'Paranın tarihsel gelişim süreciyle ilgili bir araştırma yapan grubun, zaman çizelgesinde kronolojik olarak en son sıraya aşağıdakilerden hangisini koyması beklenir? ',
+        tipi: "cs",
+        puan: 10,
+        secenekler: [
+            { text: "Lidyalıların bastığı metal paralar", correct: false },
+            { text: "Değerli metallere endeksli kâğıt banknotlar", correct: false },
+            { text: "Takas yöntemiyle yapılan ticaret", correct: false },
+            { text: "Dijital paralar ve kripto varlıklar <span style='color: #ff0008ff;'>*</style>", correct: true },
+            { text: "Temsili paralar (altın sertifikaları)", correct: false },
+        ],
+        aciklama: ["ENFLASYON", "Tarihsel süreç: Takas -> metal para -> kâğıt para -> dijital para şeklinde ilerlemiştir. Bu nedenle doğru cevap <strong>Dijital paralar ve kripto varlıklar</strong>dır."]
     },
     {
         soru: 'Ekonomik kriz veya yüksek enflasyon dönemlerinde paranın satın alma gücü düştüğü için bireyler tasarruflarını döviz veya altına yönlendirirler." Bu durum paranın hangi işlevinin zayıfladığını gösterir?',
@@ -85,7 +98,7 @@ const sorularSirali_T = [
             { text: "Değişim aracı", correct: false },
             { text: "Ödeme aracı", correct: false },
             { text: "Değer ölçüsü", correct: false },
-            { text: "Değer saklama aracı", correct: true },
+            { text: "Değer saklama aracı <span style='color: #ff0008ff;'>*</style>", correct: true },
             { text: "Hesap birimi", correct: false },
         ],
         aciklama: ["ENFLASYON", "Enflasyon paranın değerini eritir. Eğer para gelecekteki satın alma gücünü koruyamıyorsa 'değer saklama' işlevi bozulmuş demektir. Bu nedenle doğru cevap <strong>Değer saklama aracı</strong>dır."]
@@ -96,7 +109,7 @@ const sorularSirali_T = [
         puan: 10,
         secenekler: [
             { text: "Değer ölçüsü – Ödeme aracı", correct: false },
-            { text: "Değişim aracı – Değer saklama aracı", correct: true },
+            { text: "Değişim aracı – Değer saklama aracı <span style='color: #ff0008ff;'>*</style>", correct: true },
             { text: "Ödeme aracı – Değer ölçüsü", correct: false },
             { text: "Değer saklama aracı – Değişim aracı", correct: false },
             { text: "Değer ölçüsü – Değişim aracı", correct: false },
@@ -110,11 +123,11 @@ const sorularSirali_T = [
         secenekler: [
             { text: "Toplumun sınırsız ihtiyaçlarını karşılama süreci", correct: false },
             { text: "Mal ve hizmetlerin üretim aşamalarının planlaması", correct: false },
-            { text: "Belirli bir dönem için gelir ve giderlerin tahmin edilmesi ve dengelenmesi", correct: true },
+            { text: "Belirli bir dönem için gelir ve giderlerin tahmin edilmesi ve dengelenmesi <span style='color: #ff0008ff;'>*</style>", correct: true },
             { text: "Piyasadaki arz ve talep dengesinin kendiliğinden oluşması", correct: false },
             { text: "Ham maddelerin işlenerek tüketiciye ulaştırılması süreci", correct: false },
         ],
-        aciklama: ["EKONOMİ VE FİNANS", "Ekonomi, kaynakların yönetimiyle ilgilenirken finans paranın yönetimiyle ilgilenir. Bütçe, paranın (gelir-gider) planlanması sürecidir. Bu nedenle doğru cevap <strong>Belirli bir dönem için gelir ve giderlerin tahmin edilmesi ve dengelenmesi</strong>dir"]
+        aciklama: ["EKONOMİ VE FİNANS", "Ekonomi, kaynakların yönetimiyle ilgilenirken finans, paranın yönetimiyle ilgilenir. Bütçe, paranın (gelir-gider) planlanması sürecidir. Bu nedenle doğru cevap <strong>Belirli bir dönem için gelir ve giderlerin tahmin edilmesi ve dengelenmesi</strong>dir"]
     }
 ]
 
@@ -160,7 +173,7 @@ const secSound = new Audio("sound/sec.mp3")
 document.addEventListener('contextmenu', event => event.preventDefault())
 
 function denemeBaslat() {
-    sorular = arrayKaristir(sorularSirali_T)
+    sorular = sorularSirali_T //arrayKaristir(sorularSirali_T)
     aktifSoruIndex = 0
     aktifSecimIndex = -1
     topPuan = 0
@@ -238,7 +251,8 @@ function soruGoster() {
     if (aktifSoru.tipi == 'cs' || aktifSoru.tipi == 'dy') {
         soru.innerHTML = "<b>" + (soruNo + 1) + ")</b> " + aktifSoru.soru + "<br>(" + aktifSoru.puan + " puan)"
         let say = 65
-        arrayKaristir(aktifSoru.secenekler).forEach(secenek => {
+        //arrayKaristir(aktifSoru.secenekler).forEach(secenek => {
+        aktifSoru.secenekler.forEach(secenek => {
             const button = document.createElement("button")
             if (aktifSoru.tipi == "dy") {
                 button.innerHTML = secenek.text

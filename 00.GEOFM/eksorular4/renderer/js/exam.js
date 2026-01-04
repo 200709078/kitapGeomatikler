@@ -1,17 +1,264 @@
 const sorularSirali_T = [
     {
-        soru: 'Bir giyim mağazasında satılan son 10 ürünün fiyatları aşağıdaki tabloda verilmiştir.<br><br><p><table><tr><td>1. Ürün<br>770 TL</td><td>2. Ürün<br>550 TL</td><td>3. Ürün<br>570 TL</td><td>4. Ürün<br>650 TL</td><td>5. Ürün<br>820 TL</td></tr><tr><td>6. Ürün<br>590 TL</td><td>7. Ürün<br>670 TL</td><td>8. Ürün<br>550 TL</td><td>9. Ürün<br>770 TL</td><td>10. Ürün<br>620 TL</td></tr></table></p><br><b>Satılan 2 ve 3. ürünler geri iade edilmiştir. Aynı ürünlerin her birinin 600 TL’ye tekrar satılması durumunda satılan son 10 ürünün ortancasındaki değişim aşağıdakilerden hangisi olur?</b>',
-        tipi: "cs",
-        puan: 10,
+        soru: 'Bir ekonomide Gayrisafi Yurt İçi Hasıla (GSYH) hesaplanırken kullanılan harcama yöntemi formülü GSYH = C + I + G + (X - M) şeklindedir. Bir ülkede tüketim (C) 500 birim, yatırım (I) 200 birim, kamu harcamaları (G) 300 birim, ihracat (X) 150 birim ve ithalat (M) 200 birimdir. Bu ülkenin GSYH değeri kaç birimdir? ',
+        tipi: 'cs',
+        puan: 5,
         secenekler: [
-            { text: "10 artar", correct: false },
-            { text: "20 artar", correct: false },
-            { text: "Değişmez", correct: true },
-            { text: "20 azalır", correct: false },
-            { text: "10 azalır", correct: false },
+            { text: '850', correct: false },
+            { text: '950 <span style="color: #ff0008ff;"">*</style>', correct: true },
+            { text: '1000', correct: false },
+            { text: '1150', correct: false },
+            { text: '1350', correct: false }
         ],
-        aciklama: ['GİYİM MAĞAZASI', 'Bir giyim mağazası açıklaması']
-    }
+        aciklama: ['GAYRİSAFİ YURT İÇİ HASILA', '500 + 200 + 300 + (150 - 200) = 1000 - 50 = 950 birimdir.']
+    },
+    {
+        soru: "Nominal GSYH, cari fiyatlarla hesaplanan gelirdir. Reel GSYH ise enflasyondan arındırılmış gelirdir. 2024 yılında Nominal GSYH %40 artmış, aynı dönemde GSYH deflatörü (enflasyon) %25 olmuştur. Bu durumda ekonominin 'Reel Büyüme Oranı' yüzde kaçtır?",
+        tipi: 'cs',
+        puan: 5,
+        secenekler: [
+            { text: '12 <span style="color: #ff0008ff;"">*</style>', correct: true },
+            { text: '15', correct: false },
+            { text: '20', correct: false },
+            { text: '25', correct: false },
+            { text: '65', correct: false }
+        ],
+        aciklama: ['REEL BÜYÜME', 'Reel Büyüme = [(1 + Nom. Artış) / (1 + Enflasyon)] - 1 => (1,40 / 1,25) - 1 = 1,12 - 1 = 0,12 (%12) olur.']
+    },
+    {
+        soru: 'Bir ekonomide toplam arzın toplam talepten çok daha hızlı artması ve nakit para sıkışıklığı yaşanması sonucu fiyatlar genel düzeyinin sürekli düşmesi durumuna ne ad verilir? ',
+        tipi: 'cs',
+        puan: 5,
+        secenekler: [
+            { text: 'Enflasyon', correct: false },
+            { text: 'Stagflasyon', correct: false },
+            { text: 'Deflasyon <span style="color: #ff0008ff;"">*</style>', correct: true },
+            { text: 'Devalüasyon', correct: false },
+            { text: 'Revalüasyon', correct: false }
+        ],
+        aciklama: ['DEFLASYON', 'Fiyatlar genel düzeyinin sürekli düşmesi <b>deflasyon</b>dur.']
+    },
+    {
+        soru: 'Bir ülkede işsizlik oranları artarken aynı zamanda yüksek enflasyon yaşanıyorsa (ekonomik durgunluk + fiyat artışı) bu makroekonomik durum aşağıdakilerden hangisidir? ',
+        tipi: 'cs',
+        puan: 5,
+        secenekler: [
+            { text: 'Hiperenflasyon', correct: false },
+            { text: 'Stagflasyon <span style="color: #ff0008ff;"">*</style>', correct: true },
+            { text: 'Deflasyon', correct: false },
+            { text: 'Resesyon', correct: false },
+            { text: 'Ekonomik patlama', correct: false }
+        ],
+        aciklama: ['STAGFLASYON', 'Stagflasyon=İşsizlik (durgunluk) + Enflasyon ile bulunur. Bu nedenle doğru cevap <b>stagflasyon</b>dur.']
+    },
+    {
+        soru: "Merkez Bankası'nın piyasadaki para arzını kısmak ve enflasyonu düşürmek amacıyla faiz oranlarını artırması hangi politika türüne girer?",
+        tipi: 'cs',
+        puan: 5,
+        secenekler: [
+            { text: 'Genişlemeci maliye politikası', correct: false },
+            { text: 'Sıkı para politikası <span style="color: #ff0008ff;"">*</style>', correct: true },
+            { text: 'Genişlemeci para politikası', correct: false },
+            { text: 'Sıkı maliye politikası', correct: false },
+            { text: 'Gelirler politikası', correct: false }
+        ],
+        aciklama: ['PARA POLİTİKALARI', 'Faiz artışı piyasadaki parayı çeker. Bu nedenle doğru cevap <b>Sıkı para politikası</b>dır.']
+    },
+    {
+        soru: "Millî gelir bileşenlerinden net ihracatı (X - M) negatif değerde olan bir ülke için aşağıdakilerden hangisi kesinlikle doğrudur?",
+        tipi: 'cs',
+        puan: 5,
+        secenekler: [
+            { text: "Ülkenin GSYH'si her yıl azalmaktadır", correct: false },
+            { text: 'Ülke, dış ticaret açığı vermektedir <span style="color: #ff0008ff;"">*</style>', correct: true },
+            { text: 'Ülkede enflasyon çok yüksektir', correct: false },
+            { text: 'Yatırımlar tüketimden fazladır', correct: false },
+            { text: 'Döviz rezervleri sürekli artmaktadır', correct: false }
+        ],
+        aciklama: ['TİCARET AÇIĞI', 'İhracat < İthalat durumu dış ticaret açığıdır. Bu nedenle doğru cevap <b>Ülke, dış ticaret açığı vermektedir</b> olmalıdır.']
+    },
+    {
+        soru: "Okun Yasası'na göre bir ekonomide büyüme oranı düştüğünde işsizlik oranı artar. Bir ülkede büyüme oranının %2 azalması durumunda işsizliğin %1 arttığı gözlemlenmiştir. Başlangıçta işsizlik %10 ve büyüme %4 iken büyüme %0'a gerilerse yeni işsizlik oranı yüzde kaç olur?",
+        tipi: 'cs',
+        puan: 5,
+        secenekler: [
+            { text: '11', correct: false },
+            { text: '12 <span style="color: #ff0008ff;"">*</style>', correct: true },
+            { text: '13', correct: false },
+            { text: '14', correct: false },
+            { text: '15', correct: false }
+        ],
+        aciklama: ['OKUN YASASI', "Büyüme %4'ten %0'a düşerse %4 azalmış olur. Her %2 azalış işsizliği %1 artırıyorsa %4 azalış %2 artırır. %10 + %2 = %12 olur."]
+    },
+    {
+        soru: "Bir ekonomide 'Marjinal Tüketim Eğilimi' (c) 0,80'dir. (Formül: Çarpan = 1 / (1 - c)). Hükûmet kamu harcamalarını 100 milyon TL artırırsa bu durum millî geliri toplamda kaç milyon TL artırır?",
+        tipi: 'cs',
+        puan: 5,
+        secenekler: [
+            { text: '100', correct: false },
+            { text: '200', correct: false },
+            { text: '400', correct: false },
+            { text: '500 <span style="color: #ff0008ff;"">*</style>', correct: true },
+            { text: '800', correct: false }
+        ],
+        aciklama: ['MARJİNAL TÜKETİM EĞİLİMİ', 'Çarpan = 1 / (1 - 0,80) = 5. Etki = 100 * 5 = 500 milyon TL artırır.']
+    },
+    {
+        soru: 'Türkiye ekonomisinin geçmiş dönemleri incelendiğinde 1929 Dünya Ekonomik Buhranı sırasında yaşanan durum aşağıdakilerden hangisidir?',
+        tipi: 'cs',
+        puan: 5,
+        secenekler: [
+            { text: 'Hiperenflasyon', correct: false },
+            { text: 'Deflasyon ve ekonomik daralma <span style="color: #ff0008ff;"">*</style>', correct: true },
+            { text: 'Stagflasyon', correct: false },
+            { text: 'Aşırı büyüme', correct: false },
+            { text: 'Para arzı patlaması', correct: false }
+        ],
+        aciklama: ['DEFLASYON', '1929 krizinde tüm dünyada talep çökmüş ve fiyatlar düşmüştür (Deflasyon). Bu nedenle doğru cevap <b>Deflasyon ve ekonomik daralma</b> olmalıdır.']
+    },
+    {
+        soru: 'Aşağıdakilerden hangisi makroekonomik istikrarın temel kriterlerinden biri değildir? ',
+        tipi: 'cs',
+        puan: 5,
+        secenekler: [
+            { text: 'Düşük ve istikrarlı enflasyon oranı', correct: false },
+            { text: 'Sürdürülebilir büyüme oranı', correct: false },
+            { text: 'Düşük işsizlik oranı', correct: false },
+            { text: 'Bireysel kredi kartı limitlerinin yüksekliği <span style="color: #ff0008ff;"">*</style>', correct: true },
+            { text: 'Dış ticaret dengesi', correct: false }
+        ],
+        aciklama: ['BİREYSEL KREDİ LİMİTLERİ', 'Bireysel kredi/kredi kartı limitleri makroekonomik bir istikrar kriteri değildir.']
+    },
+    {
+        soru: 'Stagflasyon döneminde bir merkez bankasının sadece enflasyona odaklanarak faizleri aşırı artırması hangi sorunun daha da derinleşmesine yol açabilir? ',
+        tipi: 'cs',
+        puan: 5,
+        secenekler: [
+            { text: 'Fiyat artışlarının', correct: false },
+            { text: 'Para bolluğunun', correct: false },
+            { text: 'İşsizliğin ve durgunluğun <span style="color: #ff0008ff;"">*</style>', correct: true },
+            { text: 'Dış ticaret fazlasının', correct: false },
+            { text: 'Bütçe fazlasının', correct: false }
+        ],
+        aciklama: ['STAGFLASYON DÖNEMİ', 'Stagflasyonda ekonomi zaten durgundur, faiz artışı üretimi daha da zorlaştırır ve işsizliği artırır. Bu nedenle doğru cevap <b>İşsizliğin ve durgunluğun</b> daha da derinleşmesine yol açar olmalıdır.']
+    },
+    {
+        soru: "Bir ülkenin GSYH'si 1000 milyar dolar, nüfusu ise 50 milyondur. Kişi başı millî gelirin 25 000 dolara yükselmesi için GSYH'nin (nüfus sabitken) yüzde kaç büyümesi gerekir?",
+        tipi: 'cs',
+        puan: 5,
+        secenekler: [
+            { text: '10', correct: false },
+            { text: '20', correct: false },
+            { text: '25 <span style="color: #ff0008ff;"">*</style>', correct: true },
+            { text: '40', correct: false },
+            { text: '50', correct: false }
+        ],
+        aciklama: ['GAYRİ SAFİ YURTİÇİ HASILA', 'Mevcut kişi başı: 1000 milyar / 50 milyon = 20 000$. 25 000$ olması için %25 artış gerekir.']
+    },
+    {
+        soru: 'Tüketicilerin gelecekte fiyatların düşeceğini bekleyerek tüketimlerini ertelemeleri, hangi ekonomik olgunun daha da şiddetlenmesine neden olur? ',
+        tipi: 'cs',
+        puan: 5,
+        secenekler: [
+            { text: 'Enflasyon', correct: false },
+            { text: 'Deflasyon <span style="color: #ff0008ff;"">*</style>', correct: true },
+            { text: 'Stagflasyon', correct: false },
+            { text: 'Büyüme', correct: false },
+            { text: 'İhracat patlaması', correct: false }
+        ],
+        aciklama: ['ENFLASYON', 'Fiyatların düşeceği beklentisi talebi durdurur, bu da deflasyon sarmalını derinleştirir. Bu nedenle doğru cevap <b>Deflasyon</b>dur.']
+    },
+    {
+        soru: "Maliye politikası araçlarından biri olan 'vergilerin artırılması', makroekonomik olarak neyi amaçlar?",
+        tipi: 'cs',
+        puan: 5,
+        secenekler: [
+            { text: 'Piyasayı canlandırmayı', correct: false },
+            { text: 'Toplam talebi kısarak enflasyonu dizginlemeyi <span style="color: #ff0008ff;"">*</style>', correct: true },
+            { text: 'İşsizliği azaltmayı', correct: false },
+            { text: 'İthalatı artırmayı', correct: false },
+            { text: 'Para arzını artırmayı', correct: false }
+        ],
+        aciklama: ['VERGİLER', 'Vergi artışı halkın elindeki parayı azaltır, talebi kısar ve enflasyonu düşürmeyi hedefler. Bu nedenle doğru cevap <b>Toplam talebi kısarak enflasyonu dizginlemeyi</b> amaçlar olmalıdır.']
+    },
+    {
+        soru: 'Arz eğrisinin (AS) sola kayması (maliyet artışları nedeniyle) sonucunda fiyatların artması ve üretimin azalması durumu aşağıdakilerden hangisini tetikler? ',
+        tipi: 'cs',
+        puan: 5,
+        secenekler: [
+            { text: 'Talep enflasyonu', correct: false },
+            { text: 'Maliyet enflasyonu ve stagflasyon <span style="color: #ff0008ff;"">*</style>', correct: true },
+            { text: 'Deflasyonist boşluk', correct: false },
+            { text: 'Tam istihdam dengesi', correct: false },
+            { text: 'Bütçe dengesi', correct: false }
+        ],
+        aciklama: ['ARZ', 'Arzın azalması maliyet enflasyonuna ve durgunluğa (stagflasyon) yol açar. Bu nedenle doğru cevap <b>Maliyet enflasyonu ve stagflasyon</b>u tetikler olmalıdır.']
+    },
+    {
+        soru: "Bir makalede 'Ekonomide ısınma emareleri görülüyor.' ifadesi geçiyorsa bu durum aşağıdakilerden hangisine işaret eder?",
+        tipi: 'cs',
+        puan: 5,
+        secenekler: [
+            { text: 'Fiyatların hızla düşeceğine', correct: false },
+            { text: 'Ekonominin küçüldüğüne', correct: false },
+            { text: 'Toplam talebin arzı aşarak enflasyonist baskı yarattığına <span style="color: #ff0008ff;"">*</style>', correct: true },
+            { text: 'İşsizliğin rekor seviyeye ulaştığına', correct: false },
+            { text: 'İhracatın durduğuna', correct: false }
+        ],
+        aciklama: ['EKONOMİK ISINMA', 'Ekonominin ısınması, talebin üretim kapasitesini zorlaması ve enflasyon riskidir. Bu nedenle doğru cevap <b>Toplam talebin arzı aşarak enflasyonist baskı yarattığına</b> işaret eder olmalıdır.']
+    },
+    {
+        soru: "'Lorenz Eğrisi' ve 'Gini Katsayısı' makroekonomide neyi ölçmek için kullanılır?",
+        tipi: 'cs',
+        puan: 5,
+        secenekler: [
+            { text: 'Enflasyon oranını', correct: false },
+            { text: 'Dış ticaret açığını', correct: false },
+            { text: 'Gelir dağılımındaki adaleti <span style="color: #ff0008ff;"">*</style>', correct: true },
+            { text: 'Vergi yükünü', correct: false },
+            { text: 'Para arzını', correct: false }
+        ],
+        aciklama: ['GELİR DAĞILIMI', 'Bu iki araç gelir eşitsizliğini ölçer. Bu nedenle doğru cevap <b>Gelir dağılımındaki adaleti</b> ölçmek için kullanılır olmalıdır.']
+    },
+    {
+        soru: "Bir ülkenin nominal faiz oranı %15, beklenen enflasyon oranı %10 ise 'Fisher denklemine' göre reel faiz oranı yüzde kaçtır?",
+        tipi: 'cs',
+        puan: 5,
+        secenekler: [
+            { text: '25', correct: false },
+            { text: '15', correct: false },
+            { text: '10', correct: false },
+            { text: '5 <span style="color: #ff0008ff;"">*</style>', correct: true },
+            { text: '1,5', correct: false }
+        ],
+        aciklama: ['REEL FAİZ', 'Reel Faiz = Nominal - Enflasyon = 15 - 10 = 5 olur.']
+    },
+    {
+        soru: "Aşağıdakilerden hangisi 'Otomatik İstikrar Sağlayıcılar'dan biridir?",
+        tipi: 'cs',
+        puan: 5,
+        secenekler: [
+            { text: "Merkez Bankası'nın faiz kararı", correct: false },
+            { text: 'Artan oranlı gelir vergisi <span style="color: #ff0008ff;"">*</style>', correct: true },
+            { text: 'Yeni bir köprü yapım kararı', correct: false },
+            { text: 'Asgari ücret tespiti', correct: false },
+            { text: 'Döviz müdahalesi', correct: false }
+        ],
+        aciklama: ['GELİR VERGİSİ', 'Gelir arttıkça vergi oranı otomatik artar, piyasayı soğutur; azaldıkça vergi düşer, piyasayı canlandırır. Bu nedenle doğru cevap <b>Artan oranlı gelir vergisi</b>dir.']
+    },
+    {
+        soru: 'Millî geliri (Y) tüketim (C), yatırım (I), kamu harcaması (G) ve net ihracatın (NX) toplamı olarak kabul ettiğimizde; kamu harcamalarının bütçe açığı verilerek artırılması (G > Vergi) kısa vadede millî geliri nasıl etkiler?',
+        tipi: 'cs',
+        puan: 5,
+        secenekler: [
+            { text: 'Azaltır', correct: false },
+            { text: 'Değiştirmez', correct: false },
+            { text: 'Artırır (genişlemeci etki) <span style="color: #ff0008ff;"">*</style>', correct: true },
+            { text: 'Sadece ithalatı düşürür', correct: false },
+            { text: 'Sadece tasarrufları artırır', correct: false }
+        ],
+        aciklama: ['KAMU HARCAMALARI', 'Kamu harcamalarındaki artış (G), formül gereği toplam geliri (Y) artırır. Bu nedenle doğru cevap <b>Artırır (genişlemeci etki)</b> olmalıdır.']
+    },
 ]
 
 const closeModalButtons = document.querySelectorAll('[data-close-button]')
@@ -134,7 +381,8 @@ function soruGoster() {
     if (aktifSoru.tipi == 'cs' || aktifSoru.tipi == 'dy') {
         soru.innerHTML = "<b>" + (soruNo + 1) + ")</b> " + aktifSoru.soru + "<br>(" + aktifSoru.puan + " puan)"
         let say = 65
-        arrayKaristir(aktifSoru.secenekler).forEach(secenek => {
+        //arrayKaristir(aktifSoru.secenekler).forEach(secenek => {
+        aktifSoru.secenekler.forEach(secenek => {
             const button = document.createElement("button")
             if (aktifSoru.tipi == "dy") {
                 button.innerHTML = secenek.text
