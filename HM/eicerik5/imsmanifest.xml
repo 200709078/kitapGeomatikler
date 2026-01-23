@@ -1,0 +1,51 @@
+<?xml version="1.0" standalone="no"?>
+<manifest identifier="com.scorm.golfsamples.contentpackaging.singlesco.12" version="1"
+  xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2"
+  xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_rootv1p2"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.imsproject.org/xsd/imscp_rootv1p1p2 imscp_rootv1p1p2.xsd
+                      http://www.imsglobal.org/xsd/imsmd_rootv1p2p1 imsmd_rootv1p2p1.xsd
+                      http://www.adlnet.org/xsd/adlcp_rootv1p2 adlcp_rootv1p2.xsd">
+  <metadata>
+    <schema>ADL SCORM</schema>
+    <schemaversion>1.2</schemaversion>
+  </metadata>
+
+  <contentObject>
+    <title>5. TEMA - İSTATİSTİKSEL ARAŞTIRMA SÜRECİ</title>
+    <description>5. TEMA - İSTATİSTİKSEL ARAŞTIRMA SÜRECİ</description>
+    <width>0</width>
+    <height>0</height>
+    <language>en</language>
+    <referenceImage>eicerik_5.png</referenceImage>
+  </contentObject>
+
+  <organizations default="GEOMATIK">
+    <organization identifier="GEOMATIK">
+      <title>5. TEMA - İSTATİSTİKSEL ARAŞTIRMA SÜRECİ</title>
+      <item identifier="item_geomatik" identifierref="resource_geomatik">
+        <title>5. TEMA - İSTATİSTİKSEL ARAŞTIRMA SÜRECİ</title>
+      </item>
+    </organization>
+  </organizations>
+  <resources>
+    <resource identifier="resource_geomatik" type="webcontent" adlcp:scormtype="sco"
+      href="res/index.html">
+      <file href="res/index.html" />
+
+      <file href="res/css/style.css" />
+
+      <file href="res/img/soruFotolar/tufe.png" />
+      <file href="res/img/favicon.svg" />
+
+      <file href="res/js/exam.js" />
+
+      <file href="res/sound/dogru.mp3" />
+      <file href="res/sound/gecti.mp3" />
+      <file href="res/sound/kaldi.mp3" />
+      <file href="res/sound/sec.mp3" />
+      <file href="res/sound/yanlis.mp3" />
+
+    </resource>
+  </resources>
+</manifest>
