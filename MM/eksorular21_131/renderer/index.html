@@ -10,10 +10,18 @@
 	<meta name="author" content="MK" />
 	<link rel="shortcut icon" href="img/favicon.svg" />
 	<link rel="stylesheet" href="css/styles.css" type="text/css" />
+	<script>
+		window.MathJax = {
+			tex: {
+				inlineMath: [['\\(', '\\)']]
+			}
+		};
+	</script>
+	<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
 </head>
 
 <body>
-	<div class="modal" id="modal">S
+	<div class="modal" id="modal">
 		<div class="modal-header">
 			<div class="title">Example Modal</div>
 			<button data-close-button class="close-button">&times;</button>

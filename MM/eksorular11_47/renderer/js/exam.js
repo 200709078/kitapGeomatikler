@@ -1,13 +1,13 @@
 const sorularSirali_T = [
     {
-        soru: '<p style="text-align:center"><img src="img/fan.png" style="width:350px"></p>Grafiği verilen f fonksiyonu ve (aₙ) dizisine göre aşağıdakilerden hangisi doğrudur?',
+        soru: '<p style="text-align:center"><img src="img/fan.png" style="width:350px"></p>Grafiği verilen f fonksiyonu ve \\( (a_n) \\) dizisine göre aşağıdakilerden hangisi doğrudur?',
         tipi: 'cs',
         puan: 6,
         secenekler: [
             { text: 'Her yerde artandır.', correct: false },
-            { text: '(aₙ) azalan dizidir.', correct: false },
-            { text: 'f fonksiyonunun artan olduğu aralıkta (aₙ) artandır.', correct: false },
-            { text: '(aₙ) sabit dizidir.', correct: false },
+            { text: '\\( (a_n) \\) azalan dizidir.', correct: false },
+            { text: 'f fonksiyonunun artan olduğu aralıkta \\( (a_n) \\) artandır.', correct: false },
+            { text: '\\( (a_n) \\) sabit dizidir.', correct: false },
             { text: 'f(aₙ₊₁) < f(aₙ) <span style="color: #ff0008ff;">*</style>', correct: true }
         ],
         aciklama: ['DİZİLER', 'Çözüm: Bu nedenle doğru cevap <b>f(aₙ₊₁) < f(aₙ)</b> dir.']
@@ -249,6 +249,7 @@ function openModal(modal) {
     if (modal == null) return
     modal.classList.add('active')
     overlay.classList.add('active')
+    MathJax.typesetPromise();
 }
 function closeModal(modal) {
     if (modal == null) return
@@ -377,6 +378,7 @@ function soruGoster() {
     } else {
         sonrakiButton.innerHTML = "SONRAKİ"
     }
+    MathJax.typesetPromise();
 }
 
 function onAnswerDropDownItemClicked(e) {

@@ -1,164 +1,146 @@
 const sorularSirali_T = [
     {
-        yonerge: 'Bir cam parçası, içinden geçen ışığın %2’sini soğurmaktadır. Art arda dizilmiş x adet cam parçasından geçen ışığın yüzdesini gösteren fonksiyon f olduğuna göre aşağıdaki boşlukları doldurunuz.</b>',
-        sorular: [
-            { text: "f fonksiyonunun kuralı ***'dır. <span style='color: #ff0008ff;'>f(x)=(0,98)<sup>x</sup></style>" },
-            { text: "10 adet cam parçası ışığın yaklaşık olarak ***'sini geçirir. <span style='color: #ff0008ff;'>%82</style>" },
-        ],
-        tipi: "es",
-        puan: 6,
-        dogrular: ['f(x)=(0,98)<sup>x</sup>', '%82'],
-        secimler: ['f(x)=(0,02)<sup>x</sup>', '%18'],
-        aciklama: [
-            ['ÜSTEL FONKSİYONLAR', 'Bu nedenle doğru cevap...']
-        ]
-    },
-    {
-        soru: 'Aşağıdakilerden hangileri artan fonksiyondur?<br><b>I.</b> f:ℝ&#8594;ℝ<sup>+</sup>, f(x)=4<sup>-2x</sup><br><b>II.</b> g:ℝ&#8594;ℝ<sup>+</sup>, g(x)=(2/3)<sup>x-4</sup><br><b>III.</b> h:ℝ&#8594;ℝ<sup>+</sup>, h(x)=(5/2)<sup>3x</sup><br><b>IV.</b> m:ℝ&#8594;ℝ<sup>+</sup>, m(x)=(3<sup>x+2</sup>)/(27<sup>1-x</sup>)<br><b>V.</b> n:ℝ&#8594;ℝ<sup>+</sup>, n(x)=(0,01)<sup>1-x</sup>',
+        soru: '\\(f(x)=\\begin{cases}x, & x<2 \\\\3, & x\\ge 2\\end{cases}\\) için aşağıdakilerden hangisi doğrudur?',
         tipi: "cs",
         puan: 10,
         secenekler: [
-            { text: 'III ve IV <span style="color: #ff0008ff;">*</style>', correct: true },
-            { text: 'II, III ve IV', correct: false },
-            { text: 'Hepsi', correct: false },
-            { text: 'Yalnız I', correct: false },
-            { text: 'II ve IV', correct: false },
+            { text: 'x = 2’de süreklidir. <span style="color: #ff0008ff;">*</style>', correct: true },
+            { text: 'x = 2’de süreksizdir.', correct: false },
+            { text: 'x = 2’de tepe noktası vardır.', correct: false },
+            { text: 'Grafik paraboliktir.', correct: false },
+            { text: 'Çift fonksiyondur.', correct: false },
         ],
-        aciklama: ['ÜSTEL FONKSİYONLAR', 'Bu nedenle doğru cevap...']
+        aciklama: ['PARÇALI FONKSİYON', 'x = -1 için f(-1) = -1 + 1 = 0 olur.']
     },
     {
-        yonerge: 'f(x) = 3<sup>2-x</sup> kuralı ile verilen f fonksiyonuna göre aşağıdaki boşlukları doldurunuz.',
-        sorular: [
-            { text: "f fonksiyonunun tanım kümesi ***'dır. <span style='color: #ff0008ff;'>ℝ</style>" },
-            { text: "f fonksiyonunun değer kümesi ***'dır. <span style='color: #ff0008ff;'>(0, ∞)</style>" },
-            { text: "f fonksiyonunun grafiğinin y eksenini kestiği nokta *** noktasıdır. <span style='color: #ff0008ff;'>(0, 9)</style>" },
+        soru: '\\(f(x)=\\begin{cases}x+1, & x<0 \\\\x^2, & x\\ge 0\\end{cases}\\) şeklinde tanımlı f fonksiyonu veriliyor. Buna göre f(-1) değeri aşağıdakilerden hangisidir?',
+        tipi: "cs",
+        puan: 10,
+        secenekler: [
+            { text: '-1', correct: false },
+            { text: '0 <span style="color: #ff0008ff;">*</style>', correct: true },
+            { text: '1', correct: false },
+            { text: '2', correct: false },
+            { text: '3', correct: false },
         ],
-        tipi: "bd",
-        puan: 6,
-        dogrular: ['ℝ', '(0, ∞)', '(0, 9)'],
-        secimler: ['ℕ', '(-∞,0)', '(-9, 0)'],
-        aciklama: [
-            ['ÜSTEL FONKSİYONLAR', 'Bu nedenle doğru cevap...']
-        ]
+        aciklama: ['PARÇALI FONKSİYON', 'x = -1 için f(-1) = -1 + 1 = 0 olur.']
     },
     {
-        soru: 'f(x)=2<sup>x</sup> olmak üzere f(x+3)-f(x+2)=16 eşitliğini sağlayan x değerini bulunuz.',
+        soru: 'x² - (2a+1)x - 2a - 2 = 0 denkleminin köklerinden biri 4 olduğuna göre a kaçtır?',
+        tipi: "cs",
+        puan: 10,
+        secenekler: [
+            { text: '-2', correct: false },
+            { text: '-1', correct: false },
+            { text: '0', correct: false },
+            { text: '1 <span style="color: #ff0008ff;">*</style>', correct: true },
+            { text: '2', correct: false },
+        ],
+        aciklama: ['İKİNCİ DERECEDEN DENKLEMLER', 'Denklemin köklerinden biri 4 olduğuna göre <br>x = 4 için 4² - (2a+1).4 - 2a - 2 = 0<br>16 - 8a - 4 - 2a - 2 = 0<br>10 - 10a = 0<br>a = 1 olur.']
+    },
+    {
+        soru: '(a - 3)x³ +(a - 2)x² - 2x -(a + 5) = 0 ikinci derece denkleminin çözüm kümesi hangisidir.',
+        tipi: "cs",
+        puan: 10,
+        secenekler: [
+            { text: '{2, 4}', correct: false },
+            { text: '{-2, 4} <span style="color: #ff0008ff;">*</style>', correct: true },
+            { text: '{-2, -4}', correct: false },
+            { text: '{2, -4}', correct: false },
+            { text: '{-2, 0}', correct: false },
+        ],
+        aciklama: ['İKİNCİ DERECEDEN DENKLEMLER', 'Denklemin ikinci dereceden olması için a-3 = 0, yani a = 3 olmalıdır. Bu durumda denklem x² - 2x - 8 = 0 olur. Bu denklem (x-4).(x+2) = 0 şeklinde çarpanlara ayrılır. Bu nedenle x = 4 veya x = -2 olur. Buradan çözüm kümesi {-2, 4} olur.']
+    },
+    {
+        soru: 'Bir şirket, ürettiği ürün sayısına göre kârını K(x) =-x² + 40x - 300 (bin TL) ile modelliyor. Şirketin zarar etmemesi için üretim miktarının hangi aralıkta olması gerekir?',
+        tipi: "cs",
+        puan: 10,
+        secenekler: [
+            { text: '[5, 25]', correct: false },
+            { text: '[10, 30] <span style="color: #ff0008ff;">*</style>', correct: true },
+            { text: '[15, 25]', correct: false },
+            { text: '[10, 20]', correct: false },
+            { text: '[25, 30]', correct: false },
+        ],
+        aciklama: ['KÂR', 'K(x) = -x² + 40x - 300 = 0 için x² - 40x + 300 = 0 olur. Bu denklem (x-10)(x-30) = 0 şeklinde çarpanlara ayrılır. Bu nedenle x = 10 veya x = 30 olur. Şirketin zarar etmemesi için üretim miktarı [10,30] nda olmalıdır.']
+    },
+    {
+        soru: 'Bir mühendis, köprü ayağının yüksekliğini hesaplamak için aşağıdaki gibi modelleme yapmıştır. Ayak yüksekliği h(x) = 2x + 5 fonksiyonu ile verilmiştir. Burada x kullanılan çelik kolon sayısını göstermektedir. Köprü ayağının 35 metre olması için kaç çelik kolon gerekir?',
+        tipi: "cs",
+        puan: 10,
+        secenekler: [
+            { text: '10', correct: false },
+            { text: '15 <span style="color: #ff0008ff;">*</style>', correct: true },
+            { text: '20', correct: false },
+            { text: '25', correct: false },
+            { text: '30', correct: false },
+        ],
+        aciklama: ['KOLONLAR', '2x + 5 = 35 ise 2x = 30 ve x = 15 olur. Bu nedenle köprü ayağının 35 metre olması için 15 çelik kolon gerekir.']
+    },
+    {
+        soru: 'Bir fabrikanın üretim maliyeti f(x) = x² - 6x + 10 fonksiyonu ile modelleniyor. En düşük maliyet kaç birimdir?',
         tipi: "cs",
         puan: 10,
         secenekler: [
             { text: '1', correct: false },
-            { text: '2 <span style="color: #ff0008ff;">*</style>', correct: true },
+            { text: '2', correct: false },
             { text: '3', correct: false },
             { text: '4', correct: false },
-            { text: '5', correct: false },
+            { text: '5 <span style="color: #ff0008ff;">*</style>', correct: true },
         ],
-        aciklama: ['ÜSTEL FONKSİYONLAR', 'Bu nedenle doğru cevap...']
+        aciklama: ['TEPE NOKTASI', 'En düşük maliyet tepe noktasındadır. r =  -b/2a = 3 için k = 3² - 18 + 10 = 1 olur. Bu nedenle en düşük maliyet 1 birimdir.']
     },
     {
-        yonerge: 'Aşağıdaki tabloya f(x)=2<sup>x</sup> ve g(x)=(1/2)<sup>x</sup> şeklinde tanımlı fonksiyonların verilen özellikleri sağlayıp sağlamadığını işaretleyiniz.',
-        sorular: [
-            { text: '<p><table class="my-table" border="1"><tr><td width="80">Özellik</td><td>Bire Bir</td><td>Örten</td><td>Artan</td><td>Azalan</td><td>Pozitif Değerli</td><td>Negatif Değerli</td></tr><tr><td>f(x)=2<sup>x</sup></td><td>***</td><td>***</td><td>***</td><td>***</td><td>***</td><td>***</td></tr><tr><td>g(x)=(1/2)<sup>x</sup></td><td>***</td><td>***</td><td>***</td><td>***</td><td>***</td><td>***</td></tr></table></p>' }
-        ],
-        tipi: "es",
-        puan: 12,
-        dogrular: ['✓', 'X', '✓', 'X', '✓', 'X', '✓', 'X', 'X', '✓', '✓', 'X'],
-        secimler: ['✓', 'X'],
-        aciklama: [
-            ['ÜSTEL FONKSİYONLAR', 'Açıklama-1'],
-            ['ÜSTEL FONKSİYONLAR', 'Açıklama-2'],
-            ['ÜSTEL FONKSİYONLAR', 'Açıklama-3'],
-            ['ÜSTEL FONKSİYONLAR', 'Açıklama-4'],
-            ['ÜSTEL FONKSİYONLAR', 'Açıklama-5'],
-            ['ÜSTEL FONKSİYONLAR', 'Açıklama-6'],
-            ['ÜSTEL FONKSİYONLAR', 'Açıklama-7'],
-            ['ÜSTEL FONKSİYONLAR', 'Açıklama-8'],
-            ['ÜSTEL FONKSİYONLAR', 'Açıklama-9'],
-            ['ÜSTEL FONKSİYONLAR', 'Açıklama-10'],
-            ['ÜSTEL FONKSİYONLAR', 'Açıklama-11'],
-            ['ÜSTEL FONKSİYONLAR', 'Açıklama-12'],
-        ]
-    },
-    {
-        soru: 'Aşağıdaki fonksiyonlardan hangileri üstel fonksiyondur?<br><b>I.</b> f:ℝ&#8594;ℝ<sup>+</sup>, f(x)=3<sup>x+1</sup><br><b>II.</b> g:ℝ&#8594;ℝ<sup>+</sup>, g(x)=1<sup>x</sup><br><b>III.</b> h:ℤ&#8594;ℝ<sup>+</sup>, h(x)=5<sup>2x</sup><br><b>IV.</b> k:ℝ&#8594;ℝ<sup>+</sup>, k(x)=1/2<sup>2-x</sup><br><b>V.</b> r:ℝ&#8594;ℝ<sup>+</sup>, r(x)=3<sup>-2x</sup><br><b>VI.</b> m:ℝ&#8594;ℝ<sup>+</sup>, m(x)=(0,01)<sup>x</sup>',
+        soru: 'Bir öğrencinin konumunu temsil eden nokta A(3,-2), okulun konumunu temsil eden B(-1, 1) noktası ile aynı koordinat düzleminde gösteriliyor. Bu öğrencinin evinden okula olan kuş uçuşu uzaklık kaç birimdir?',
         tipi: "cs",
         puan: 10,
         secenekler: [
-            { text: 'I, III, IV, V ve VI <span style="color: #ff0008ff;">*</style>', correct: true },
-            { text: 'III ve IV', correct: false },
-            { text: 'Hepsi', correct: false },
-            { text: 'Yalnız III', correct: false },
-            { text: 'II, III ve IV', correct: false },
+            { text: '1', correct: false },
+            { text: '2', correct: false },
+            { text: '3', correct: false },
+            { text: '4', correct: false },
+            { text: '5 <span style="color: #ff0008ff;">*</style>', correct: true },
         ],
-        aciklama: ['ÜSTEL FONKSİYONLAR', 'Bu nedenle doğru cevap...']
+        aciklama: ['UZAKLIK', '\\(\\sqrt{(3-(-1))^2 + (-2-1)^2} = 5\\) olur.']
     },
     {
-        yonerge: 'Aşağıda çubuklar kullanılarak oluşturulan bir örüntünün ilk 4 adımı verilmiştir.<br><img src="img/cubuklar.png"><br><b>Buna göre aşağıda verilen boşlukları doldurunuz.</b>',
-        sorular: [
-            { text: 'Örüntünün 6. adımında *** adet çubuk kullanılmıştır. <span style="color: #ff0008ff;">19</style>' },
-            { text: 'Adım sayısı n olmak üzere örüntünün n. adımında kullanılan çubuk sayısı *** kuralı ile bulunur. <span style="color: #ff0008ff;">3n+1</style>' },
-        ],
-        tipi: "bd",
-        puan: 6,
-        dogrular: ['19', '3n+1'],
-        secimler: ['22', '2n+2', '25', '3n-2'],
-        aciklama: [
-            ['ÇUBUKLAR', 'Her adımda kullanılan çubuk sayısı, adım sayısının 3 katından 1 fazladır. Bu nedenle örüntünün 6. adımında 3.6+1=19 adet çubuk kullanılması gerekir.'],
-            ['ÇUBUKLAR', 'Ardışık adımlarda kullanılan çubuk sayıları arasındaki fark 3 olduğu için kural içerisinde 3n terimi olmalıdır. Örüntünün 1. adımında 4 adet çubuk kullanıldığı için kuralda n yerine 1 yazıldığında 4 elde edilmelidir. Bu nedenle kural 3n+1 olması gerekir.']
-        ]
-    },
-    {
-        yonerge: '(3, 9, 27, ...) şeklinde verilen örüntüye göre aşağıdaki verilen boşlukları doldurunuz.',
-        sorular: [
-            { text: 'Örüntünün 5. elemanına karşılık gelen sayıdır. &#8594 *** <span style="color: #ff0008ff;">343</style>' },
-            { text: 'Eleman sayısı n olmak üzere örüntünün n. elemanını veren kuraldır. &#8594 *** <span style="color: #ff0008ff;">3<sup>n</sup></style>' },
-        ],
-        tipi: "es",
-        puan: 10,
-        dogrular: ['343', '3<sup>n</sup>'],
-        secimler: ['81', '3n', '125', '2<sup>n</sup>'],
-        aciklama: [
-            ['ÖRÜNTÜ', 'Her adım 3 ün kuvveti olduğundan 5. adımda 3<sup>5</sup>=343 olması gerekir.'],
-            ['ÖRÜNTÜ', 'Ardışık terimlerden büyük olanın küçük olana oranı daima 3 olduğundan örüntünün n. elemanı 3<sup>n</sup> kuralı ile bulunur.']
-        ]
-    },
-    {
-        soru: 'Aşağıda verilen grafiklerden hangisi üstel fonksiyon grafiğidir?',
+        soru: 'P(x) = x² + 3x + 2 polinomunun kökleri nelerdir?',
         tipi: "cs",
         puan: 10,
         secenekler: [
-            { text: '<br><img src="img/ga.png" style="width:200px">', correct: false },
-            { text: '<br><img src="img/gb.png" style="width:200px"><span style="color: #ff0008ff;">*</style>', correct: true },
-            { text: '<br><img src="img/gc.png" style="width:200px">', correct: false },
-            { text: '<br><img src="img/gd.png" style="width:200px">', correct: false },
-            { text: '<br><img src="img/ge.png" style="width:200px">', correct: false },
+            { text: '-1 ve -2 <span style="color: #ff0008ff;">*</style>', correct: true },
+            { text: '1 ve 2', correct: false },
+            { text: '-1 ve 2', correct: false },
+            { text: '1 ve -2', correct: false },
+            { text: '1 ve 3', correct: false },
         ],
-        aciklama: ['ÜSTEL FONKSİYONLAR', 'Bu nedenle doğru cevap...']
+        aciklama: ['PARÇALI FONKSİYON', 'x² + 3x + 2 = (x+1).(x+2) = 0 ise x = -1 veya x = -2 olur.']
     },
     {
-        soru: 'Aşağıdaki grafiklerden hangisi f(x)=2<sup>x</sup> kuralı ile verilen üstel fonksiyonun grafiğidir?',
+        soru: 'f(x) = x² - 4 fonksiyonunun tepe noktasının koordinatı aşağıdakilerden hangisidir?',
         tipi: "cs",
         puan: 10,
         secenekler: [
-            { text: '<br><img src="img/gaa.png" style="width:200px">', correct: false },
-            { text: '<br><img src="img/gbb.png" style="width:200px"><span style="color: #ff0008ff;">*</style>', correct: true },
-            { text: '<br><img src="img/gcc.png" style="width:200px">', correct: false },
-            { text: '<br><img src="img/gdd.png" style="width:200px">', correct: false },
-            { text: '<br><img src="img/gee.png" style="width:200px">', correct: false },
+            { text: '(0, -4) <span style="color: #ff0008ff;">*</style>', correct: true },
+            { text: '(2, 0)', correct: false },
+            { text: '(0, 0)', correct: false },
+            { text: '(-4, 0)', correct: false },
+            { text: '(-2, 0)', correct: false },
         ],
-        aciklama: ['ÜSTEL FONKSİYONLAR', 'Bu nedenle doğru cevap...']
+        aciklama: ["TEPE NOKTASI', 'Simetri ekseni x = 0'dır. Buradan x = 0 için f(0) = 0² - 4 = -4 olduğundan tepe noktası (0, -4) noktasıdır."]
     },
     {
-        soru: 'Aşağıdaki grafiklerden hangisi f(x)=1/2<sup>x</sup> kuralı ile verilen üstel fonksiyonun grafiğidir?',
+        soru: 'f(x) = 2x + 3 fonksiyonunun grafiği aşağıdaki noktalardan hangisinden geçer?',
         tipi: "cs",
         puan: 10,
         secenekler: [
-            { text: '<br><img src="img/gaa.png" style="width:200px">', correct: false },
-            { text: '<br><img src="img/gbb.png" style="width:200px">', correct: false },
-            { text: '<br><img src="img/gcc.png" style="width:200px"><span style="color: #ff0008ff;">*</style>', correct: true },
-            { text: '<br><img src="img/gdd.png" style="width:200px">', correct: false },
-            { text: '<br><img src="img/gee.png" style="width:200px">', correct: false },
+            { text: '(0, 3) <span style="color: #ff0008ff;">*</style>', correct: true },
+            { text: '(2, 3)', correct: false },
+            { text: '(-3, 0)', correct: false },
+            { text: '(3, 0)', correct: false },
+            { text: '(2, 0)', correct: false },
         ],
-        aciklama: ['ÜSTEL FONKSİYONLAR', 'Bu nedenle doğru cevap...']
+        aciklama: ['DOĞRU GRAFİĞİ', 'x = 0 için f(0) = 2.3 + 3 = 3 olduğundan (0, 3) noktasından geçer.']
     }
 ]
 
@@ -177,6 +159,7 @@ function openModal(modal) {
     if (modal == null) return
     modal.classList.add('active')
     overlay.classList.add('active')
+    MathJax.typesetPromise();
 }
 function closeModal(modal) {
     if (modal == null) return
@@ -301,6 +284,7 @@ function soruGoster() {
     } else {
         sonrakiButton.innerHTML = "SONRAKİ"
     }
+    MathJax.typesetPromise();
 }
 
 function onAnswerDropDownItemClicked(e) {

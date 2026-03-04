@@ -1,6 +1,6 @@
 const sorularSirali_T = [
     {
-        soru: 'Bir su deposu modeli V(t) = (a − bt) / (t + c) şeklindedir. Bu model için aşağıdakilerden hangisi kesinlikle doğrudur?',
+        soru: 'Bir su deposu modeli \\( V(t) = \\frac{a - b.t}{t + c} \\) şeklindedir. Bu model için aşağıdakilerden hangisi kesinlikle doğrudur?',
         tipi: 'cs',
         puan: 4,
         secenekler: [
@@ -192,7 +192,7 @@ const sorularSirali_T = [
             { text: 'Köklerinin simetrik olmasını', correct: false },
             { text: 'Grafiğinin x eksenine göre simetrik olmasını', correct: false }
         ],
-        aciklama: ['POLİNOMLAR', 'P(x)=P(−x) → Çift fonksiyon → yalnızca çift dereceli terimler']
+        aciklama: ['POLİNOMLAR', 'P(x) = P(−x) → Çift fonksiyon → yalnızca çift dereceli terimler']
     },
     {
         soru: 'Başkatsayısı 1 olan üçüncü dereceden bir polinomun P(a) = P(b) = P(c) = P(d) (a, b, c, d farklı) olması aşağıdakilerden hangisini gösterir?',
@@ -208,7 +208,7 @@ const sorularSirali_T = [
         aciklama: ['POLİNOMLAR', 'Üçüncü dereceden bir polinom en fazla 3 farklı noktada aynı değeri alabilir. 4 farklı noktada eşitlik mümkün değildir.']
     },
     {
-        soru: '3)T(x) = (x + a)² + (x − a)³ polinomunda x’li terimin katsayısı 5 ise a kaçtır?',
+        soru: 'T(x) = (x + a)² + (x − a)³ polinomunda x’li terimin katsayısı 5 ise a kaçtır?',
         tipi: 'cs',
         puan: 4,
         secenekler: [
@@ -218,7 +218,7 @@ const sorularSirali_T = [
             { text: '4', correct: false },
             { text: '5', correct: false }
         ],
-        aciklama: ['', '(x + a)² → x’li terim: 2ax<br>(x − a)³ → x’li terim: 3a²x<br>Toplam katsayı: 2a + 3a² = 5<br>3a² + 2a − 5 = 0 → a = 1']
+        aciklama: ['KATSAYILAR', '(x + a)² → x’li terim: 2ax<br>(x − a)³ → x’li terim: 3a²x<br>Toplam katsayı: 2a + 3a² = 5<br>3a² + 2a − 5 = 0 → a = 1']
     },
     {
         soru: 'R(x) = 3(x − 2)³ − (x + 1)² polinomunda sabit terim kaçtır?',
@@ -266,7 +266,7 @@ const sorularSirali_T = [
     {
         yonerge: 'Aşağıda verilen boşlukları doldurunuz.',
         sorular: [
-            { text: 'f(x)=−(x−4)² polinom fonksiyonunun görüntü kümesi ***’dır. <span style="color: #ff0008ff;">(−∞, 0] </style>' },
+            { text: 'f(x) = −(x−4)² polinom fonksiyonunun görüntü kümesi ***’dır. <span style="color: #ff0008ff;">(−∞, 0] </style>' },
             { text: 'g(x)=(x+2)³ polinom fonksiyonunun görüntü kümesi ***’dır. <span style="color: #ff0008ff;">ℝ</style>' },
             { text: 'h(x)=(x−1)(x+5) polinom fonksiyonunun sıfırlarının oluşturduğu küme ***’dır. <span style="color: #ff0008ff;">{-5, 1}</style>' }
         ],
@@ -297,6 +297,7 @@ function openModal(modal) {
     if (modal == null) return
     modal.classList.add('active')
     overlay.classList.add('active')
+    MathJax.typesetPromise();
 }
 function closeModal(modal) {
     if (modal == null) return
@@ -425,6 +426,7 @@ function soruGoster() {
     } else {
         sonrakiButton.innerHTML = "SONRAKİ"
     }
+    MathJax.typesetPromise();
 }
 
 function onAnswerDropDownItemClicked(e) {
