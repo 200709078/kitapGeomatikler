@@ -1,16 +1,133 @@
 const sorularSirali_T = [
     {
-        soru: 'SORU EKLENECEK...',
+        yonerge: 'Bir taksi şirketi için aşağıdaki doğrusal fonksiyonları uygun durumlarla eşleştiriniz.',
+        sorular: [
+            { text: "f(x) = 3x + 12 &rarr; *** <span style='color: #ff0008ff;'>Başlangıç 12 TL, km başına 3 TL</style>" },
+            { text: "f(x) = 2x + 10 &rarr; *** <span style='color: #ff0008ff;'>Başlangıç 10 TL, km başına 2 TL</style>" },
+            { text: "f(x) = 5 + 4x &rarr; *** <span style='color: #ff0008ff;'>Başlangıç 5 TL, km başına 4 TL</style>" },
+        ],
+        tipi: "es",
+        puan: 9,
+        dogrular: ['Başlangıç 12 TL, km başına 3 TL', 'Başlangıç 10 TL, km başına 2 TL', 'Başlangıç 5 TL, km başına 4 TL'],
+        secimler: ['Başlangıç 3 TL, km başına 12 TL', 'Başlangıç 2 TL, km başına 10 TL', 'Başlangıç 4 TL, km başına 5 TL'],
+        aciklama: [
+            ['FONKSİYONLAR', 'f(x) = 3x + 12 için başlangıç 12 TL ve km başına 3 TL ücret düşer.'],
+            ['FONKSİYONLAR', 'f(x) = 2x + 10 için başlangıç 10 TL ve km başına 2 TL ücret düşer.'],
+            ['FONKSİYONLAR', 'f(x) = 5 + 4x için başlangıç 5 TL ve km başına 4 TL ücret düşer.'],
+        ]
+    },
+    {
+        yonerge: 'Aşağıdaki ifadeleri uygun yorumlarla eşleştiriniz.',
+        sorular: [
+            { text: "Sabit ücret 12 TL &rarr; ***  <span style='color: #ff0008ff;'>y eksenini 12 noktasında keser</style>" },
+            { text: "Her birimde 7 TL artış &rarr; *** <span style='color: #ff0008ff;'>Eğimi 7'dir</style>" },
+        ],
+        tipi: "es",
+        puan: 10,
+        dogrular: ["y eksenini 12 noktasında keser", "Eğimi 7'dir"],
+        secimler: ["Eğimi 12'dir.", "y eksenini 7 noktasında keser"],
+        aciklama: [
+            ['FONKSİYONLAR', 'Sabiti 12 olan f(x) = mx + 12 şeklindeki fonksiyon y eksenini 12 noktasında keser.'],
+            ['FONKSİYONLAR', 'Her birimde 7 TL artış olan f(x) = 7x + c şeklindeki fonksiyonun eğimi 7 dir.'],
+        ]
+    },
+    {
+        yonerge: 'Aşağıdaki boşluğu doldurunuz.',
+        sorular: [
+            { text: "2x² + 4x + 3 = 2(***)² + 1 <span style='color: #ff0008ff;'>x+1</style>" }
+        ],
+        tipi: "bd",
+        puan: 6,
+        dogrular: ['x + 1'],
+        secimler: ['x - 1', 'x - 2'],
+        aciklama: [
+            ['FONKSİYONLAR', '2x² + 4x + 3 = 2(x²+2x+1) + 1 = 2(x+1)² + 1 olduğundan boşluğa gelecek ifade x + 1 dir.']
+        ]
+    },
+    {
+        yonerge: 'f(x) = 2x + 2 ve g(x) = x + 1 şeklinde tanımlanıyor. Buna göre aşağıdaki işlemleri uygun sonuçlarla eşleştiriniz.',
+        sorular: [
+            { text: "f + g = *** <span style='color: #ff0008ff;'>3x+3</style>" },
+            { text: "f - g = *** <span style='color: #ff0008ff;'>x+1</style>" },
+            { text: "f . g = *** <span style='color: #ff0008ff;'>2x²+4x+2</style>" },
+            { text: "f / g = *** <span style='color: #ff0008ff;'>2</style>" },
+        ],
+        tipi: "es",
+        puan: 12,
+        dogrular: ['3x+3', 'x+1', '2x²+4x+2', '2'],
+        secimler: ['3x+1', 'x-1', '2x²+2x+2', '4'],
+        aciklama: [
+            ['FONKSİYONLAR', 'f(x) + g(x) = (2x + 2) + (x + 1) = 3x + 3<br>f(x) - g(x) = (2x + 2) - (x + 1) = x + 1<br> f(x).g(x) = (2x + 2).(x + 1) = 2x² + 4x + 2<br>f(x)/g(x) = (2x + 2)/(x + 1) = 2 olur.']
+        ]
+    },
+    {
+        soru: '"Bir ücret fonksiyonu f(x) = 6x + 20 ise 20 sayısı başlangıç ücretini temsil eder." ifadesine göre seçim yapınız.',
+        tipi: "dy",
+        puan: 9,
+        secenekler: [
+            { text: 'Doğrudur. <span style="color: #ff0008ff;">*</style>', correct: true },
+            { text: 'Yanlıştır.', correct: false },
+        ],
+        aciklama: ['BAŞLANGIÇ ÜCRETI', 'x=0 için f(0) = 20 TL, başlangıç ücretini temsil eder. Bu nedenle verilen ifade doğrudur.'],
+    },
+    {
+        soru: '"Bir kargo şirketinde başlangıç ücreti 20 TL ve kilogram başına 4 TL alınmaktadır. Bu doğrusal fonksiyonun eğimi 20&apos;dir." ifadesine göre seçim yapınız.',
+        tipi: "dy",
+        puan: 10,
+        secenekler: [
+            { text: 'Doğrudur.', correct: false },
+            { text: 'Yanlıştır. <span style="color: #ff0008ff;">*</style>', correct: true },
+        ],
+        aciklama: ['EĞİM', 'Şirket x kilogram için f(x) = 20 + 4x fonksiyonunu kullanmaktadır. Bu doğrusal fonksiyonun eğimi 4&apos;tür. Bu nedenle verilen ifade yanlıştır.'],
+    },
+    {
+        soru: '"x² + 4x + 1 = (x + 2)² − 3" ifadesine göre seçim yapınız.',
+        tipi: "dy",
+        puan: 10,
+        secenekler: [
+            { text: 'Doğrudur. <span style="color: #ff0008ff;">*</style>', correct: true },
+            { text: 'Yanlıştır.', correct: false },
+        ],
+        aciklama: ['ÇARPANLARA AYIRMA', '(x + 2)² − 3 = x² + 4x + 4 − 3 = x² + 4x + 1 olduğundan verilen ifade doğrudur.'],
+    },
+    {
+        soru: "Bir telefon tarifesinde aylık sabit ücret 50 TL ve kullanılan her GB için 2 TL ücret alınmaktadır.Toplam ödeme 74 TL olduğuna göre müşteri kaç GB internet kullanmıştır?",
         tipi: "cs",
         puan: 10,
         secenekler: [
-            { text: '1 <span style="color: #ff0008ff;">*</style>', correct: true },
-            { text: '2', correct: false },
-            { text: '3', correct: false },
-            { text: '4', correct: false },
-            { text: '5', correct: false },
+            { text: '10 <span style="color: #ff0008ff;">*</style>', correct: true },
+            { text: '12', correct: false },
+            { text: '15', correct: false },
+            { text: '18', correct: false },
+            { text: '24', correct: false },
         ],
-        aciklama: ['SORU EKLENECEK', 'Bu nedenle doğru cevap...']
+        aciklama: ['TARİFE', "Telefon ücreti = sabit ücret + (GB ücreti x GB) ile hesaplanır. Yani x GB'lık bir kullanımın ücreti y = f(x) = 50 + 2.x ile hesaplanır. Buradan y = 74 TL ücret ödemek için 74 = 50 + 2x = 12 GB internet kullanmak gerekir."]
+    },
+    {
+        soru: "Bir kargo şirketi sabit olarak 15 TL ve kilogram başına 6 TL ücret almaktadır. Buna göre 4 kg'lık bir kargonun ücreti kaç TL olur?",
+        tipi: "cs",
+        puan: 10,
+        secenekler: [
+            { text: '24', correct: false },
+            { text: '39 <span style="color: #ff0008ff;">*</style>', correct: true },
+            { text: '45', correct: false },
+            { text: '54', correct: false },
+            { text: '60', correct: false },
+        ],
+        aciklama: ['KARGO ÜCRETİ', ' Kargo ücreti = sabit ücret + (kilogram başına ücret x kilogram) ile hesaplanır. Yani x kilogramlık bir paketin kargo ücreti f(x) = 15 + 6.x  ile hesaplanır. Buradan x = 4 kg için f(4) = 15 + 6.4 = 39 TL olur.']
+    },
+    {
+        soru: 'f(x) = x² + 7x + 12 ifadesinin çarpanlarına ayrılmış biçimi aşağıdakilerden hangisidir?',
+        tipi: "cs",
+        puan: 10,
+        secenekler: [
+            { text: '(x+3).(x+4) <span style="color: #ff0008ff;">*</style>', correct: true },
+            { text: '(x+2).(x+6)', correct: false },
+            { text: '(x+1).(x+12)', correct: false },
+            { text: '(x+5).(x+2)', correct: false },
+            { text: '(x-3).(x-4)', correct: false },
+        ],
+        aciklama: ['ÇARPANLARA AYIRMA', 'x² + 7x + 12 = (x+3).(x+4) olur.']
     }
 ]
 
@@ -29,7 +146,6 @@ function openModal(modal) {
     if (modal == null) return
     modal.classList.add('active')
     overlay.classList.add('active')
-    MathJax.typesetPromise();
 }
 function closeModal(modal) {
     if (modal == null) return
@@ -54,7 +170,7 @@ const bittiSound = new Audio("sound/gecti.mp3")
 const kaldiSound = new Audio("sound/kaldi.mp3")
 const secSound = new Audio("sound/sec.mp3")
 
-document.addEventListener('contextmenu', event => event.preventDefault())
+//document.addEventListener('contextmenu', event => event.preventDefault())
 
 function denemeBaslat() {
     sorular = sorularSirali_T //arrayKaristir(sorularSirali_T)
@@ -154,7 +270,6 @@ function soruGoster() {
     } else {
         sonrakiButton.innerHTML = "SONRAKİ"
     }
-    MathJax.typesetPromise();
 }
 
 function onAnswerDropDownItemClicked(e) {
@@ -173,7 +288,6 @@ function onAnswerDropDownItemClicked(e) {
         openModal(modal)
     }
     answerDropDown.style.display = 'none'
-    console.log(bSay)
     if (bSay == sorular[aktifSoruIndex].dogrular.length) sonrakiButton.style.display = 'block'
 }
 

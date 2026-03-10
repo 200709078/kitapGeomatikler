@@ -13,7 +13,7 @@ const sorularSirali_T = [
         aciklama: ['DİZİLER', 'Çözüm: Bu nedenle doğru cevap <b>f(aₙ₊₁) < f(aₙ)</b> dir.']
     },
     {
-        soru: 'f(n)=(3/2)^n için aşağıdakilerden hangisi doğrudur?',
+        soru: '\\( f(n)=\\left(\\frac{3}{2}\\right)^n \\) için aşağıdakilerden hangisi doğrudur?',
         tipi: 'cs',
         puan: 6,
         secenekler: [
@@ -39,7 +39,7 @@ const sorularSirali_T = [
         aciklama: ['ORTAK FARK', 'İlk terimi pozitif ve ilk 20 teriminin toplamının 0 olabilmesi için sonraki bazı terimleri negatif olmalıdır. Yani dizinin terimlerinin azalarak ilerlemesi gerekir. Bu nedenle doğru cevap "negatiftir." olmalıdır.']
     },
     {
-        soru: 'İlk terimi 45 olan bir aritmetik dizide a₆ + a₁₂ = 390 ise ortak fark kaçtır?',
+        soru: 'İlk terimi 45 olan bir aritmetik dizide \\( a_6 + a_{12} = 390 \\) ise ortak fark kaçtır?',
         tipi: 'cs',
         puan: 6,
         secenekler: [
@@ -246,10 +246,10 @@ closeModalButtons.forEach(button => {
 })
 
 function openModal(modal) {
+    MathJax.typesetPromise();
     if (modal == null) return
     modal.classList.add('active')
     overlay.classList.add('active')
-    MathJax.typesetPromise();
 }
 function closeModal(modal) {
     if (modal == null) return
@@ -274,7 +274,7 @@ const bittiSound = new Audio("sound/gecti.mp3")
 const kaldiSound = new Audio("sound/kaldi.mp3")
 const secSound = new Audio("sound/sec.mp3")
 
-document.addEventListener('contextmenu', event => event.preventDefault())
+//document.addEventListener('contextmenu', event => event.preventDefault())
 
 function denemeBaslat() {
     sorular = sorularSirali_T //arrayKaristir(sorularSirali_T)
@@ -378,7 +378,7 @@ function soruGoster() {
     } else {
         sonrakiButton.innerHTML = "SONRAKİ"
     }
-    MathJax.typesetPromise();
+    MathJax.typesetPromise()
 }
 
 function onAnswerDropDownItemClicked(e) {

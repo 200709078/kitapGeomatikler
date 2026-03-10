@@ -29,7 +29,6 @@ function openModal(modal) {
     if (modal == null) return
     modal.classList.add('active')
     overlay.classList.add('active')
-    MathJax.typesetPromise();
 }
 function closeModal(modal) {
     if (modal == null) return
@@ -158,7 +157,6 @@ function soruGoster() {
     } else {
         sonrakiButton.innerHTML = "SONRAKİ"
     }
-    MathJax.typesetPromise();
 }
 
 function onAnswerDropDownItemClicked(e) {
