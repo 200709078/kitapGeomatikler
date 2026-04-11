@@ -10,7 +10,7 @@ const sorularSirali_T = [
             { text: 'Depo yalnızca t = 0 anında boşalır.', correct: false },
             { text: 'Su miktarı artan bir fonksiyondur.', correct: false }
         ],
-        aciklama: ['SU DEPOSU', 'V(t)=0 → a−bt=0 → Pay sıfır']
+        aciklama: ['SU DEPOSU', '\\( V(t) = \\frac{a - b.t}{t + c} \\) V(t)=0 → a−bt=0 → Pay sıfır']
     },
     {
         soru: 'Bir rasyonel fonksiyonun tanım kümesi belirlenirken aşağıdakilerden hangisine dikkat edilir?',
@@ -294,6 +294,7 @@ closeModalButtons.forEach(button => {
 })
 
 function openModal(modal) {
+    MathJax.typesetPromise();
     if (modal == null) return
     modal.classList.add('active')
     overlay.classList.add('active')
@@ -342,10 +343,7 @@ function soruGoster() {
 
     // BOŞLUK DOLDURMA - EŞLEŞTİRME
     if (aktifSoru.tipi == 'bd' || aktifSoru.tipi == 'es') {
-        let secimler = aktifSoru.secimler.slice()
-        aktifSoru.dogrular.forEach(d => {
-            secimler.push(d)
-        })
+        let secimler = arrayKaristir([...new Set([...aktifSoru.dogrular, ...aktifSoru.secimler])])
 
         answerDropDown = document.createElement('div')
         answerDropDown.id = 'app-text-answer-dropdown'
@@ -402,8 +400,7 @@ function soruGoster() {
     if (aktifSoru.tipi == 'cs' || aktifSoru.tipi == 'dy') {
         soru.innerHTML = "<b>" + (soruNo + 1) + ")</b> " + aktifSoru.soru + "<br>(" + aktifSoru.puan + " puan)"
         let say = 65
-        //arrayKaristir(aktifSoru.secenekler).forEach(secenek => {
-        aktifSoru.secenekler.forEach(secenek => {
+        arrayKaristir(aktifSoru.secenekler).forEach(secenek => {
             const button = document.createElement("button")
             if (aktifSoru.tipi == "dy") {
                 button.innerHTML = secenek.text
@@ -425,6 +422,7 @@ function soruGoster() {
     } else {
         sonrakiButton.innerHTML = "SONRAKİ"
     }
+    MathJax.typesetPromise();
 }
 
 function onAnswerDropDownItemClicked(e) {

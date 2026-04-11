@@ -16,11 +16,11 @@
     <section class="container">
         <div class="controlPanel">
             <div>
-                <label for="polygonMidle">Çokgenler (Orta Nokta)</label>
+                <label for="polygonMidle">Orta Noktalar</label>
                 <input type="radio" name="drawType" value="polygonMiddle" id="polygonMiddle" checked>
             </div>
             <div>
-                <label for="polygonCorner">Çokgenler (Köşe)</label>
+                <label for="polygonCorner">Köşeler</label>
                 <input type="radio" name="drawType" value="polygonCorner" id="polygonCorner">
             </div>
             <div>
@@ -29,9 +29,9 @@
             </div>
 
             <label for="stepNum" id="stepNumLabel">Adım Sayısı: 1</label>
-            <input type="range" min="1" max="50" id="stepNum" title="Adım Sayısı" value="1" oninput="stepNumChanged()">
-            <label for="edgeNum" id="edgeNumLabel">Köşe Sayısı: 4</label>
-            <input type="range" min="2" max="60" id="edgeNum" title="Köşe Sayısı" value="4" oninput="edgeNumChanged()">
+            <input type="range" min="1" max="10" id="stepNum" title="Adım Sayısı" value="1" oninput="stepNumChanged()">
+            <label for="edgeNum" id="edgeNumLabel">Kenar Sayısı: 3</label>
+            <input type="range" min="3" max="60" id="edgeNum" title="Kenar Sayısı" value="3" oninput="edgeNumChanged()">
             <label for="radius" id="radiusLabel">Yarıçap: 200</label>
             <input type="range" min="2" max="600" id="radius" title="Yarıçap" value="200" oninput="radiusChanged()">
             <label for="xCenter" id="xCenterLabel">Merkex (x): 350</label>

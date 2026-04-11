@@ -270,6 +270,7 @@ function soruGoster() {
     } else {
         sonrakiButton.innerHTML = "SONRAKİ"
     }
+    MathJax.typesetPromise();
 }
 
 function onAnswerDropDownItemClicked(e) {

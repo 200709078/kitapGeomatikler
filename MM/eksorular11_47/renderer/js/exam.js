@@ -295,10 +295,7 @@ function soruGoster() {
 
     // BOŞLUK DOLDURMA - EŞLEŞTİRME
     if (aktifSoru.tipi == 'bd' || aktifSoru.tipi == 'es') {
-        let secimler = aktifSoru.secimler.slice()
-        aktifSoru.dogrular.forEach(d => {
-            secimler.push(d)
-        })
+        let secimler = arrayKaristir([...new Set([...aktifSoru.dogrular, ...aktifSoru.secimler])])
 
         answerDropDown = document.createElement('div')
         answerDropDown.id = 'app-text-answer-dropdown'
@@ -355,8 +352,7 @@ function soruGoster() {
     if (aktifSoru.tipi == 'cs' || aktifSoru.tipi == 'dy') {
         soru.innerHTML = "<b>" + (soruNo + 1) + ")</b> " + aktifSoru.soru + "<br>(" + aktifSoru.puan + " puan)"
         let say = 65
-        //arrayKaristir(aktifSoru.secenekler).forEach(secenek => {
-        aktifSoru.secenekler.forEach(secenek => {
+        arrayKaristir(aktifSoru.secenekler).forEach(secenek => {
             const button = document.createElement("button")
             if (aktifSoru.tipi == "dy") {
                 button.innerHTML = secenek.text
@@ -378,7 +374,7 @@ function soruGoster() {
     } else {
         sonrakiButton.innerHTML = "SONRAKİ"
     }
-    MathJax.typesetPromise()
+    MathJax.typesetPromise();
 }
 
 function onAnswerDropDownItemClicked(e) {

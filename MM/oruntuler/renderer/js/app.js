@@ -4,16 +4,16 @@ canvas.width = window.innerWidth - canvas.offsetLeft
 canvas.height = window.innerHeight - canvas.offsetTop
 let ctx = canvas.getContext('2d')
 
-document.getElementById('xCenterRange').value = Math.round((canvas.width - canvas.width * .1) / 2)
-document.getElementById('xCenterLabel').innerHTML = 'Merkez (x): ' + Math.round((canvas.width - canvas.width * .1) / 2)
-document.getElementById('yCenterRange').value = Math.round(canvas.height / 2)
-document.getElementById('yCenterLabel').innerHTML = 'Merkez (y): ' + Math.round(canvas.height / 2)
-document.getElementById('radius').value = Math.round(canvas.height * .95 / 2)
-document.getElementById('radiusLabel').innerHTML = 'Yarıçap: ' + Math.round(canvas.height * .95 / 2)
+document.getElementById('xCenterRange').value = Math.round((canvas.width - canvas.width * .05) / 2)
+document.getElementById('xCenterLabel').innerHTML = 'Merkez (x): ' + Math.round((canvas.width - canvas.width * .05) / 2)
+document.getElementById('yCenterRange').value = Math.round(canvas.height - canvas.height * .8 / 2)
+document.getElementById('yCenterLabel').innerHTML = 'Merkez (y): ' + Math.round(canvas.height - canvas.height * .8 / 2)
+document.getElementById('radius').value = Math.round(canvas.height * 1.15 / 2)
+document.getElementById('radiusLabel').innerHTML = 'Yarıçap: ' + Math.round(canvas.height * 1.15 / 2)
 
 let missing = 'polygonMiddle'
 
-let edgeNum = 4
+let edgeNum = 3
 let stepNum = 1
 let ba
 
@@ -25,7 +25,115 @@ class mPoly {
         this.r = r
     }
 }
-updateArrayCorner = function () {
+
+function calculatePolyPerimeter(n, a, k = 1) {
+    if (n < 3 || a < 1 || k <= 0) {
+        throw new Error("n >= 3, a >= 1 ve k > 0 olmalı.");
+    }
+
+    const r = Math.cos(Math.PI / n);
+
+    let terms = [];
+    let total = 0;
+
+    for (let i = 0; i < a; i++) {
+        let perimeter = n * k * Math.pow(r, i);
+        total += perimeter;
+
+        let formatted = Number(perimeter.toFixed(2)).toLocaleString("tr-TR");
+        terms.push(formatted);
+    }
+
+    let expression = terms.join("+");
+    let totalFormatted = Number(total.toFixed(2)).toLocaleString("tr-TR");
+
+    return {
+        strPer: expression,
+        sumPer: totalFormatted
+    };
+}
+
+function calculatePolyArea(n, a, k = 1) {
+    if (n < 3 || a < 1 || k <= 0) {
+        throw new Error("n >= 3, a >= 1 ve k > 0 olmalı.");
+    }
+
+    const r = Math.cos(Math.PI / n);
+    const r2 = r * r;
+    const A1 = (n * k * k) / (4 * Math.tan(Math.PI / n));
+
+    let terms = [];
+    let total = 0;
+
+    for (let i = 0; i < a; i++) {
+        let area = A1 * Math.pow(r2, i);
+        total += area;
+
+        let formatted = Number(area.toFixed(2)).toLocaleString("tr-TR");
+        terms.push(formatted);
+    }
+
+    let expression = terms.join("+");
+    let totalFormatted = Number(total.toFixed(2)).toLocaleString("tr-TR");
+
+    return {
+        strArea: expression,
+        sumArea: totalFormatted
+    };
+}
+
+function calculateSierpinskiPerimeter(a, k = 1) {
+    if (a < 1 || k <= 0) {
+        throw new Error("a >= 1 ve k > 0 olmalı.");
+    }
+    let perimeter = 3 * k * Math.pow(3 / 2, a - 1);
+    return {
+        sumPer: Number(perimeter.toFixed(2)).toLocaleString("tr-TR")
+    };
+}
+
+function calculateSierpinskiArea(a, k = 1) {
+    if (a < 1 || k <= 0) {
+        throw new Error("a >= 1 ve k > 0 olmalı.");
+    }
+
+    let area = Math.pow(3, a - 1) * Math.pow(k / Math.pow(2, a - 1), 2) * Math.sqrt(3) / 4;
+
+    return {
+        sumArea: Number(area.toFixed(2)).toLocaleString("tr-TR")
+    };
+}
+
+function drawPolyCalculates() {
+    let per = calculatePolyPerimeter(edgeNum, stepNum, 1)
+    let are = calculatePolyArea(edgeNum, stepNum, 1)
+
+
+    ctx.beginPath
+    ctx.font = "16px Arial";
+    ctx.fillStyle = "#000";
+
+    stepNum > 1 ? ctx.fillText("Toplam Çevre = " + per.strPer + " = " + per.sumPer, 20, innerHeight - 55) : ctx.fillText("Toplam Çevre = " + per.sumPer, 20, innerHeight - 55);
+    stepNum > 1 ? ctx.fillText("Toplam Alan   = " + are.strArea + " = " + are.sumArea, 20, innerHeight - 25) : ctx.fillText("Toplam Alan   = " + are.sumArea, 20, innerHeight - 25);
+
+    ctx.closePath
+}
+
+function drawSierCalculates() {
+    let per = calculateSierpinskiPerimeter(stepNum, 1)
+    let are = calculateSierpinskiArea(stepNum, 1)
+
+    ctx.beginPath
+    ctx.font = "16px Arial";
+    ctx.fillStyle = "#000";
+
+    ctx.fillText("Toplam Çevre = " + per.sumPer, 20, innerHeight - 55)
+    ctx.fillText("Toplam Alan   = " + are.sumArea, 20, innerHeight - 25)
+
+    ctx.closePath
+}
+
+function updateArrayCorner() {
     ba = (Math.PI - 2 * Math.PI / edgeNum) / 2
     arrPoly = []
     let mp = new mPoly(Number(document.getElementById('xCenterRange').value), Number(document.getElementById('yCenterRange').value), Number(document.getElementById('radius').value))
@@ -36,7 +144,7 @@ updateArrayCorner = function () {
     }
 }
 
-updateArrayMiddle = function () {
+function updateArrayMiddle() {
     ba = (Math.PI - 2 * Math.PI / edgeNum) / 2
     arrPoly = []
     let mp = new mPoly(Number(document.getElementById('xCenterRange').value), Number(document.getElementById('yCenterRange').value), Number(document.getElementById('radius').value))
@@ -47,7 +155,7 @@ updateArrayMiddle = function () {
     }
 }
 
-drawPolygonCorner = function () {
+function drawPolygonCorner() {
     updateArrayCorner()
     arrPoly.forEach(mp => {
         ctx.beginPath()
@@ -65,9 +173,10 @@ drawPolygonCorner = function () {
         ctx.fill()
         ctx.closePath()
     })
+    drawPolyCalculates()
 }
 
-drawPolygonMiddle = function () {
+function drawPolygonMiddle() {
     updateArrayMiddle()
     let s = 0
     arrPoly.forEach(mp => {
@@ -95,11 +204,12 @@ drawPolygonMiddle = function () {
         ctx.fill()
         ctx.closePath()
     })
+    drawPolyCalculates()
 }
 
 function edgeNumChanged() {
     edgeNum = Number(document.getElementById('edgeNum').value)
-    document.getElementById('edgeNumLabel').innerHTML = 'Köşe Sayısı: ' + edgeNum
+    document.getElementById('edgeNumLabel').innerHTML = 'Kenar Sayısı: ' + edgeNum
     ctx.strokeStyle = ctx.fillStyle = 'white'
     ctx.fillRect(0, 0, canvas.width, canvas.height)
     if (missing == 'polygonMiddle') {
@@ -206,6 +316,7 @@ function drawSierpinski() {
     ctx.strokeStyle = 'black'
     ctx.lineWidth = 1
     ctx.stroke()
+    drawSierCalculates()
 }
 
 /* END SIERPINSKI */
