@@ -29,7 +29,9 @@
 
       <file href="renderer/css/styles.css" />
 
+      <file href="renderer/img/angle.svg" />
       <file href="renderer/img/choice.svg" />
+      <file href="renderer/img/circle.svg" />
       <file href="renderer/img/clear.svg" />
       <file href="renderer/img/default.svg" />
       <file href="renderer/img/down.svg" />
@@ -37,11 +39,11 @@
       <file href="renderer/img/favicon.svg" />
       <file href="renderer/img/help.svg" />
       <file href="renderer/img/left.svg" />
-      <file href="renderer/img/line_blue.svg" />
-      <file href="renderer/img/linesegment_blue.svg" />
+      <file href="renderer/img/line.svg" />
+      <file href="renderer/img/linesegment.svg" />
       <file href="renderer/img/minus.svg" />
       <file href="renderer/img/plus.svg" />
-      <file href="renderer/img/point_blue.svg" />
+      <file href="renderer/img/point.svg" />
       <file href="renderer/img/redo.svg" />
       <file href="renderer/img/right.svg" />
       <file href="renderer/img/undo.svg" />

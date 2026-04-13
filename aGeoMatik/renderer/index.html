@@ -37,18 +37,28 @@
 			</button>
 			<button class="button" id="btnPoint" data-action="point" data-cursor="crosshair"
 				data-toast="Nokta|Konum seçiniz.">
-				<img src="img/point_blue.svg">
+				<img src="img/point.svg">
 				<span>Nokta</span>
 			</button>
 			<button class="button" id="btnLine" data-action="line" data-cursor="crosshair"
 				data-toast="Doğru|Farklı iki nokta seçiniz.">
-				<img src="img/line_blue.svg">
+				<img src="img/line.svg">
 				<span>Doğru</span>
 			</button>
 			<button class="button" id="btnLineSegment" data-action="linesegment" data-cursor="crosshair"
 				data-toast="Doğru Parçası|Farklı iki nokta seçiniz.">
-				<img src="img/linesegment_blue.svg">
+				<img src="img/linesegment.svg">
 				<span>Doğru Parçası</span>
+			</button>
+			<button class="button" id="btnCircle" data-action="circle" data-cursor="crosshair"
+				data-toast="Çember|Merkez nokta ve ardından çember üzerinde bir nokta seçiniz.">
+				<img src="img/circle.svg">
+				<span>Çember</span>
+			</button>
+			<button class="button" id="btnAngle" data-action="angle" data-cursor="crosshair"
+				data-toast="Açı|Üç nokta seçiniz.">
+				<img src="img/angle.svg">
+				<span>Açı</span>
 			</button>
 			<button class="button" id="btnCalc" data-action="calc" data-cursor="pointer">
 				<img id="btnimgCalc" src="img/left.svg">
@@ -189,14 +199,24 @@
 <code class="example">(-1, 2)</code></pre>
 
 				<h4>Doğru</h4>
-				<pre>ax + b
+
+				<pre>
+Eğimli Doğru: ax + b
 <code class="example">2x-3</code>
+Dik Doğru: x = c
+<code class="example">x=2</code>
 Doğru(Nokta, Nokta)
-<code class="example">Doğru((-1,1),(2,3))</code></pre>
+<code class="example">Doğru((-1,0),(1,1))</code></pre>
 
 				<h4>Doğru Parçası</h4>
 				<pre>DoğruParçası(Nokta, Nokta)
-<code class="example">DoğruParçası((1,1),(-1,2))</code></pre>
+<code class="example">DoğruParçası((-2,1),(-1,2))</code></pre>
+
+				<h4>Çember</h4>
+				<pre>Çember(Nokta, r)
+<code class="example">Çember((-1,2),1)</code></pre>
+				<pre>Çember(Nokta, Nokta)
+<code class="example">Çember((-1,2),(0,3))</code></pre>
 
 				<h4>Trigonometrik İfadeler</h4>
 				<pre>sin(...), cos(...), tan(...), cot(...)
@@ -207,12 +227,12 @@ Doğru(Nokta, Nokta)
 <code class="example">2^(x-1)</code><code class="example">(1/2)^sin(x)</code><code class="example">E^(x-1)</code></pre>
 
 				<h4>Logaritmik İfadeler</h4>
-				<pre>log(...),log(...,Taban), log_Taban(...), ln(...), ln(...,Taban), ln_Taban(...)
-<code class="example">log(4-x^2)</code><code class="example">log(2x-3,5)</code><code class="example">log_5(2x-3)</code><code class="example">ln(2x-4)</code><code class="example">ln(3-x,2)</code><code class="example">ln_2(3-x)</code></pre>
+				<pre>log(Taban,...)
+<code class="example">log(E,4-x^2)</code><code class="example">log(5,2x-3)</code></pre>
 
 				<h4>Dizi</h4>
-				<pre>Dizi(Fonksiyon,Başlangıç,Bitiş)
-<code class="example">Dizi(x^2-4,-1,2)</code></pre>
+				<pre>Dizi(Fonksiyon (n),Başlangıç,Bitiş)
+<code class="example">Dizi(n-2,1,3)</code></pre>
 
 				<h4>Limit</h4>
 				<pre>Limit(Fonksiyon,Apsis)
@@ -226,12 +246,12 @@ Doğru(Nokta, Nokta)
 				<pre><code class="example">2f/(1-3x)</code><code class="example">f+2(3x-4)</code><code class="example">3f-4g</code><code class="example">f*g</code></pre>
 
 				<h4>Bileşke Fonksiyon</h4>
-				<pre>BileşkeFonksiyon(Fonksiyon,Fonksiyon,...)
-<code class="example">BileşkeFonksiyon(3x-4,2x^-3)</code></pre>
+				<pre>Bileşke(Fonksiyon,Fonksiyon,...)
+<code class="example">Bileşke(3x-4,2x^-3)</code></pre>
 
 				<h4>Parçalı Fonksiyon</h4>
-				<pre>{Fonksiyon,Aralık;Fonksiyon,Aralık;...}
-<code class="example">{2x+1,x&lt;0; x^2,x>=0}</code></pre>
+				<pre>Fonksiyon,Aralık;Fonksiyon,Aralık;...
+<code class="example">2x+1,x&lt;0; x^2,x>=0</code></pre>
 			</div>
 		</div>
 	</div>

@@ -134,8 +134,8 @@ updateChart = function () {
             backgroundColor: 'blue',
             borderWidth: 2
         }
-        //configChart.data.datasets.push(regLine)
-        //configChart.data.datasets[1].hidden = true
+        configChart.data.datasets.push(regLine)
+        configChart.data.datasets[1].hidden = true
 
     }
     if (chartType == 'boxplot') {
@@ -149,8 +149,8 @@ updateChart = function () {
     configChart.options.plugins.legend = true
 
     if (chartType == 'scatter') {
-        configChart.plugins[0] = labelsConfig
-        configChart.options.plugins.legend = false
+        //configChart.plugins[0] = labelsConfig
+        //configChart.options.plugins.legend = false
 
         vals.min = Math.min(...chartDatas.map(Number))
         const minLine = {
@@ -172,7 +172,7 @@ updateChart = function () {
                 }
             }
         }
-        configChart.data.datasets.push(minLine)
+        //configChart.data.datasets.push(minLine)
 
         vals.avg = eval(chartDatas.join('+')) / chartDatas.length
         const avgLine = {
@@ -193,7 +193,7 @@ updateChart = function () {
                 }
             }
         }
-        configChart.data.datasets.push(avgLine)
+        //configChart.data.datasets.push(avgLine)
 
         let medArray = []
         medArray = [...chartDatas]
@@ -225,7 +225,7 @@ updateChart = function () {
                 }
             }
         }
-        configChart.data.datasets.push(medianLine)
+        //configChart.data.datasets.push(medianLine)
 
         vals.max = Math.max(...chartDatas.map(Number))
         const maxLine = {
@@ -246,7 +246,7 @@ updateChart = function () {
                 }
             }
         }
-        configChart.data.datasets.push(maxLine)
+        //configChart.data.datasets.push(maxLine)
     }
 
 

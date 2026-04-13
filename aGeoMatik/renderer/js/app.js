@@ -1,5 +1,4 @@
 let canvas = document.getElementById('canvas')
-canvas.style.cursor = 'pointer'
 ctx = canvas.getContext('2d')
 canvas.width = innerWidth
 canvas.height = innerHeight
@@ -9,7 +8,11 @@ let activeElementID = null
 let lineDrawing = false
 let lineA, lineB
 let lineSegmentDrawing = false
+let circleDrawing = false
+let angleDrawing = false
 let lineSegmentA, lineSegmentB
+let circleA, circleB
+let angleA, angleB, angleC
 let scaleX = 100
 let scaleY = 100
 
@@ -24,11 +27,10 @@ let unitY = units[tickY]
 let firstMousePos, lastMousePos, findPointPos = null
 let arrObjects = []
 let undoObjects = []
-let pointNames = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-let sequenceNames = "abcdeijklmostuvwxyz"
-let limitNames = "abcdeijklmostuvwxyz"
-let turevNames = "abcdeijklmostuvwxyz"
-let lineNames = "fghpqr"
+let bigNames = "ABC"
+let smallNames = "abc"
+let lineNames = "fgh"
+let angleNames = "αβθ"
 let sliders = document.getElementById('sliders')
 
 let idCount = -1
@@ -42,7 +44,7 @@ class mPoint {
 	constructor(a, b, temp = false) {
 		this.type = 'point'
 		this.name = createName('point')
-		this.id = idCounter()
+		temp ? this.id = null : this.id = idCounter()
 		this.a = a
 		this.b = b
 		this.color = getRandomColor()
@@ -51,13 +53,54 @@ class mPoint {
 		this.temp = temp
 	}
 }
+class mCircle {
+	constructor(A, r, temp = false) {
+		this.type = 'circle'
+		this.name = createName('circle')
+		temp ? this.id = null : this.id = idCounter()
+		this.A = A
+		this.r = r
+		this.color = getRandomColor()
+		this.visibility = true
+		this.size = 1
+		this.temp = temp
+	}
+}
+class mCircleWithPoints {
+	constructor(A, B, temp = false) {
+		this.type = 'circlewithpoints'
+		this.name = createName('circle')
+		temp ? this.id = null : this.id = idCounter()
+		this.A = A
+		this.B = B
+		this.color = getRandomColor()
+		this.visibility = true
+		this.size = 1
+		this.temp = temp
+	}
+}
+
+class mAngle {
+	constructor(A, B, C, temp = false) {
+		this.type = 'angle'
+		this.name = createName('angle')
+		temp ? this.id = null : this.id = idCounter()
+		this.A = A
+		this.B = B
+		this.C = C
+		this.color = getRandomColor()
+		this.visibility = true
+		this.size = 1
+		this.temp = temp
+	}
+}
 
 class mVerLine {
-	constructor(x) {
+	constructor(x, temp = null) {
 		this.type = "verLine"
 		const denkCount = arrObjects.filter(f => f.name.includes("denk")).length + 1
 		this.name = "denk" + denkCount
-		this.id = idCounter()
+		temp ? this.id = null : this.id = idCounter()
 		this.x = x
 		this.color = getRandomColor()
 		this.visibility = true
@@ -95,10 +138,10 @@ function normalizeLine(m, n) {
 }
 
 class mLineWithEquation {
-	constructor(m, n, startX = null, endX = null) {
+	constructor(m, n, temp = false, startX = null, endX = null) {
 		this.type = 'lineWithEquation'
 		this.name = createName('line')
-		this.id = idCounter()
+		temp ? this.id = null : this.id = idCounter()
 		this.m = m
 		this.n = n
 		this.func = normalizeLine(m, n)
@@ -114,7 +157,7 @@ class mLineWithPoints {
 	constructor(A, B, temp = false) {
 		this.type = 'lineWithPoints'
 		this.name = createName('line')
-		this.id = idCounter()
+		temp ? this.id = null : this.id = idCounter()
 		this.A = A
 		this.B = B
 		this.color = getRandomColor()
@@ -128,7 +171,7 @@ class mLineSegment {
 	constructor(A, B, temp = false) {
 		this.type = 'lineSegment'
 		this.name = createName('lineSegment')
-		this.id = idCounter()
+		temp ? this.id = null : this.id = idCounter()
 		this.A = A
 		this.B = B
 		this.color = getRandomColor()
@@ -139,10 +182,10 @@ class mLineSegment {
 	}
 }
 class mSequence {
-	constructor(func, s, e) {
+	constructor(func, s, e, temp = false) {
 		this.type = 'sequence'
 		this.name = createName('sequence')
-		this.id = idCounter()
+		temp ? this.id = null : this.id = idCounter()
 		this.func = func
 		this.start = s
 		this.end = e
@@ -153,10 +196,10 @@ class mSequence {
 }
 
 class mLimit {
-	constructor(func, a) {
+	constructor(func, a, temp = false) {
 		this.type = 'limit'
 		this.name = createName('limit')
-		this.id = idCounter()
+		temp ? this.id = null : this.id = idCounter()
 		this.func = func
 		this.approachVal = a
 		this.approachValRight = Number(a) + 0.4
@@ -169,10 +212,10 @@ class mLimit {
 }
 
 class mFunction {
-	constructor(func, startX = null, endX = null) {
+	constructor(func, temp = false, startX = null, endX = null) {
 		this.type = 'function'
 		this.name = createName('function')
-		this.id = idCounter()
+		temp ? this.id = null : this.id = idCounter()
 		this.func = func
 		this.startX = startX
 		this.endX = endX
@@ -183,10 +226,10 @@ class mFunction {
 }
 
 class mTurev {
-	constructor(func, a) {
+	constructor(func, a, temp = false) {
 		this.type = 'derivative'
 		this.name = createName('derivative')
-		this.id = idCounter()
+		temp ? this.id = null : this.id = idCounter()
 		this.func = func
 		this.approachVal = a
 		this.color = getRandomColor()
@@ -197,9 +240,9 @@ class mTurev {
 }
 
 class mSectionalFunctions {
-	constructor(str) {
+	constructor(str, temp = false) {
 		this.name = createName('function')
-		this.id = idCounter()
+		temp ? this.id = null : this.id = idCounter()
 		this.secFuncs = null
 		this.color = getRandomColor()
 		this.visibility = true
@@ -238,97 +281,33 @@ function createName(type) {
 	let nm
 	let iFound = false
 	let i = 0
-
+	let objNames = arrObjects.map((item) => item.name)
+	let newNames
 	if (type == 'point') {
-		if (arrObjects.length == 0) return pointNames[0]
-		let names = arrObjects.map((item) => item.name)
-		while (!iFound) {
-			if (i < pointNames.length) {
-				if (!names.includes(pointNames[i])) {
-					iFound = true
-					nm = pointNames[i]
-				}
+		newNames = bigNames
+	} else if (type == 'lineSegment' || type == 'sequence' || type == 'circle') {
+		newNames = smallNames
+	} else if (type == 'line' || type == 'limit' || type == 'derivative' || type == 'function') {
+		newNames = lineNames
+	} else if (type == 'angle') {
+		newNames = angleNames
+	}
+
+	if (arrObjects.length == 0) return newNames[0]
+	while (!iFound) {
+		if (i < newNames.length) {
+			if (!objNames.includes(newNames[i])) {
+				iFound = true
+				nm = newNames[i]
 			}
-			if (i >= pointNames.length) {
-				if (!(names.includes(pointNames[i % pointNames.length] + ((i / pointNames.length) - ((i / pointNames.length) % 1))))) {
-					iFound = true
-					nm = pointNames[i % pointNames.length] + ((i / pointNames.length) - ((i / pointNames.length) % 1))
-				}
-			}
-			i++
 		}
-	} else if (type == 'sequence') {
-		if (arrObjects.length == 0) return sequenceNames[0]
-		let names = arrObjects.map((item) => item.name)
-		while (!iFound) {
-			if (i < sequenceNames.length) {
-				if (!names.includes(sequenceNames[i])) {
-					iFound = true
-					nm = sequenceNames[i]
-				}
+		if (i >= newNames.length) {
+			if (!(objNames.includes(newNames[i % newNames.length] + ((i / newNames.length) - ((i / newNames.length) % 1))))) {
+				iFound = true
+				nm = newNames[i % newNames.length] + ((i / newNames.length) - ((i / newNames.length) % 1))
 			}
-			if (i >= sequenceNames.length) {
-				if (!(names.includes(sequenceNames[i % sequenceNames.length] + ((i / sequenceNames.length) - ((i / sequenceNames.length) % 1))))) {
-					iFound = true
-					nm = sequenceNames[i % sequenceNames.length] + ((i / sequenceNames.length) - ((i / sequenceNames.length) % 1))
-				}
-			}
-			i++
 		}
-	} else if (type == 'limit') {
-		if (arrObjects.length == 0) return limitNames[0]
-		let names = arrObjects.map((item) => item.name)
-		while (!iFound) {
-			if (i < limitNames.length) {
-				if (!names.includes(limitNames[i])) {
-					iFound = true
-					nm = limitNames[i]
-				}
-			}
-			if (i >= limitNames.length) {
-				if (!(names.includes(limitNames[i % limitNames.length] + ((i / limitNames.length) - ((i / limitNames.length) % 1))))) {
-					iFound = true
-					nm = limitNames[i % limitNames.length] + ((i / limitNames.length) - ((i / limitNames.length) % 1))
-				}
-			}
-			i++
-		}
-	} else if (type == 'derivative') {
-		if (arrObjects.length == 0) return turevNames[0]
-		let names = arrObjects.map((item) => item.name)
-		while (!iFound) {
-			if (i < turevNames.length) {
-				if (!names.includes(turevNames[i])) {
-					iFound = true
-					nm = turevNames[i]
-				}
-			}
-			if (i >= turevNames.length) {
-				if (!(names.includes(turevNames[i % turevNames.length] + ((i / turevNames.length) - ((i / turevNames.length) % 1))))) {
-					iFound = true
-					nm = turevNames[i % turevNames.length] + ((i / turevNames.length) - ((i / turevNames.length) % 1))
-				}
-			}
-			i++
-		}
-	} else {
-		if (arrObjects.length == 0) return lineNames[0]
-		let names = arrObjects.map((item) => item.name)
-		while (!iFound) {
-			if (i < lineNames.length) {
-				if (!names.includes(lineNames[i])) {
-					iFound = true
-					nm = lineNames[i]
-				}
-			}
-			if (i >= lineNames.length) {
-				if (!(names.includes(lineNames[i % lineNames.length] + ((i / lineNames.length) - ((i / lineNames.length) % 1))))) {
-					iFound = true
-					nm = lineNames[i % lineNames.length] + ((i / lineNames.length) - ((i / lineNames.length) % 1))
-				}
-			}
-			i++
-		}
+		i++
 	}
 	return nm
 }
@@ -418,6 +397,12 @@ function drawAll() {
 			drawSectionalFunctions(item)
 		} else if (item.type === 'function') {
 			drawFunction(item)
+		} else if (item.type === 'circle') {
+			drawCircle(item)
+		} else if (item.type === 'circlewithpoints') {
+			drawCircleWithPoints(item)
+		} else if (item.type === 'angle') {
+			drawAngle(item)
 		} else { console.log('drawAll içinde type bulunamadı.') }
 	})
 }
@@ -435,10 +420,46 @@ function drawPoint(point) {
 	ctx.fillStyle = pColor
 	ctx.arc((-minX + point.a / unitY) * scaleY, (-minY - point.b / unitX) * scaleX, pSize, 0, 2 * Math.PI)
 	ctx.lineWidth = 1
-	if (point.id != null && !point.temp) text((-minX + point.a / unitY) * scaleY - 10, (-minY - point.b / unitX) * scaleX - 5, pColor, 'center', 'bold 15px arial', point.name)
+	if (!point.temp) text((-minX + point.a / unitY) * scaleY - 10, (-minY - point.b / unitX) * scaleX - 5, pColor, 'center', 'bold 15px arial', point.name)
 	ctx.fill()
 	ctx.stroke()
 	ctx.closePath()
+}
+function drawCircle(circle) {
+	if (!circle.visibility) return
+
+	let cSize
+	circle.id == activeElementID ? cSize = circle.size + 1 : cSize = circle.size
+	let cColor = circle.color
+	if (circle.temp) cColor = '#000000'
+
+	ctx.beginPath()
+	ctx.strokeStyle = cColor
+	ctx.arc((-minX + circle.A.a / unitY) * scaleY, (-minY - circle.A.b / unitX) * scaleX, circle.r * scaleX, 0, 2 * Math.PI)
+	ctx.lineWidth = cSize
+	if (!circle.temp) text((-minX + circle.A.a / unitY) * scaleY - circle.r * scaleY * 0.75, (-minY - circle.A.b / unitX) * scaleX - circle.r * scaleX * 0.75, cColor, 'center', 'bold 15px arial', circle.name)
+	ctx.stroke()
+	ctx.closePath()
+}
+
+function drawCircleWithPoints(circle) {
+	if (!circle.visibility) return
+	let r = math.sqrt(math.pow(circle.B.a - circle.A.a, 2) + math.pow(circle.B.b - circle.A.b, 2))
+	let cSize
+	circle.id == activeElementID ? cSize = circle.size + 1 : cSize = circle.size
+	let cColor = circle.color
+	if (circle.temp) cColor = '#000000'
+	ctx.beginPath()
+	ctx.strokeStyle = cColor
+	ctx.arc((-minX + circle.A.a / unitY) * scaleY, (-minY - circle.A.b / unitX) * scaleX, r * scaleX, 0, 2 * Math.PI)
+	ctx.lineWidth = cSize
+	if (!circle.temp) text((-minX + circle.A.a / unitY) * scaleY - r * scaleY * 0.75, (-minY - circle.A.b / unitX) * scaleX - r * scaleX * 0.75, cColor, 'center', 'bold 15px arial', circle.name)
+	ctx.stroke()
+	ctx.closePath()
+
+
+
+
 }
 
 function drawVerLine(vline) {
@@ -453,7 +474,7 @@ function drawVerLine(vline) {
 	ctx.lineWidth = vlSize
 	ctx.moveTo((-minX + vline.x / unitY) * scaleY, canvas.height + 100)
 	ctx.lineTo((-minX + vline.x / unitY) * scaleY, -canvas.height - 100)
-	if (vline.id != null) text((-minX + vline.x / unitY) * scaleY + 10, 15, vlColor, 'center', 'bold 15px arial', vline.name)
+	text((-minX + vline.x / unitY) * scaleY + 10, 15, vlColor, 'center', 'bold 15px arial', vline.name)
 	ctx.fill()
 	ctx.stroke()
 	ctx.closePath()
@@ -501,16 +522,6 @@ function drawLineWithPoints(pl) {
 	if (pl.temp) plColor = '#000000'
 
 	if (pl.A.a == pl.B.a && pl.A.b != pl.B.b) {
-		// draw A
-		ctx.beginPath()
-		ctx.strokeStyle = 'black'
-		ctx.fillStyle = plColor
-		ctx.arc((-minX + pl.A.a / unitY) * scaleY, (-minY / unitX) * scaleX, plSize + 1, 0, 2 * Math.PI)
-		ctx.lineWidth = 1
-		ctx.fill()
-		ctx.stroke()
-		ctx.closePath()
-
 		//draw line
 		ctx.beginPath()
 		ctx.strokeStyle = ctx.fillStyle = plColor
@@ -520,40 +531,18 @@ function drawLineWithPoints(pl) {
 		ctx.fill()
 		ctx.stroke()
 		ctx.closePath()
-
 	} else {
-		// draw A
-		ctx.beginPath()
-		ctx.strokeStyle = 'black'
-		ctx.fillStyle = plColor
-		ctx.arc((-minX + pl.A.a / unitY) * scaleY, (-minY - pl.A.b / unitX) * scaleX, plSize + 1, 0, 2 * Math.PI)
-		ctx.lineWidth = 1
-		ctx.fill()
-		ctx.stroke()
-		ctx.closePath()
-
-		//draw B
-		ctx.beginPath()
-		ctx.strokeStyle = 'black'
-		ctx.fillStyle = plColor
-		ctx.arc((-minX + pl.B.a / unitY) * scaleY, (-minY - pl.B.b / unitX) * scaleX, plSize + 1, 0, 2 * Math.PI)
-		ctx.lineWidth = 1
-		ctx.fill()
-		ctx.stroke()
-		ctx.closePath()
-
 		let x, y
 		ctx.beginPath()
 		ctx.strokeStyle = ctx.fillStyle = plColor
 		ctx.lineWidth = plSize
-
 		x = -50000
 		y = math.evaluate(createLineEquation(pl.A, pl.B).m + '*x+' + createLineEquation(pl.A, pl.B).c, { x: x })
 		ctx.moveTo(-minX * scaleY + (x * scaleY) / unitY, -minY * scaleX - (y * scaleX) / unitX)
 		x = 50000
 		y = math.evaluate(createLineEquation(pl.A, pl.B).m + '*x+' + createLineEquation(pl.A, pl.B).c, { x: x })
 		ctx.lineTo(-minX * scaleY + (x * scaleY) / unitY, -minY * scaleX - (y * scaleX) / unitX)
-		if (!pl.temp) text((-minX + (-minY - createLineEquation(pl.A, pl.B).c) / createLineEquation(pl.A, pl.B).m) * scaleY + 5, 20, plColor, 'center', 'bold 15px arial', pl.name)
+		text((-minX + (-minY - createLineEquation(pl.A, pl.B).c) / createLineEquation(pl.A, pl.B).m) * scaleY + 5, 20, plColor, 'center', 'bold 15px arial', pl.name)
 		ctx.fill()
 		ctx.stroke()
 		ctx.closePath()
@@ -649,14 +638,11 @@ function drawSequence(seq) {
 
 function drawLimit(lim) {
 	if (!lim.visibility) return
-	// draw Function
 	drawFunction(lim)
-
 	// Limit (.)
-	let A = new mPoint(lim.approachVal, 0)
-	let B = new mPoint(lim.approachVal, math.evaluate(lim.func, { x: A.a }))
-	let C = new mPoint(0, math.evaluate(lim.func, { x: A.a }))
-	A.id = B.id = C.id = null
+	let A = new mPoint(lim.approachVal, 0, true)
+	let B = new mPoint(lim.approachVal, math.evaluate(lim.func, { x: A.a }), true)
+	let C = new mPoint(0, math.evaluate(lim.func, { x: A.a }), true)
 	let vls = new mLineSegment(A, B, true)
 	let hls = new mLineSegment(B, C, true)
 	A.color = B.color = C.color = vls.color = hls.color = lim.color
@@ -668,10 +654,9 @@ function drawLimit(lim) {
 
 	if (lim.id == activeElementID) {
 		// Limit (+)
-		let A = new mPoint(lim.approachValRight, 0)
-		let B = new mPoint(lim.approachValRight, math.evaluate(lim.func, { x: A.a }))
-		let C = new mPoint(0, math.evaluate(lim.func, { x: A.a }))
-		A.id = B.id = C.id = null
+		let A = new mPoint(lim.approachValRight, 0, true)
+		let B = new mPoint(lim.approachValRight, math.evaluate(lim.func, { x: A.a }), true)
+		let C = new mPoint(0, math.evaluate(lim.func, { x: A.a }), true)
 		let vls = new mLineSegment(A, B, true)
 		let hls = new mLineSegment(B, C, true)
 		A.color = B.color = C.color = vls.color = hls.color = lim.color
@@ -683,10 +668,9 @@ function drawLimit(lim) {
 		drawPoint(C)
 
 		//limit (-)
-		A = new mPoint(lim.approachValLeft, 0)
-		B = new mPoint(lim.approachValLeft, math.evaluate(lim.func, { x: A.a }))
-		C = new mPoint(0, math.evaluate(lim.func, { x: A.a }))
-		A.id = B.id = C.id = null
+		A = new mPoint(lim.approachValLeft, 0, true)
+		B = new mPoint(lim.approachValLeft, math.evaluate(lim.func, { x: A.a }), true)
+		C = new mPoint(0, math.evaluate(lim.func, { x: A.a }), true)
 		vls = new mLineSegment(A, B, true)
 		hls = new mLineSegment(B, C, true)
 		A.color = B.color = C.color = vls.color = hls.color = lim.color
@@ -703,12 +687,11 @@ function drawDerivative(tur) {
 	if (!tur.visibility) return
 	drawFunction(tur)
 	// Türev (.)
-	let A = new mPoint(Number(tur.approachVal), 0)
-	let B = new mPoint(Number(tur.approachVal), math.evaluate(tur.func, { x: A.a }))
-	let C = new mPoint(0, math.evaluate(tur.func, { x: A.a }))
-	A.id = B.id = C.id = null
-	let vls = new mLineSegment(A, B)
-	let hls = new mLineSegment(B, C)
+	let A = new mPoint(Number(tur.approachVal), 0, true)
+	let B = new mPoint(Number(tur.approachVal), math.evaluate(tur.func, { x: A.a }), true)
+	let C = new mPoint(0, math.evaluate(tur.func, { x: A.a }), true)
+	let vls = new mLineSegment(A, B, true)
+	let hls = new mLineSegment(B, C, true)
 	A.color = B.color = C.color = vls.color = hls.color = tur.color
 	drawLineSegment(vls)
 	drawLineSegment(hls)
@@ -732,38 +715,73 @@ function drawLineSegment(ls) {
 	ls.id == activeElementID ? lsSize = ls.size + 1 : lsSize = ls.size
 	let lsColor = ls.color
 	if (ls.temp) lsColor = '#000000'
-
-	// draw A
 	ctx.beginPath()
-	ctx.strokeStyle = 'black'
-	ctx.fillStyle = lsColor
-	ctx.arc((-minX + ls.A.a / unitY) * scaleY, (-minY - ls.A.b / unitX) * scaleX, lsSize + 1, 0, 2 * Math.PI)
-	ctx.lineWidth = 1
-	ctx.fill()
-	ctx.stroke()
-	ctx.closePath()
-
-	//draw B
-	ctx.beginPath()
-	ctx.strokeStyle = 'black'
-	ctx.fillStyle = lsColor
-	ctx.arc((-minX + ls.B.a / unitY) * scaleY, (-minY - ls.B.b / unitX) * scaleX, lsSize + 1, 0, 2 * Math.PI)
-	ctx.lineWidth = 1
-	ctx.fill()
-	ctx.stroke()
-	ctx.closePath()
-
-	ctx.beginPath()
-	ctx.strokeStyle = ctx.fillStyle = lsColor
+	ctx.strokeStyle = lsColor
 	ctx.lineWidth = lsSize
-	ctx.setLineDash(ls.lineDash)
 	ctx.moveTo((-minX + ls.A.a / unitY) * scaleY, (-minY - ls.A.b / unitX) * scaleX)
 	ctx.lineTo((-minX + ls.B.a / unitY) * scaleY, (-minY - ls.B.b / unitX) * scaleX)
 	if (!ls.temp) text((-minX + ((ls.A.a + ls.B.a) / 2) / unitY) * scaleY - 10, (-minY - ((ls.A.b + ls.B.b) / 2) / unitX) * scaleX - 10, lsColor, 'center', 'bold 15px arial', ls.name)
-	ctx.fill()
 	ctx.stroke()
-	ctx.setLineDash([])
 	ctx.closePath()
+}
+
+function calculateAngle(ag) {
+	let u = { x: ag.A.a - ag.B.a, y: ag.A.b - ag.B.b }
+	let v = { x: ag.C.a - ag.B.a, y: ag.C.b - ag.B.b }
+	let angleBA = Math.atan(u.y / u.x) * 180 / Math.PI
+	if (u.x > 0 && u.y >= 0) {
+		angleBA = angleBA
+	} else if (u.x < 0 && u.y > 0) {
+		angleBA = angleBA + 180
+	} else if (u.x < 0 && u.y <= 0) {
+		angleBA = angleBA + 180
+	} else if (u.x >= 0 && u.y <= 0) {
+		angleBA = angleBA + 360
+	}
+	let angleBC = Math.atan(v.y / v.x) * 180 / Math.PI
+	if (v.x > 0 && v.y >= 0) {
+		angleBC = angleBC
+	} else if (v.x < 0 && v.y > 0) {
+		angleBC = angleBC + 180
+	} else if (v.x < 0 && v.y <= 0) {
+		angleBC = angleBC + 180
+	} else if (v.x >= 0 && v.y <= 0) {
+		angleBC = angleBC + 360
+	}
+	return { angleBA, angleBC }
+}
+
+
+function drawAngle(ag) {
+	if (!ag.visibility) return
+	let agSize
+	ag.id == activeElementID ? agSize = ag.size + 1 : agSize = ag.size
+	let agColor = ag.color
+	if (ag.temp) agColor = '#000000'
+	// Açı
+	ctx.beginPath()
+	ctx.strokeStyle = agColor
+	ctx.lineWidth = agSize
+	ctx.moveTo((-minX + ag.A.a / unitY) * scaleY, (-minY - ag.A.b / unitX) * scaleX)
+	ctx.lineTo((-minX + ag.B.a / unitY) * scaleY, (-minY - ag.B.b / unitX) * scaleX)
+	ctx.lineTo((-minX + ag.C.a / unitY) * scaleY, (-minY - ag.C.b / unitX) * scaleX)
+	ctx.stroke()
+	ctx.closePath()
+
+	//Sembol ve ölçü
+	let angles = calculateAngle(ag)
+	let cx = (-minX + ag.B.a / unitY) * scaleY
+	let cy = (-minY - ag.B.b / unitX) * scaleX
+	let startAngle = 360 - angles.angleBC
+	let endAngle = startAngle + angles.angleBC - angles.angleBA
+
+	ctx.beginPath()
+	ctx.strokeStyle = agColor
+	ctx.lineWidth = agSize + 1
+	ctx.arc(cx, cy, 20, startAngle * Math.PI / 180, endAngle * Math.PI / 180)
+	ctx.stroke()
+	ctx.closePath()
+	text(cx, cy - 40, agColor, 'center', 'bold 15px arial', ag.name + '=' + (calculateAngle(ag).angleBC - calculateAngle(ag).angleBA).toFixed(0) + '°')
 }
 
 function drawSectionalFunctions(sf) {
@@ -848,6 +866,22 @@ function labelsCreator() {
 			labelB.hidden = true
 			sliderB.hidden = true
 			input.value = item.name + ": x = " + item.x
+		} else if (item.type == 'circle') {
+			labelB.hidden = true
+			sliderB.hidden = true
+			input.value = item.name + ': Çember((' + item.A.a + ',' + item.A.b + '),' + item.r + ')'
+		} else if (item.type == 'circlewithpoints') {
+			labelA.hidden = true
+			sliderA.hidden = true
+			labelB.hidden = true
+			sliderB.hidden = true
+			input.value = item.name + ': Çember((' + item.A.a + ',' + item.A.b + '),(' + item.B.a + ',' + item.B.b + '))'
+		} else if (item.type == 'angle') {
+			labelA.hidden = true
+			sliderA.hidden = true
+			labelB.hidden = true
+			sliderB.hidden = true
+			input.value = item.name + ': Açı((' + item.A.a + ',' + item.A.b + '),(' + item.B.a + ',' + item.B.b + '),(' + item.C.a + ',' + item.C.b + '))'
 		} else if (item.type == 'lineWithEquation') {
 			let lineEquation = item.name + ': y = ' + item.m + 'x + ' + item.n
 			lineEquation = lineEquation.replace('+ -', '- ')
@@ -916,6 +950,11 @@ function labelsCreator() {
 		} else if (item.type == 'verLine') {
 			sliderA.value = item.x
 			labelA.innerHTML = 'x = ' + item.x
+		} else if (item.type == 'circle') {
+			sliderA.min = 0
+			sliderA.max = (minX + Math.round(canvas.width / scaleY) + 1) * unitY
+			sliderA.value = item.r
+			labelA.innerHTML = 'r = ' + item.r
 		} else if (item.type == 'lineWithEquation') {
 			sliderA.value = item.m
 			labelA.innerHTML = 'm = ' + item.m
@@ -979,7 +1018,7 @@ document.querySelector('.buttonGroup').addEventListener('click', e => {
 	if (!btn) return
 	document.querySelectorAll('.buttonGroup .button').forEach(b => b.classList.remove('active'))
 	btn.classList.add('active')
-	canvas.style.cursor = btn.dataset.cursor || 'default'
+	//canvas.style.cursor = btn.dataset.cursor || 'default'
 	switch (btn.dataset.action) {
 		case 'choice':
 			activeObject = 'choice'
@@ -992,6 +1031,12 @@ document.querySelector('.buttonGroup').addEventListener('click', e => {
 			break
 		case 'linesegment':
 			activeObject = 'linesegment'
+			break
+		case 'circle':
+			activeObject = 'circle'
+			break
+		case 'angle':
+			activeObject = 'angle'
 			break
 		case 'calc':
 			activeObject = 'choice'
@@ -1019,7 +1064,7 @@ function toggleCalcIcon(imgEl) {
 
 function closeHelp() {
 	activeObject = 'choice'
-	canvas.style.cursor = 'pointer'
+	//canvas.style.cursor = 'pointer'
 	document.querySelectorAll('.buttonGroup .button').forEach(b => b.classList.remove('active'))
 	document.getElementById('btnChoice').classList.add('active')
 	document.getElementById('help-popup').style.display = 'none';
@@ -1059,18 +1104,18 @@ function changeActiveElement(id) {
 	document.getElementById(activeElementID + '-labelB').hidden = false
 	document.getElementById(activeElementID + '-sliderB').hidden = false
 
-	if (activeitem.type == 'derivative' || activeitem.type == "verLine") {
+	if (activeitem.type == 'derivative' || activeitem.type == "verLine" || activeitem.type == 'circle') {
 		document.getElementById(activeElementID + '-labelB').hidden = true
 		document.getElementById(activeElementID + '-sliderB').hidden = true
 	}
-	if (activeitem.type == 'sequence' || activeitem.type == 'lineSegment' || activeitem.type == 'lineWithPoints' || activeitem.type == 'sectionalFunctions' || activeitem.type == 'function') {
+	if (activeitem.type == 'sequence' || activeitem.type == 'lineSegment' || activeitem.type == 'lineWithPoints' || activeitem.type == 'sectionalFunctions' || activeitem.type == 'function' || activeitem.type == 'circlewithpoints' || activeitem.type == 'angle') {
 		document.getElementById(activeElementID + '-labelA').hidden = true
 		document.getElementById(activeElementID + '-sliderA').hidden = true
 		document.getElementById(activeElementID + '-labelB').hidden = true
 		document.getElementById(activeElementID + '-sliderB').hidden = true
 	}
 	drawAll()
-}
+}	
 
 function bileskeProcess(funcs) {
 	return funcs.reduceRight((acc, f) => {
@@ -1115,15 +1160,12 @@ function isPoint(input) {
 
 	let str = input.trim();
 
-	// (a,b) formatı
 	if (!str.startsWith('(') || !str.endsWith(')')) {
 		return { status: false };
 	}
 
-	// dış parantezleri kaldır
 	str = str.slice(1, -1).trim();
 
-	// depth-aware split
 	let parts = [];
 	let current = '';
 	let depth = 0;
@@ -1147,15 +1189,11 @@ function isPoint(input) {
 	}
 
 	if (current.length > 0) parts.push(current.trim());
-
-	// tam 2 parametre olmalı
 	if (parts.length !== 2) return { status: false };
 
 	const [aRaw, bRaw] = parts;
 
 	if (!aRaw || !bRaw) return { status: false };
-
-	// numerik kontrol (senin fonksiyon)
 	if (!isNumeric(aRaw) || !isNumeric(bRaw)) {
 		return { status: false };
 	}
@@ -1185,7 +1223,6 @@ function isVerLine(input) {
 
 	const str = input.trim();
 
-	// sadece 1 '=' olmalı
 	const eqCount = (str.match(/=/g) || []).length;
 	if (eqCount !== 1) return { status: false };
 
@@ -1197,7 +1234,6 @@ function isVerLine(input) {
 
 	let expr;
 
-	// x izolasyonu
 	if (left === 'x') {
 		expr = right;
 	} else if (right === 'x') {
@@ -1206,7 +1242,6 @@ function isVerLine(input) {
 		return { status: false };
 	}
 
-	// numerik kontrol (senin fonksiyon)
 	if (!isNumeric(expr)) {
 		return { status: false };
 	}
@@ -1233,8 +1268,6 @@ function isLineWithEquation(input) {
 	if (typeof input !== 'string') return { status: false };
 	if (!input.includes('y')) input = 'y=' + input
 	const str = input.trim();
-
-	// sadece 1 '=' olmalı
 	const eqCount = (str.match(/=/g) || []).length;
 	if (eqCount !== 1) return { status: false };
 
@@ -1245,8 +1278,6 @@ function isLineWithEquation(input) {
 	const right = rightRaw.trim();
 
 	let expr;
-
-	// y izolasyonu
 	if (left === 'y') {
 		expr = right;
 	} else if (right === 'y') {
@@ -1257,12 +1288,10 @@ function isLineWithEquation(input) {
 
 	const normalized = expr.replace(/\s+/g, '');
 
-	// ❌ parantezli çarpım reddi
 	if (/\*\(/.test(normalized) && normalized.includes('x')) {
 		return { status: false };
 	}
 
-	// değişken kontrolü
 	try {
 		const node = math.parse(expr);
 		const symbols = new Set();
@@ -1281,8 +1310,6 @@ function isLineWithEquation(input) {
 	} catch {
 		return { status: false };
 	}
-
-	// x yoksa → sabit fonksiyon
 	if (!normalized.includes('x')) {
 		if (!isNumeric(normalized)) return { status: false };
 
@@ -1298,7 +1325,6 @@ function isLineWithEquation(input) {
 		};
 	}
 
-	// x terimi bul
 	const xMatch = normalized.match(/([+-]?[^x]*x)/);
 	if (!xMatch) return { status: false };
 
@@ -1313,8 +1339,6 @@ function isLineWithEquation(input) {
 	let nRaw = rest || '0';
 
 	if (nRaw.startsWith('+')) nRaw = nRaw.slice(1);
-
-	// numerik kontrol
 	if (!isNumeric(mRaw) || !isNumeric(nRaw)) {
 		return { status: false };
 	}
@@ -1343,14 +1367,10 @@ function isLineWithPoints(input) {
 	if (typeof input !== 'string') return { status: false };
 
 	let str = input.trim();
-
-	// Doğru(...) kontrolü (case-insensitive)
 	const match = str.match(/^doğru\s*\((.*)\)$/i);
 	if (!match) return { status: false };
 
 	let inner = match[1].trim();
-
-	// iki point'i ayır (depth-aware)
 	let parts = [];
 	let current = '';
 	let depth = 0;
@@ -1374,10 +1394,8 @@ function isLineWithPoints(input) {
 	}
 
 	if (current.length > 0) parts.push(current.trim());
-
 	if (parts.length !== 2) return { status: false };
 
-	// isPoint mantığı
 	function parsePoint(str) {
 		if (!str.startsWith('(') || !str.endsWith(')')) return null;
 
@@ -1439,18 +1457,15 @@ function isLineWithPoints(input) {
 	};
 }
 
-function isLineSegment(input) { //DoğruParçası((1,2),(3,4))
+function isLineSegment(input) {
 	if (typeof input !== 'string') return { status: false };
 
 	let str = input.trim();
-
-	// DoğruParçası(...) kontrolü (case-insensitive)
 	const match = str.match(/^doğruparçası\s*\((.*)\)$/i);
 	if (!match) return { status: false };
 
 	let inner = match[1].trim();
 
-	// iki point'i ayır (depth-aware)
 	let parts = [];
 	let current = '';
 	let depth = 0;
@@ -1474,10 +1489,8 @@ function isLineSegment(input) { //DoğruParçası((1,2),(3,4))
 	}
 
 	if (current.length > 0) parts.push(current.trim());
-
 	if (parts.length !== 2) return { status: false };
 
-	// isPoint mantığı
 	function parsePoint(str) {
 		if (!str.startsWith('(') || !str.endsWith(')')) return null;
 
@@ -1539,31 +1552,9 @@ function isLineSegment(input) { //DoğruParçası((1,2),(3,4))
 	};
 }
 
-/* function isSequence(str) { // Dizi(x^3,-1,5)
-	const diziRe = /^\s*Dizi\s*\(\s*(.+)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*\)\s*$/i
-	const arrayMatch = str.match(diziRe)
-	if (arrayMatch) {
-		const func = arrayMatch[1].trim()
-		const start = Number(arrayMatch[2])
-		const end = Number(arrayMatch[3])
-		return {
-			type: "sequence",
-			status: true,
-			func,
-			start,
-			end
-		}
-	} else {
-		return { status: false }
-	}
-} */
-
-
 function isSequence(str) {
-	// Boşlukları temizle (input toleransı)
 	const cleanStr = str.replace(/\s+/g, '');
 
-	// Regex ile Dizi(...) parse et
 	const diziRe = /^Dizi\(\s*(.+)\s*,\s*([^\s,]+)\s*,\s*([^\s,]+)\s*\)$/i;
 	const match = cleanStr.match(diziRe);
 	if (!match) return { status: false };
@@ -1572,43 +1563,29 @@ function isSequence(str) {
 	const startStr = match[2];
 	const endStr = match[3];
 
-	// a ve b doğal sayı >= 1 olmalı
 	const start = Number(startStr);
 	const end = Number(endStr);
 	if (!Number.isInteger(start) || start < 1) return { status: false };
 	if (!Number.isInteger(end) || end < 1) return { status: false };
-
-	// func sabit veya n'e bağlı olmalı
-	// func içindeki standalone "n" → "x" değiştir
-
-	// funcStr'de standalone "n" var mı?
 	const hasN = /(?<![a-zA-Z0-9_])n(?![a-zA-Z0-9_])/.test(funcStr);
-
-	// func sabit mi? (evaluate edilebilir ve değişken yok)
-	const isConstant = !/[a-zA-Z]/.test(funcStr); // sadece rakam ve operatörler
+	const isConstant = !/[a-zA-Z]/.test(funcStr);
 
 	if (!hasN && !isConstant) return { status: false };
 
 	const safeFunc = funcStr.replace(/(?<![a-zA-Z0-9_])n(?![a-zA-Z0-9_])/g, 'x');
-
-	// isFunction kontrolü
 	const funcCheck = isFunction(safeFunc);
 	if (!funcCheck.status) return { status: false };
 
-	// Eğer func sabitse (n yok) kabul
-	// implicit çarpım zaten isFunction tarafından kabul ediliyor
-
-	// Output objesi, boşluksuz
 	return {
 		type: "sequence",
 		status: true,
-		func: funcStr.replace(/\s+/g, ''), // orijinal func, boşluksuz
+		func: funcStr.replace(/\s+/g, ''),
 		start,
 		end
 	};
 }
 
-function isLimit(str) { // Limit(x^2,1)
+function isLimit(str) {
 	const limitRe = /^\s*Limit\s*\(\s*(.+)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*\)\s*$/i
 	const limitMatch = str.match(limitRe)
 	if (limitMatch) {
@@ -1625,7 +1602,7 @@ function isLimit(str) { // Limit(x^2,1)
 	}
 }
 
-function isDerivative(str) { // Türev(x^2+1,1)
+function isDerivative(str) {
 	const turevRe = /^\s*Türev\s*\(\s*(.+)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*\)\s*$/i
 	const turevMatch = str.match(turevRe)
 	if (turevMatch) {
@@ -1642,7 +1619,7 @@ function isDerivative(str) { // Türev(x^2+1,1)
 	}
 }
 
-function isFunctionOperations(str) { // f+g,f-g,f*g,f/g
+function isFunctionOperations(str) {
 	if (!/log|ln|sin|cos|tan|cot|sqrt/.test(str)) {
 		// ---- f+g, 2f-3g, -f, -3g+1 ----
 		const funcOpRe = /([+-]?\d*)([fghpqr][0-9]*)\b/gi
@@ -1670,7 +1647,7 @@ function isFunctionOperations(str) { // f+g,f-g,f*g,f/g
 	return { status: false }
 }
 
-function isFunctionCompositions(str) { // Bileşke(f,x^2)
+function isFunctionCompositions(str) {
 	const funcCompRe = /^\s*Bileşke\s*\((.+)\)\s*$/i
 	const compMatch = str.match(funcCompRe)
 	if (compMatch) {
@@ -1686,7 +1663,7 @@ function isFunctionCompositions(str) { // Bileşke(f,x^2)
 	}
 }
 
-function isSectionalFunctions(str) { // ParçalıFonksiyon(x^2, x<0; x, x>=0)
+function isSectionalFunctions(str) {
 	if (/,/.test(str)) {
 		const segments = str.split(";").map(s => s.trim()).filter(s => s.length > 0);
 		const functions = [];
@@ -1812,6 +1789,173 @@ function isFunction(input) {
 	};
 }
 
+function isCircle(input) {
+	if (typeof input !== 'string') return { status: false }
+
+	// boşlukları temizle
+	const str = input.replace(/\s+/g, '')
+
+	// Çember(...) kontrolü
+	const match = str.match(/^Çember\((.*)\)$/i)
+	if (!match) return { status: false }
+
+	const inner = match[1]
+
+	// SON virgülü bul (iç içe parantezler için)
+	let depth = 0
+	let splitIndex = -1
+
+	for (let i = inner.length - 1; i >= 0; i--) {
+		if (inner[i] === ')') depth++
+		else if (inner[i] === '(') depth--
+		else if (inner[i] === ',' && depth === 0) {
+			splitIndex = i
+			break
+		}
+	}
+
+	if (splitIndex === -1) return { status: false }
+
+	const pointStr = inner.slice(0, splitIndex)
+	const rStr = inner.slice(splitIndex + 1)
+
+	// (a,b) kontrolü
+	const point = isPoint(pointStr)
+	if (!point.status) return { status: false }
+
+	// r kontrolü
+	if (!isNumeric(rStr)) return { status: false }
+
+	let r
+	try {
+		r = math.evaluate(rStr)
+	} catch {
+		return { status: false }
+	}
+
+	// yarıçap > 0 olmalı
+	if (!isFinite(r) || r < 0) return { status: false }
+
+	return {
+		type: "circle",
+		a: point.a,
+		b: point.b,
+		r: r,
+		status: true
+	}
+}
+
+function isCircleWithPoints(input) {
+	if (typeof input !== 'string') return { status: false }
+
+	const str = input.replace(/\s+/g, '')
+
+	const match = str.match(/^Çember\((.*)\)$/i)
+	if (!match) return { status: false }
+
+	const inner = match[1]
+
+	// depth ile doğru virgülü bul
+	let depth = 0
+	let splitIndex = -1
+
+	for (let i = 0; i < inner.length; i++) {
+		if (inner[i] === '(') depth++
+		else if (inner[i] === ')') depth--
+		else if (inner[i] === ',' && depth === 0) {
+			splitIndex = i
+			break
+		}
+	}
+
+	if (splitIndex === -1) return { status: false }
+
+	const centerStr = inner.slice(0, splitIndex)
+	const pointStr = inner.slice(splitIndex + 1)
+
+	// merkez kontrolü
+	const center = isPoint(centerStr)
+	if (!center.status) return { status: false }
+
+	// çember üzerindeki nokta kontrolü
+	const point = isPoint(pointStr)
+	if (!point.status) return { status: false }
+
+	// yarıçap hesapla
+	const dx = point.a - center.a
+	const dy = point.b - center.b
+	const r = Math.sqrt(dx * dx + dy * dy)
+
+	// r > 0 olmalı
+	if (!isFinite(r) || r < 0) return { status: false }
+
+	return {
+		type: "circleWithPoints",
+		m: center.a,
+		n: center.b,
+		a: point.a,
+		b: point.b,
+		r: r,
+		status: true
+	}
+}
+
+function isAngle(input) {
+	if (typeof input !== 'string') return { status: false }
+
+	const str = input.replace(/\s+/g, '')
+
+	const match = str.match(/^Açı\((.*)\)$/i)
+	if (!match) return { status: false }
+
+	const inner = match[1]
+
+	// depth ile virgülleri bul
+	let depth = 0
+	let splits = []
+
+	for (let i = 0; i < inner.length; i++) {
+		if (inner[i] === '(') depth++
+		else if (inner[i] === ')') depth--
+		else if (inner[i] === ',' && depth === 0) {
+			splits.push(i)
+		}
+	}
+
+	// tam 2 virgül olmalı
+	if (splits.length !== 2) return { status: false }
+
+	const p1Str = inner.slice(0, splits[0])
+	const p2Str = inner.slice(splits[0] + 1, splits[1])
+	const p3Str = inner.slice(splits[1] + 1)
+
+	// noktaları parse et
+	const p1 = isPoint(p1Str)
+	const p2 = isPoint(p2Str)
+	const p3 = isPoint(p3Str)
+
+	if (!p1.status || !p2.status || !p3.status) return { status: false }
+
+	// köşe ile diğer noktalar aynı olamaz
+	if (
+		(p1.a === p2.a && p1.b === p2.b) ||
+		(p3.a === p2.a && p3.b === p2.b)
+	) {
+		return { status: false }
+	}
+
+	return {
+		type: "angle",
+		ax: p1.a,
+		ay: p1.b,
+		bx: p2.a,
+		by: p2.b,
+		cx: p3.a,
+		cy: p3.b,
+		status: true
+	}
+}
+
 function girisKeyDown(event) {
 	let setform = document.getElementById('set-popup')
 	setform.style.display = 'none'
@@ -1822,15 +1966,31 @@ function girisKeyDown(event) {
 	}
 	if (event.key === 'Enter' && event.target.value != '') {
 		let str = event.target.value
-		str = str.replaceAll('y', '')
-		str = str.replaceAll('=', '')
-		str = str.replaceAll(' ', '')
 		if (isPoint(str).status) {
 			console.log('Nokta:', isPoint(str))
-
 			let pt = new mPoint(isPoint(str).a, isPoint(str).b)
 			arrObjects.push(pt)
 			activeElementID = pt.id
+			undoObjects = []
+			delCount = 0
+		} else if (isCircle(str).status) {
+			console.log('Çember((a,b),r):', isCircle(str))
+			let m = new mPoint(isCircle(str).a, isCircle(str).b)
+			arrObjects.push(m)
+			let c = new mCircle(m, isCircle(str).r)
+			arrObjects.push(c)
+			activeElementID = c.id
+			undoObjects = []
+			delCount = 0
+		} else if (isCircleWithPoints(str).status) {
+			console.log('Çember((a,b),r):', isCircle(str))
+			let A = new mPoint(isCircleWithPoints(str).m, isCircleWithPoints(str).n)
+			arrObjects.push(A)
+			let B = new mPoint(isCircleWithPoints(str).a, isCircleWithPoints(str).b)
+			arrObjects.push(B)
+			let c = new mCircleWithPoints(A, B)
+			arrObjects.push(c)
+			activeElementID = c.id
 			undoObjects = []
 			delCount = 0
 		} else if (isVerLine(str).status) {
@@ -1853,7 +2013,9 @@ function girisKeyDown(event) {
 			console.log('Nokta ile doğru:', isLineWithPoints(str))
 
 			let A = new mPoint(isLineWithPoints(str).xA, isLineWithPoints(str).yA)
+			arrObjects.push(A)
 			let B = new mPoint(isLineWithPoints(str).xB, isLineWithPoints(str).yB)
+			arrObjects.push(B)
 			let line = new mLineWithPoints(A, B)
 			arrObjects.push(line)
 			activeElementID = line.id
@@ -1863,10 +2025,26 @@ function girisKeyDown(event) {
 			console.log('DoğruParçası:', isLineSegment(str))
 
 			let A = new mPoint(isLineSegment(str).xA, isLineSegment(str).yA)
+			arrObjects.push(A)
 			let B = new mPoint(isLineSegment(str).xB, isLineSegment(str).yB)
+			arrObjects.push(B)
 			let lineSegment = new mLineSegment(A, B)
 			arrObjects.push(lineSegment)
 			activeElementID = lineSegment.id
+			undoObjects = []
+			delCount = 0
+		} else if (isAngle(str).status) {
+			console.log('Açı:', isAngle(str))
+
+			let A = new mPoint(isAngle(str).ax, isAngle(str).ay)
+			arrObjects.push(A)
+			let B = new mPoint(isAngle(str).bx, isAngle(str).by)
+			arrObjects.push(B)
+			let C = new mPoint(isAngle(str).cx, isAngle(str).cy)
+			arrObjects.push(C)
+			let angle = new mAngle(A, B, C)
+			arrObjects.push(angle)
+			activeElementID = angle.id
 			undoObjects = []
 			delCount = 0
 		} else if (isSequence(str).status) {
@@ -1935,7 +2113,6 @@ function girisKeyDown(event) {
 				})
 				let cometoBileske = bileskeProcess(isFunctionCompositions(str).functions)
 				let func = new mFunction(cometoBileske)
-				console.log('Bileşke fonksiyon ifadesi:', cometoBileske)
 				arrObjects.push(func)
 				activeElementID = func.id
 				undoObjects = []
@@ -1969,21 +2146,16 @@ function girisKeyDown(event) {
 			delCount = 0
 		} else if (isSectionalFunctions(str).status) {
 			console.log('2x,x<0; x^3, x>=0', isSectionalFunctions(str))
-
 			let allFuncsDrawable = true
 			if (allFuncsDrawable) {
 				let secFuncs = []
 				isSectionalFunctions(str).functions.forEach((func, i) => {
 					if (isLineWithEquation(func).status) {
-						let line = new mLineWithEquation(isLineWithEquation(func).m, isLineWithEquation(func).n, isSectionalFunctions(str).ranges[i].from, isSectionalFunctions(str).ranges[i].to)
-						line.id = null
+						let line = new mLineWithEquation(isLineWithEquation(func).m, isLineWithEquation(func).n, false, isSectionalFunctions(str).ranges[i].from, isSectionalFunctions(str).ranges[i].to)
 						secFuncs.push(line)
 					} else if (isFunction(func).status) {
-						let other = new mFunction(func, isSectionalFunctions(str).ranges[i].from, isSectionalFunctions(str).ranges[i].to)
-						other.id = null
+						let other = new mFunction(func, false, isSectionalFunctions(str).ranges[i].from, isSectionalFunctions(str).ranges[i].to)
 						secFuncs.push(other)
-					} else {
-						console.log('Tür bulunamadı. (girisKeyDown:Sectional Functions içinde)')
 					}
 				})
 				let sf = new mSectionalFunctions(str)
@@ -2065,7 +2237,7 @@ function delBtnClick(e) {
 
 	activeElementID = null
 	activeObject = 'choice'
-	canvas.style.cursor = 'pointer'
+	//canvas.style.cursor = 'pointer'
 	document.querySelectorAll('.buttonGroup .button').forEach(b => b.classList.remove('active'))
 	document.getElementById('btnChoice').classList.add('active')
 	document.getElementById('set-popup').style.display = 'none'
@@ -2148,28 +2320,58 @@ function crossSlider() {
 
 		if (item.type == 'point') {
 			labelA.innerHTML = 'a = ' + sliderA.value
-			item.a = sliderA.value
+			item.a = Number(sliderA.value)
 			labelB.innerHTML = 'b = ' + sliderB.value
-			item.b = sliderB.value
+			item.b = Number(sliderB.value)
 			input.value = item.name + '(' + item.a + ',' + item.b + ')'
+			let owner = arrObjects.find(obj => (obj.type === "lineSegment" || obj.type === "lineWithPoints" || obj.type === "circle" || obj.type == 'circle' || obj.type == 'circlewithpoints' || obj.type == 'angle') && (obj.A.name === item.name || obj.B.name === item.name || obj.C.name === item.name));
+			if (owner) {
+				if (owner.A.name === item.name) {
+					owner.A.a = item.a
+					owner.A.b = item.b
+				} else if (owner.B.name === item.name) {
+					owner.B.a = item.a
+					owner.B.b = item.b
+				} else if (owner.C.name === item.name) {
+					owner.C.a = item.a
+					owner.C.b = item.b
+				}
+				let inputOwner = document.getElementById(owner.id + '-input')
+				if (owner.type === 'lineWithPoints') {
+					inputOwner.value = owner.name + ': Doğru((' + owner.A.a + ',' + owner.A.b + '),(' + owner.B.a + ',' + owner.B.b + '))'
+				} else if (owner.type === 'lineSegment') {
+					inputOwner.value = owner.name + ': DoğruParçası((' + owner.A.a + ',' + owner.A.b + '),(' + owner.B.a + ',' + owner.B.b + '))'
+				} else if (owner.type === 'circle') {
+					inputOwner.value = owner.name + ': Çember((' + owner.A.a + ',' + owner.A.b + '),' + owner.r + ')'
+				} else if (owner.type === 'circlewithpoints') {
+					inputOwner.value = owner.name + ': Çember((' + owner.A.a + ',' + owner.A.b + '),(' + owner.B.a + ',' + owner.B.b + '))'
+				} else if (owner.type === 'angle') {
+					inputOwner.value = owner.name + ': Açı((' + owner.A.a + ',' + owner.A.b + '),(' + owner.B.a + ',' + owner.B.b + '),(' + owner.C.a + ',' + owner.C.b + '))'
+				}
+			}
 		} else if (item.type == 'derivative') {
+			input.value = 'Türev(' + item.func + ',' + sliderA.value + ')'
 			labelA.innerHTML = 'x = ' + sliderA.value
-			item.approachVal = sliderA.value
+			item.approachVal = Number(sliderA.value)
 		} else if (item.type == 'lineWithEquation') {
-			item.m = sliderA.value
-			item.n = sliderB.value
+			item.m = Number(sliderA.value)
+			item.n = Number(sliderB.value)
 			labelA.innerHTML = 'm = ' + item.m
 			labelB.innerHTML = 'n = ' + item.n
 			input.value = 'y = ' + normalizeLine(Number(item.m), Number(item.n))
 		} else if (item.type == 'verLine') {
-			item.x = sliderA.value
+			item.x = Number(sliderA.value)
 			labelA.innerHTML = 'x = ' + item.x
 			input.value = item.name + ': x = ' + item.x
+		} else if (item.type == 'circle') {
+			item.r = Number(sliderA.value)
+			labelA.innerHTML = 'r = ' + item.r
+			input.value = item.name + ': Çember((' + item.A.a + ',' + item.A.b + '),' + item.r + ')'
 		} else if (item.type == 'limit') {
-			item.approachValRight = sliderA.value
+			item.approachValRight = Number(sliderA.value)
 			labelA.innerHTML = sliderA.min + '⁺ = ' + sliderA.value
 			sliderA.innerHTML = item.approachValRight + '⁺ = ' + Number(sliderA.value).toFixed(2)
-			item.approachValLeft = sliderB.value
+			item.approachValLeft = Number(sliderB.value)
 			labelB.innerHTML = sliderB.max + '⁻ = ' + sliderB.value
 			sliderB.innerHTML = item.approachVal + '⁻ = ' + Number(sliderB.value).toFixed(2)
 
@@ -2268,6 +2470,95 @@ function isMobile() {
 	return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
 }
 
+function hitObject(mousePos) {
+	let hit = null
+	for (const obj of arrObjects) {
+		if (obj.type === 'point') {
+			let distance = Math.sqrt((mousePos.x - obj.a) ** 2 + (mousePos.y - obj.b) ** 2)
+			if (distance < .1) {
+				canvas.style.cursor = 'pointer'
+				hit = obj
+				break
+			} else {
+				canvas.style.cursor = 'default'
+			}
+		} else if (obj.type === 'lineWithEquation') {
+			let expectedY = math.evaluate(obj.func, { x: mousePos.x })
+			if (Math.abs(mousePos.y - expectedY) < .1) {
+				canvas.style.cursor = 'pointer'
+				hit = obj
+				break
+			} else {
+				canvas.style.cursor = 'default'
+			}
+		} else if (obj.type === 'verLine') {
+			if (Math.abs(mousePos.x - obj.x) < .1) {
+				canvas.style.cursor = 'pointer'
+				hit = obj
+				break
+			} else {
+				canvas.style.cursor = 'default'
+			}
+		} else if (obj.type === 'lineSegment') {
+			let lineEq = createLineEquation(obj.A, obj.B)
+			let expectedY = lineEq.m * mousePos.x + lineEq.c
+			let withinSegment = (mousePos.x >= Math.min(obj.A.a, obj.B.a) - .1 && mousePos.x <= Math.max(obj.A.a, obj.B.a) + .1) &&
+				(mousePos.y >= Math.min(obj.A.b, obj.B.b) - .1 && mousePos.y <= Math.max(obj.A.b, obj.B.b) + .1)
+			if (withinSegment) {
+				canvas.style.cursor = 'pointer'
+				hit = obj
+				break
+			} else {
+				canvas.style.cursor = 'default'
+			}
+		} else if (obj.type === 'lineWithPoints') {
+			let lineEq = createLineEquation(obj.A, obj.B)
+			let expectedY = lineEq.m * mousePos.x + lineEq.c
+			if (Math.abs(mousePos.y - expectedY) < .1) {
+				canvas.style.cursor = 'pointer'
+				hit = obj
+				break
+			} else {
+				canvas.style.cursor = 'default'
+			}
+		} else if (obj.type === 'sequence') {
+			let expectedY = math.evaluate(obj.func, { n: mousePos.x })
+			if (Math.abs(mousePos.y - expectedY) < .1) {
+				canvas.style.cursor = 'pointer'
+				hit = obj
+				break
+			} else {
+				canvas.style.cursor = 'default'
+			}
+		} else if (obj.type == 'circle' || obj.type == 'circlewithpoints') {
+			let r = obj.type == 'circle' ? obj.r : Math.sqrt((obj.B.a - obj.A.a) ** 2 + (obj.B.b - obj.A.b) ** 2)
+			let distance = Math.sqrt((mousePos.x - obj.A.a) ** 2 + (mousePos.y - obj.A.b) ** 2)
+			if (Math.abs(distance - r) < .1) {
+				canvas.style.cursor = 'pointer'
+				hit = obj
+				break
+			} else {
+				canvas.style.cursor = 'default'
+			}
+		}else if (obj.type == 'angle') {
+			let ab = Math.sqrt((obj.B.a - obj.A.a) ** 2 + (obj.B.b - obj.A.b) ** 2)
+			let bc = Math.sqrt((obj.C.a - obj.B.a) ** 2 + (obj.C.b - obj.B.b) ** 2)
+			let ac = Math.sqrt((obj.C.a - obj.A.a) ** 2 + (obj.C.b - obj.A.b) ** 2)
+			let angle = Math.acos((ab**2 + bc**2 - ac**2) / (2 * ab * bc)) * (180 / Math.PI)
+			let angleAtMouse = Math.acos(((mousePos.x - obj.B.a) * (obj.A.a - obj.B.a) + (mousePos.y - obj.B.b) * (obj.A.b - obj.B.b)) / (Math.sqrt((mousePos.x - obj.B.a) ** 2 + (mousePos.y - obj.B.b) ** 2) * ab)) * (180 / Math.PI)
+			if (Math.abs(angleAtMouse - angle) < 5) {
+				canvas.style.cursor = 'pointer'
+				hit = obj
+				break
+			} else {
+				canvas.style.cursor = 'default'
+			}
+		}
+
+	}
+	return hit
+}
+
 $(document).ready(function () {
 
 	// document.addEventListener('contextmenu', event => event.preventDefault())
@@ -2301,7 +2592,7 @@ $(document).ready(function () {
 		} else {
 			activeElementID = null
 			activeObject = 'choice'
-			canvas.style.cursor = 'pointer'
+			//canvas.style.cursor = 'pointer'
 			document.querySelectorAll('.buttonGroup .button').forEach(b => b.classList.remove('active'))
 			document.getElementById('btnChoice').classList.add('active')
 		}
@@ -2318,7 +2609,7 @@ $(document).ready(function () {
 			clearSound.play()
 			activeObject = 'choice'
 			lineDrawing = false
-			canvas.style.cursor = 'pointer'
+			//canvas.style.cursor = 'pointer'
 			document.querySelectorAll('.buttonGroup .button').forEach(b => b.classList.remove('active'))
 			document.getElementById('btnChoice').classList.add('active')
 			document.getElementById('set-popup').style.display = 'none'
@@ -2423,29 +2714,30 @@ $(document).ready(function () {
 	})
 
 	canvas.addEventListener("mousemove", function (evt) {
-		let tempPoint = new mPoint(getMousePos(evt).x, getMousePos(evt).y, true)
-		if (activeObject === 'point') {
-			canvas.style.cursor = 'none'
-			drawAll()
-			drawPoint(tempPoint, true)
-		}
+
+		hitObject(getMousePos(evt))
+
+		//let tempPoint = new mPoint(getMousePos(evt).x, getMousePos(evt).y, true)
+		//activeObject !== 'choice' && (canvas.style.cursor = 'none')
+		//if (activeObject === 'point') {
+		//drawAll()
+		//drawPoint(tempPoint, true)
+		//}
 		if (activeObject === 'line') {
-			canvas.style.cursor = 'none'
 			drawAll()
-			drawPoint(tempPoint, true)
+			//drawPoint(tempPoint, true)
 			if (lineDrawing) {
 				let lineB = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
 				drawLineWithPoints(new mLineWithPoints(lineA, lineB, true))
 			}
 		}
 		if (activeObject === 'linesegment') {
-			canvas.style.cursor = 'none'
 			drawAll()
-			drawPoint(tempPoint, true)
+			//drawPoint(tempPoint, true)
 			if (lineSegmentDrawing) {
 				let lineSegmentB = new mPoint(getMousePos(evt).x, getMousePos(evt).y, true)
 				drawAll()
-				drawPoint(lineSegmentB, true)
+				//drawPoint(lineSegmentB, true)
 				drawLineSegment(new mLineSegment(lineSegmentA, lineSegmentB, true))
 			}
 		}
@@ -2458,7 +2750,6 @@ $(document).ready(function () {
 				firstMousePos = getMousePos(evt)
 				findPointPos = getMousePos(evt)
 			}
-
 			if (activeObject === 'point') {
 				let mousePos = getMousePos(evt)
 				let point = new mPoint(mousePos.x, mousePos.y)
@@ -2472,11 +2763,14 @@ $(document).ready(function () {
 			if (activeObject === 'line') {
 				if (lineDrawing == false) {
 					lineA = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
+					arrObjects.push(lineA)
 					lineDrawing = true
 				} else {
 					lineB = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
+					arrObjects.push(lineB)
 					let lwp = new mLineWithPoints(lineA, lineB)
 					arrObjects.push(lwp)
+					activeElementID = lwp.id
 					lineDrawing = false
 					lineA = lineB = null
 				}
@@ -2485,16 +2779,59 @@ $(document).ready(function () {
 			if (activeObject === 'linesegment') {
 				if (lineSegmentDrawing == false) {
 					lineSegmentA = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
+					arrObjects.push(lineSegmentA)
 					lineSegmentDrawing = true
 				} else {
 					lineSegmentB = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
-
+					arrObjects.push(lineSegmentB)
 					let ls = new mLineSegment(lineSegmentA, lineSegmentB)
 					arrObjects.push(ls)
 					activeElementID = ls.id
 					lineSegmentDrawing = false
 					lineSegmentA = lineSegmentB = null
 				}
+			}
+
+			if (activeObject === 'circle') {
+				if (circleDrawing == false) {
+					circleA = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
+					arrObjects.push(circleA)
+					circleDrawing = true
+				} else {
+					circleB = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
+					arrObjects.push(circleB)
+					let c = new mCircleWithPoints(circleA, circleB)
+					arrObjects.push(c)
+					activeElementID = c.id
+					circleDrawing = false
+					circleA = circleB = null
+				}
+			}
+			if (activeObject === 'angle') {
+				if (angleDrawing == false) {
+					if (angleA == null) {
+						angleA = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
+						arrObjects.push(angleA)
+					} else {
+						angleB = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
+						arrObjects.push(angleB)
+						angleDrawing = true
+					}
+				} else {
+					angleC = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
+					arrObjects.push(angleC)
+					let a = new mAngle(angleA, angleB, angleC)
+					arrObjects.push(a)
+					activeElementID = a.id
+					angleDrawing = false
+					angleA = angleB = angleC = null
+				}
+			}
+
+			if (hitObject(getMousePos(evt)) != null) {
+				let obj = hitObject(getMousePos(evt))
+				activeElementID = obj.id
+				drawAll()
 			}
 		}
 		drawAll()
@@ -2508,7 +2845,7 @@ $(document).ready(function () {
 			if (lastMousePos.x - firstMousePos.x <= -1 * unitY) minX++
 			if (lastMousePos.y - firstMousePos.y >= 1 * unitX) minY++
 			if (lastMousePos.y - firstMousePos.y <= -1 * unitX) minY--
-			canvas.style.cursor = 'pointer'
+			canvas.style.cursor = 'default'
 			drawAll()
 		}
 	}, false)
@@ -2528,7 +2865,7 @@ $(document).ready(function () {
 			activeElementID = null
 
 			activeObject = 'choice'
-			canvas.style.cursor = 'pointer'
+			//canvas.style.cursor = 'pointer'
 			document.querySelectorAll('.buttonGroup .button').forEach(b => b.classList.remove('active'))
 			document.getElementById('btnChoice').classList.add('active')
 
