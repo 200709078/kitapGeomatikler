@@ -2363,15 +2363,18 @@ function girisKeyDown(event) {
 		} else if (isDerivative(str).status) {
 			console.log('Türev(x^2)', isDerivative(str))
 
+
+			return
+
 			let funcFound = true
 			let names = arrObjects.map((item) => item.name)
-			/* 			if (!isDerivative(str).func.includes('x') && !Number.isFinite(Number(isDerivative(str).func))) {
-							if (!names.includes(isDerivative(str).func)) funcFound = false
-						} */
+			if (!isDerivative(str).func.includes('x') && !Number.isFinite(Number(isDerivative(str).func))) {
+				if (!names.includes(isDerivative(str).func)) funcFound = false
+			}
 			if (funcFound) {
-				/* 				if (!isDerivative(str).func.includes('x') && !Number.isFinite(Number(isDerivative(str).func))) {
-									str = str.replaceAll(isDerivative(str).func, arrObjects.find(o => o.name === isDerivative(str).func).func)
-								} */
+				if (!isDerivative(str).func.includes('x') && !Number.isFinite(Number(isDerivative(str).func))) {
+					str = str.replaceAll(isDerivative(str).func, arrObjects.find(o => o.name === isDerivative(str).func).func)
+				}
 
 				let func = new mFunction(isDerivative(str).expr, true)
 				let derFunc = new mFunction(derivative(isDerivative(str).expr).toString(), true)

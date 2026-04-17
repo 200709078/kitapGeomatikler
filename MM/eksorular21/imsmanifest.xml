@@ -7,8 +7,8 @@
   <schemaversion>1.2</schemaversion>
   <lom>
     <general>
-      <title><string language="tr">Matematik 12 - Nicelikler ve Değişimler - Ek Sorular 1.2</string></title>
-      <description><string language="tr">Matematik 12 - Nicelikler ve Değişimler - Ek Sorular 1.2</string></description>
+      <title><string language="tr">Matematik 12 - Geometrik Şekiller - Ek Sorular 2.1</string></title>
+      <description><string language="tr">Matematik 12 - Geometrik Şekiller - Ek Sorular 2.1</string></description>
       <language>tr</language>
     </general>
   </lom>
@@ -16,9 +16,9 @@
 
   <organizations default="GEOMATIK">
     <organization identifier="GEOMATIK">
-      <title>Matematik 12 - Nicelikler ve Değişimler - Ek Sorular 1.2</title>
+      <title>Matematik 12 - Geometrik Şekiller - Ek Sorular 2.1</title>
       <item identifier="item_geomatik" identifierref="resource_geomatik">
-        <title>Matematik 12 - Nicelikler ve Değişimler - Ek Sorular 1.2</title>
+        <title>Matematik 12 - Geometrik Şekiller - Ek Sorular 2.1</title>
       </item>
     </organization>
   </organizations>

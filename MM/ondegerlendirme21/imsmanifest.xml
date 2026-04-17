@@ -7,8 +7,8 @@
   <schemaversion>1.2</schemaversion>
   <lom>
     <general>
-      <title><string language="tr">Matematik 12 - Nicelikler ve Değişimler - Ek Sorular 1.2</string></title>
-      <description><string language="tr">Matematik 12 - Nicelikler ve Değişimler - Ek Sorular 1.2</string></description>
+      <title><string language="tr">Ön Değerlendirme-2.1</string></title>
+      <description><string language="tr">Ön Değerlendirme-1.1</string></description>
       <language>tr</language>
     </general>
   </lom>
@@ -16,9 +16,9 @@
 
   <organizations default="GEOMATIK">
     <organization identifier="GEOMATIK">
-      <title>Matematik 12 - Nicelikler ve Değişimler - Ek Sorular 1.2</title>
+      <title>Ön Değerlendirme-2.1</title>
       <item identifier="item_geomatik" identifierref="resource_geomatik">
-        <title>Matematik 12 - Nicelikler ve Değişimler - Ek Sorular 1.2</title>
+        <title>Ön Değerlendirme-2.1</title>
       </item>
     </organization>
   </organizations>
@@ -29,7 +29,18 @@
 
       <file href="renderer/css/styles.css" />
 
+      <file href="renderer/img/cubuklar.png" />
       <file href="renderer/img/favicon.svg" />
+      <file href="renderer/img/ga.png" />
+      <file href="renderer/img/gaa.png" />
+      <file href="renderer/img/gb.png" />
+      <file href="renderer/img/gbb.png" />
+      <file href="renderer/img/gc.png" />
+      <file href="renderer/img/gcc.png" />
+      <file href="renderer/img/gd.png" />
+      <file href="renderer/img/gdd.png" />
+      <file href="renderer/img/ge.png" />
+      <file href="renderer/img/gee.png" />
 
       <file href="renderer/js/exam.js" />
 
