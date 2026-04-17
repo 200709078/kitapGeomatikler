@@ -1,5 +1,72 @@
 const sorularSirali_T = [
     {
+        yonerge: 'Aşağıda verilen fonksiyonları türevleri ile eşleştiriniz.',
+        sorular: [
+            { text: '\\(2x^3\\) &#8594 *** <span style="color: #ff0008ff;">6x²</style>' },
+            { text: '\\(-x^4+4x-3\\) &#8594 *** <span style="color: #ff0008ff;">-4x³+4</style>' },
+            { text: '\\((2x+1)^2+2\\) &#8594 *** <span style="color: #ff0008ff;">4x+4</style>' },
+        ],
+        tipi: "es",
+        puan: 6,
+        dogrular: ['6x²', '-4x³+4', '4x+4'],
+        secimler: ['6x', '-4x²+4', '4x-4'],
+        aciklama: [
+            ['TÜREV', "\\(2x^3\\) fonksiyonunun türevi 6x²'dir."],
+            ['TÜREV', "\\(-x^4+4x-3\\) fonksiyonunun türevi -4x³+4'tür."],
+            ['TÜREV', "\\((2x+1)^2+2\\) fonksiyonunun türevi 4x+4'tür."],
+        ]
+    },
+    {
+        soru: '"Bir fonksiyonun bir noktada limitinin olması için fonksiyonun o noktada tanımlı olması gerekir." ifadesine göre seçim yapınız.',
+        tipi: "dy",
+        puan: 4,
+        secenekler: [
+            { text: 'Doğrudur.', correct: false },
+            { text: 'Yanlıştır. <span style="color: #ff0008ff;">*</style>', correct: true },
+        ],
+        aciklama: ['LİMİT', 'Bir fonksiyonun bir noktada limitinin olması için fonksiyonun o noktada tanımlı olması gerekmez. O noktadaki sağdan ve soldan limitlerin eşit olması yeterlidir. Bu nedenle verilen ifade yanlıştır.'],
+    },
+    {
+        soru: '"Bir deponun dolum fonksiyonunun türevi deponun dolum hızını verir." ifadesine göre seçim yapınız.',
+        tipi: "dy",
+        puan: 4,
+        secenekler: [
+            { text: 'Doğrudur. <span style="color: #ff0008ff;">*</style>', correct: true },
+            { text: 'Yanlıştır.', correct: false },
+        ],
+        aciklama: ['HIZ', 'Dolum fonksiyonunun türevi, deponun dolum hızını verir. Bu nedenle verilen ifade doğrudur.'],
+    },
+    {
+        yonerge: 'Aşağıdaki boşlukları doldurunuz.',
+        sorular: [
+            { text: "Bir fonksiyonun türevi pozitif ise fonksiyon ***'dır. <span style='color: #ff0008ff;'>artan</style>" },
+            { text: "Bir fonksiyonun türevinin sıfır olduğu noktalar *** noktalardır. <span style='color: #ff0008ff;'>kritik</style>" },
+            { text: "Ekonomide maliyet fonksiyonunun türevi *** maliyeti verir. <span style='color: #ff0008ff;'>marjinal</style>" },
+        ],
+        tipi: "bd",
+        puan: 6,
+        dogrular: ['artan', 'kritik', 'marjinal'],
+        secimler: ['azalan', 'sürekli', 'yüksek'],
+        aciklama: [
+            ['TÜREV', 'Açıklama 1 eklenecek...'],
+            ['TÜREV', 'Açıklama 2 eklenecek...'],
+            ['TÜREV', 'Açıklama 3 eklenecek...'],
+        ]
+    },
+    {
+        yonerge: 'Aşağıdaki boşluğu doldurunuz.',
+        sorular: [
+            { text: "\\(3x^2-12\\ge 0\\) eşitsizliğinin çözüm kümesi ***'dır. <span style='color: #ff0008ff;'>(-∞,-2] ∪ [2,∞)</style>" }
+        ],
+        tipi: "bd",
+        puan: 10,
+        dogrular: ['(-∞,-2] ∪ [2,∞)'],
+        secimler: ['[-2,2]', '(-4,-2] ∪ [2,∞)'],
+        aciklama: [
+            ['EŞİTSİZLİKLER', 'Açıklama eklenecek...']
+        ]
+    },
+    {
         soru: '-4x + 1 > 0 eşitsizliğinin çözüm kümesi aşağıdakilerden hangisidir?',
         tipi: "cs",
         puan: 10,
@@ -26,19 +93,6 @@ const sorularSirali_T = [
         aciklama: ['TÜREVİN YORUMU', 'Bu nedenle doğru cevap...']
     },
     {
-        soru: "f(x) = (x² - 1)(x² - x + 1)(x² + x + 1) fonksiyonu veriliyor. Buna göre f'(-1) değeri hangisidir?",
-        tipi: "cs",
-        puan: 10,
-        secenekler: [
-            { text: '-6 <span style="color: #ff0008ff;">*</style>', correct: true },
-            { text: '-4', correct: false },
-            { text: '4', correct: false },
-            { text: '5', correct: false },
-            { text: '6', correct: false }
-        ],
-        aciklama: ['TÜREVİN YORUMU', 'Bu nedenle doğru cevap...']
-    },
-    {
         soru: 'Bir aracın hız/zaman grafiği verildiğinde türev kavramı neyi temsil eder?',
         tipi: "cs",
         puan: 10,
@@ -48,19 +102,6 @@ const sorularSirali_T = [
             { text: 'Aracın yolunu gösterir.', correct: false },
             { text: 'Aracın ivmesini gösterir.', correct: false },
             { text: 'Aracın hızını gösterir.', correct: false }
-        ],
-        aciklama: ['TÜREVİN YORUMU', 'Bu nedenle doğru cevap...']
-    },
-    {
-        soru: 'Bir fonksiyonun türevinin pozitif olması ne anlama gelir?',
-        tipi: "cs",
-        puan: 10,
-        secenekler: [
-            { text: 'Fonksiyonun artan olduğunu gösterir. <span style="color: #ff0008ff;">*</style>', correct: true },
-            { text: 'Fonksiyonun azalan olduğunu gösterir.', correct: false },
-            { text: 'Fonksiyonun sabit olduğunu gösterir.', correct: false },
-            { text: 'Fonksiyonun maksimum değerini gösterir.', correct: false },
-            { text: 'Fonksiyonun minimum değerini gösterir.', correct: false }
         ],
         aciklama: ['TÜREVİN YORUMU', 'Bu nedenle doğru cevap...']
     },
@@ -130,6 +171,7 @@ closeModalButtons.forEach(button => {
 })
 
 function openModal(modal) {
+    MathJax.typesetPromise();
     if (modal == null) return
     modal.classList.add('active')
     overlay.classList.add('active')

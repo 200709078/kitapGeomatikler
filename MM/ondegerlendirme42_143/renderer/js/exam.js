@@ -1,29 +1,90 @@
 const sorularSirali_T = [
     {
-        soru: '\\(f(x)=\\begin{cases}x, & x<2 \\\\3, & x\\ge 2\\end{cases}\\) için aşağıdakilerden hangisi doğrudur?',
-        tipi: "cs",
-        puan: 10,
-        secenekler: [
-            { text: 'x = 2’de süreklidir. <span style="color: #ff0008ff;">*</style>', correct: true },
-            { text: 'x = 2’de süreksizdir.', correct: false },
-            { text: 'x = 2’de tepe noktası vardır.', correct: false },
-            { text: 'Grafik paraboliktir.', correct: false },
-            { text: 'Çift fonksiyondur.', correct: false },
+        yonerge: 'Aşağıda kökleri verilen parabollerin tepe noktalarına göre seçim yapınız.',
+        sorular: [
+            { text: "Kökleri 1 ve 5 olan parabolün tepe noktasının apsisi ***'tür. <span style='color: #ff0008ff'>3</style>" },
+            { text: "Tek kökü 2 olan parabolün tepe noktasının apsisi ***'dir. <span style='color: #ff0008ff'>2</style>" },
         ],
-        aciklama: ['PARÇALI FONKSİYON', 'x = -1 için f(-1) = -1 + 1 = 0 olur.']
+        tipi: "es",
+        puan: 6,
+        dogrular: ['3', '2'],
+        secimler: ['1', '4'],
+        aciklama: [
+            ['SÜREKLİLİK', '\\((x-1)(x-5) = x^2 - 6x + 5\\) parabolünün tepe noktası apsisi \\(\\frac{-b}{2a}=\\frac{6}{2}=3\\)\'tür.'],
+            ['SÜREKLİLİK', '\\((x-2)^2 = x^2 - 4x + 4\\) parabolünün tepe noktası apsisi \\(\\frac{-b}{2a}=\\frac{4}{2}=2\\)\'dir.'],
+        ]
     },
     {
-        soru: '\\(f(x)=\\begin{cases}x+1, & x<0 \\\\x^2, & x\\ge 0\\end{cases}\\) şeklinde tanımlı f fonksiyonu veriliyor. Buna göre f(-1) değeri aşağıdakilerden hangisidir?',
-        tipi: "cs",
-        puan: 10,
-        secenekler: [
-            { text: '-1', correct: false },
-            { text: '0 <span style="color: #ff0008ff;">*</style>', correct: true },
-            { text: '1', correct: false },
-            { text: '2', correct: false },
-            { text: '3', correct: false },
+        yonerge: 'Aşağıda bir parçalı fonksiyonun x=a noktasındaki durumlarına göre seçim yapınız.',
+        sorular: [
+            { text: 'x=a noktasında limiti var ama tanımlı değil. &#8594 *** <span style="color: #ff0008ff;">Süreksiz</style>' },
+            { text: 'x=a noktasında limiti yok. &#8594 *** <span style="color: #ff0008ff;">Süreksiz</style>' },
+            { text: 'x=a noktasında limiti var ve fonksiyonun x=a noktasındaki değerine eşit. &#8594 *** <span style="color: #ff0008ff;">Sürekli</style>' },
         ],
-        aciklama: ['PARÇALI FONKSİYON', 'x = -1 için f(-1) = -1 + 1 = 0 olur.']
+        tipi: "es",
+        puan: 6,
+        dogrular: ['Süreksiz', 'Süreksiz', 'Sürekli'],
+        secimler: [''],
+        aciklama: [
+            ['SÜREKLİLİK', 'Bir parçalı fonksiyonun x=a noktasında limiti var ama tanımlı değilse o noktada süreksizdir.'],
+            ['SÜREKLİLİK', 'Bir parçalı fonksiyonun x=a noktasında limiti yoksa o noktada süreksizdir.'],
+            ['SÜREKLİLİK', 'Bir parçalı fonksiyonun x=a noktasında limiti var ve fonksiyonun x=a noktasındaki değerine eşitse o noktada süreklidir.']
+        ]
+    },
+    {
+        yonerge: '\\(f(x) = ax^2 + bx + c \\) şeklinde tanımlı polinom fonksiyonuna göre aşağıdaki verilen boşlukları doldurunuz.',
+        sorular: [
+            { text: 'a<0 ise f polinomunun maksimum değeri vardır. &#8594 *** <span style="color: #ff0008ff;">Doğru</style>' },
+            { text: 'Tepe noktası polinomun minimum değerini verir. &#8594 *** <span style="color: #ff0008ff;">Yanlış</style>' },
+        ],
+        tipi: "es",
+        puan: 4,
+        dogrular: ['Doğru', 'Yanlış'],
+        secimler: [''],
+        aciklama: [
+            ['PARABOL', 'Baş katsayısı negatif olan bir polinom maksimum değere sahiptir.'],
+            ['PARABOL', 'a değerinin işaretine bağlı olarak tepe noktası maksimum veya minimum değere sahip olabilir.']
+        ]
+    },
+    {
+        soru: '"Bir fonksiyonun bir noktada limiti varsa aynı zamanda o noktada süreklidir." ifadesine göre seçim yapınız.',
+        tipi: "dy",
+        puan: 4,
+        secenekler: [
+            { text: 'Doğrudur.', correct: false },
+            { text: 'Yanlıştır.<span style="color: #ff0008ff;">*</style>', correct: true },
+        ],
+        aciklama: ['SÜREKLİLİK', 'Açıklama ekle.'],
+    },
+    {
+        yonerge: 'Bir su deposunda bulunan suyun yüksekliği zamana bağlı olarak \\(h(t)= -2t^2 + 12t + 3\\) fonksiyonu ile modellenmektedir. Buna göre aşağıda verilen boşlukları doldurunuz.',
+        sorular: [
+            { text: "Su seviyesi en fazla *** metreye ulaşır. <span style='color: #ff0008ff;'>21</style>" },
+            { text: "Su maksimum seviyeye *** saat sonunda ulaşır. <span style='color: #ff0008ff;'>3</style>" },
+            { text: "Su seviyesi 3 metreye *** saat sonra tekrar düşer. <span style='color: #ff0008ff;'>6</style>" },
+        ],
+        tipi: "bd",
+        puan: 12,
+        dogrular: ['21', '3', '6'],
+        secimler: ['12', '4', '5', '7'],
+        aciklama: [
+            ['DEPO', 'Açıklama 1 ekle.'],
+            ['DEPO', 'Açıklama 2 ekle.'],
+            ['DEPO', 'Açıklama 3 ekle.'],
+        ]
+    },
+    {
+        yonerge: 'Bir f fonksiyonu x=a noktasında sürekli olduğuna göre aşağıda verilen boşluğu doldurunuz.',
+        sorular: [
+            { text: "\\(f(a^+)=\\)***\\(=f(a^-) \\) <span style='color: #ff0008ff;'>\\(f(a)\\)</style>" }
+        ],
+        tipi: "bd",
+        puan: 8,
+        dogrular: ['f(a)'],
+        secimler: ['f(0)', 'f(-1)'],
+        aciklama: [
+            ['SÜREKLİLİK', 'Bir f fonksiyonu x=a noktasında sürekli olduğuna göre \\(f(a^+)=f(a)=f(a^-)\\) olmalıdır.']
+        ]
     },
     {
         soru: 'x² - (2a+1)x - 2a - 2 = 0 denkleminin köklerinden biri 4 olduğuna göre a kaçtır?',
@@ -65,19 +126,6 @@ const sorularSirali_T = [
         aciklama: ['KÂR', 'K(x) = -x² + 40x - 300 = 0 için x² - 40x + 300 = 0 olur. Bu denklem (x-10)(x-30) = 0 şeklinde çarpanlara ayrılır. Bu nedenle x = 10 veya x = 30 olur. Şirketin zarar etmemesi için üretim miktarı [10,30] nda olmalıdır.']
     },
     {
-        soru: 'Bir mühendis, köprü ayağının yüksekliğini hesaplamak için aşağıdaki gibi modelleme yapmıştır. Ayak yüksekliği h(x) = 2x + 5 fonksiyonu ile verilmiştir. Burada x kullanılan çelik kolon sayısını göstermektedir. Köprü ayağının 35 metre olması için kaç çelik kolon gerekir?',
-        tipi: "cs",
-        puan: 10,
-        secenekler: [
-            { text: '10', correct: false },
-            { text: '15 <span style="color: #ff0008ff;">*</style>', correct: true },
-            { text: '20', correct: false },
-            { text: '25', correct: false },
-            { text: '30', correct: false },
-        ],
-        aciklama: ['KOLONLAR', '2x + 5 = 35 ise 2x = 30 ve x = 15 olur. Bu nedenle köprü ayağının 35 metre olması için 15 çelik kolon gerekir.']
-    },
-    {
         soru: 'Bir fabrikanın üretim maliyeti f(x) = x² - 6x + 10 fonksiyonu ile modelleniyor. En düşük maliyet kaç birimdir?',
         tipi: "cs",
         puan: 10,
@@ -102,32 +150,6 @@ const sorularSirali_T = [
             { text: '5 <span style="color: #ff0008ff;">*</style>', correct: true },
         ],
         aciklama: ['UZAKLIK', '\\(\\sqrt{(3-(-1))^2 + (-2-1)^2} = 5\\) olur.']
-    },
-    {
-        soru: 'P(x) = x² + 3x + 2 polinomunun kökleri nelerdir?',
-        tipi: "cs",
-        puan: 10,
-        secenekler: [
-            { text: '-1 ve -2 <span style="color: #ff0008ff;">*</style>', correct: true },
-            { text: '1 ve 2', correct: false },
-            { text: '-1 ve 2', correct: false },
-            { text: '1 ve -2', correct: false },
-            { text: '1 ve 3', correct: false },
-        ],
-        aciklama: ['PARÇALI FONKSİYON', 'x² + 3x + 2 = (x+1).(x+2) = 0 ise x = -1 veya x = -2 olur.']
-    },
-    {
-        soru: 'f(x) = x² - 4 fonksiyonunun tepe noktasının koordinatı aşağıdakilerden hangisidir?',
-        tipi: "cs",
-        puan: 10,
-        secenekler: [
-            { text: '(0, -4) <span style="color: #ff0008ff;">*</style>', correct: true },
-            { text: '(2, 0)', correct: false },
-            { text: '(0, 0)', correct: false },
-            { text: '(-4, 0)', correct: false },
-            { text: '(-2, 0)', correct: false },
-        ],
-        aciklama: ["TEPE NOKTASI', 'Simetri ekseni x = 0'dır. Buradan x = 0 için f(0) = 0² - 4 = -4 olduğundan tepe noktası (0, -4) noktasıdır."]
     },
     {
         soru: 'f(x) = 2x + 3 fonksiyonunun grafiği aşağıdaki noktalardan hangisinden geçer?',
@@ -156,6 +178,7 @@ closeModalButtons.forEach(button => {
 })
 
 function openModal(modal) {
+    MathJax.typesetPromise();
     if (modal == null) return
     modal.classList.add('active')
     overlay.classList.add('active')

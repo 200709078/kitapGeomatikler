@@ -43,7 +43,7 @@ let delCount = 0
 class mPoint {
 	constructor(a, b, temp = false) {
 		this.type = 'point'
-		this.name = createName('point')
+		temp ? this.name = null : this.name = createName('point')
 		temp ? this.id = null : this.id = idCounter()
 		this.a = a
 		this.b = b
@@ -105,6 +105,7 @@ class mVerLine {
 		this.color = getRandomColor()
 		this.visibility = true
 		this.size = 2
+		this.temp = temp
 	}
 }
 
@@ -140,7 +141,7 @@ function normalizeLine(m, n) {
 class mLineWithEquation {
 	constructor(m, n, temp = false, startX = null, endX = null) {
 		this.type = 'lineWithEquation'
-		this.name = createName('line')
+		temp ? this.name = null : this.name = createName('line')
 		temp ? this.id = null : this.id = idCounter()
 		this.m = m
 		this.n = n
@@ -150,13 +151,14 @@ class mLineWithEquation {
 		this.color = getRandomColor()
 		this.visibility = true
 		this.size = 2
+		this.temp = temp
 	}
 }
 
 class mLineWithPoints {
 	constructor(A, B, temp = false) {
 		this.type = 'lineWithPoints'
-		this.name = createName('line')
+		temp ? this.name = null : this.name = createName('line')
 		temp ? this.id = null : this.id = idCounter()
 		this.A = A
 		this.B = B
@@ -192,6 +194,7 @@ class mSequence {
 		this.color = getRandomColor()
 		this.visibility = true
 		this.size = 2
+		this.temp = temp
 	}
 }
 
@@ -208,13 +211,14 @@ class mLimit {
 		this.lineDash = []
 		this.visibility = true
 		this.size = 2
+		this.temp = temp
 	}
 }
 
 class mFunction {
 	constructor(func, temp = false, startX = null, endX = null) {
 		this.type = 'function'
-		this.name = createName('function')
+		temp ? this.name = null : this.name = createName('function')
 		temp ? this.id = null : this.id = idCounter()
 		this.func = func
 		this.startX = startX
@@ -222,20 +226,78 @@ class mFunction {
 		this.color = getRandomColor()
 		this.visibility = true
 		this.size = 2
+		this.temp = temp
 	}
 }
 
-class mTurev {
+class mFunctionComposions {
+	constructor(funcs, temp = false, startX = null, endX = null) {
+		this.type = 'functioncomposition'
+		temp ? this.name = null : this.name = createName('functioncomposition')
+		temp ? this.id = null : this.id = idCounter()
+		this.funcs = funcs
+		this.func = bileskeProcess(funcs)
+		this.startX = startX
+		this.endX = endX
+		this.color = getRandomColor()
+		this.visibility = true
+		this.size = 2
+		this.temp = temp
+	}
+}
+class mTangent {
 	constructor(func, a, temp = false) {
-		this.type = 'derivative'
-		this.name = createName('derivative')
+		this.type = 'tangent'
+		this.name = createName('tangent')
 		temp ? this.id = null : this.id = idCounter()
 		this.func = func
 		this.approachVal = a
+		let m = math.evaluate(derivative(func), { x: a })
+		let c = math.evaluate(func, { x: a }) - m * a
+		this.tngLine = new mLineWithEquation(m, c, true)
 		this.color = getRandomColor()
 		this.lineDash = []
 		this.visibility = true
 		this.size = 2
+		this.temp = temp
+	}
+}
+
+class mTangentHX {
+	constructor(func, a, haveH, temp = false) {
+		this.type = 'tangentHX'
+		this.name = createName('tangentHX')
+		temp ? this.id = null : this.id = idCounter()
+		this.func = func
+		this.approachVal = a
+		this.h = 2
+		this.haveH = haveH
+		let A = new mPoint(a, math.evaluate(func, { x: a }), true)
+		let B = haveH ? new mPoint(a + this.h, math.evaluate(func, { x: a + this.h }), true) : new mPoint(this.h, math.evaluate(func, { x: this.h }), true)
+		let m = math.evaluate(derivative(func), { x: a })
+		let c = math.evaluate(func, { x: a }) - m * a
+		this.tngLine = new mLineWithEquation(m, c, true)
+		this.aodLine = new mLineWithPoints(A, B, true)
+		this.color = getRandomColor()
+		this.lineDash = []
+		this.visibility = true
+		this.size = 2
+		this.temp = temp
+	}
+}
+
+class mDerivative {
+	constructor(func, derFunc, temp = false) {
+		this.type = 'derivative'
+		this.name = createName('derivative')
+		temp ? this.id = null : this.id = idCounter()
+		this.func = func
+		this.derFunc = derFunc
+		this.color = getRandomColor()
+		this.lineDash = []
+		this.visibility = true
+		this.size = 2
+		this.temp = temp
 	}
 }
 
@@ -249,6 +311,7 @@ class mSectionalFunctions {
 		this.size = 2
 		this.type = 'sectionalFunctions'
 		this.cmd = str
+		this.temp = temp
 	}
 }
 
@@ -287,7 +350,7 @@ function createName(type) {
 		newNames = bigNames
 	} else if (type == 'lineSegment' || type == 'sequence' || type == 'circle') {
 		newNames = smallNames
-	} else if (type == 'line' || type == 'limit' || type == 'derivative' || type == 'function') {
+	} else if (type == 'line' || type == 'limit' || type == 'tangent' || type == 'function' || type == 'sectionalFunctions' || type == 'tangent' || type == 'tangentHX' || type == 'derivative' || type == 'functioncomposition') {
 		newNames = lineNames
 	} else if (type == 'angle') {
 		newNames = angleNames
@@ -374,6 +437,7 @@ function drawAll() {
 		ctx.stroke()
 		ctx.closePath()
 	}
+	if (angleA && angleB) drawLineSegment(new mLineSegment(angleA, angleB, true))
 
 	arrObjects.sort(function (a, b) { return a.id - b.id })
 	arrObjects.findLast((item) => {
@@ -391,18 +455,24 @@ function drawAll() {
 			drawSequence(item)
 		} else if (item.type === 'limit') {
 			drawLimit(item)
-		} else if (item.type === 'derivative') {
-			drawDerivative(item)
+		} else if (item.type === 'tangent') {
+			drawTangent(item)
+		} else if (item.type === 'tangentHX') {
+			drawTangentHX(item)
 		} else if (item.type === 'sectionalFunctions') {
 			drawSectionalFunctions(item)
 		} else if (item.type === 'function') {
 			drawFunction(item)
+		} else if (item.type === 'functioncomposition') {
+			drawFunctionComposition(item)
 		} else if (item.type === 'circle') {
 			drawCircle(item)
 		} else if (item.type === 'circlewithpoints') {
 			drawCircleWithPoints(item)
 		} else if (item.type === 'angle') {
 			drawAngle(item)
+		} else if (item.type === 'derivative') {
+			drawDerivative(item)
 		} else { console.log('drawAll içinde type bulunamadı.') }
 	})
 }
@@ -428,23 +498,33 @@ function drawPoint(point) {
 function drawCircle(circle) {
 	if (!circle.visibility) return
 
+	let sp = new mPoint(circle.A.a + circle.r, circle.A.b, true)
+	drawPoint(sp)
+	let sls = new mLineSegment(circle.A, sp, true)
+	drawLineSegment(sls)
+
 	let cSize
 	circle.id == activeElementID ? cSize = circle.size + 1 : cSize = circle.size
 	let cColor = circle.color
 	if (circle.temp) cColor = '#000000'
-
 	ctx.beginPath()
 	ctx.strokeStyle = cColor
 	ctx.arc((-minX + circle.A.a / unitY) * scaleY, (-minY - circle.A.b / unitX) * scaleX, circle.r * scaleX, 0, 2 * Math.PI)
 	ctx.lineWidth = cSize
 	if (!circle.temp) text((-minX + circle.A.a / unitY) * scaleY - circle.r * scaleY * 0.75, (-minY - circle.A.b / unitX) * scaleX - circle.r * scaleX * 0.75, cColor, 'center', 'bold 15px arial', circle.name)
+	text((-minX + (circle.A.a + sp.a) / 2 / unitY) * scaleY, (-minY - (circle.A.b + sp.b) / 2 / unitX) * scaleX, cColor, 'center', 'bold 15px arial', 'r = ' + circle.r)
 	ctx.stroke()
 	ctx.closePath()
 }
 
 function drawCircleWithPoints(circle) {
 	if (!circle.visibility) return
-	let r = math.sqrt(math.pow(circle.B.a - circle.A.a, 2) + math.pow(circle.B.b - circle.A.b, 2))
+
+	let r = math.sqrt(math.pow(circle.B.a - circle.A.a, 2) + math.pow(circle.B.b - circle.A.b, 2)).toFixed(2)
+
+	let sls = new mLineSegment(circle.A, circle.B, true)
+	drawLineSegment(sls)
+
 	let cSize
 	circle.id == activeElementID ? cSize = circle.size + 1 : cSize = circle.size
 	let cColor = circle.color
@@ -454,12 +534,9 @@ function drawCircleWithPoints(circle) {
 	ctx.arc((-minX + circle.A.a / unitY) * scaleY, (-minY - circle.A.b / unitX) * scaleX, r * scaleX, 0, 2 * Math.PI)
 	ctx.lineWidth = cSize
 	if (!circle.temp) text((-minX + circle.A.a / unitY) * scaleY - r * scaleY * 0.75, (-minY - circle.A.b / unitX) * scaleX - r * scaleX * 0.75, cColor, 'center', 'bold 15px arial', circle.name)
+	text((-minX + (circle.A.a + circle.B.a) / 2 / unitY) * scaleY, (-minY - (circle.A.b + circle.B.b) / 2 / unitX) * scaleX, cColor, 'center', 'bold 15px arial', 'r = ' + r)
 	ctx.stroke()
 	ctx.closePath()
-
-
-
-
 }
 
 function drawVerLine(vline) {
@@ -493,12 +570,13 @@ function drawLineWithEquation(line) {
 	endX = Math.min(mostRight, endX)
 	if (startX > endX) startX = endX
 	let x, y
-	ctx.beginPath()
 
 	let lSize
 	line.id == activeElementID ? lSize = line.size + 1 : lSize = line.size
 	let lColor = line.color
+	if (line.temp) lColor = '#000000'
 
+	ctx.beginPath()
 	ctx.strokeStyle = ctx.fillStyle = lColor
 	ctx.lineWidth = lSize
 	x = startX
@@ -507,7 +585,7 @@ function drawLineWithEquation(line) {
 	x = endX
 	y = math.evaluate(line.m + "*" + x + "+" + line.n, { x: x })
 	ctx.lineTo(-minX * scaleY + (x * scaleY) / unitY, -minY * scaleX - (y * scaleX) / unitX)
-	text((-minX + (-minY - line.n) / line.m) * scaleY + 5, 20, lColor, 'center', 'bold 15px arial', line.name)
+	if (!line.temp) text((-minX + (-minY - line.n) / line.m) * scaleY + 5, 20, lColor, 'center', 'bold 15px arial', line.name)
 	ctx.fill()
 	ctx.stroke()
 	ctx.closePath()
@@ -542,7 +620,7 @@ function drawLineWithPoints(pl) {
 		x = 50000
 		y = math.evaluate(createLineEquation(pl.A, pl.B).m + '*x+' + createLineEquation(pl.A, pl.B).c, { x: x })
 		ctx.lineTo(-minX * scaleY + (x * scaleY) / unitY, -minY * scaleX - (y * scaleX) / unitX)
-		text((-minX + (-minY - createLineEquation(pl.A, pl.B).c) / createLineEquation(pl.A, pl.B).m) * scaleY + 5, 20, plColor, 'center', 'bold 15px arial', pl.name)
+		if (!pl.temp) text((-minX + (-minY - createLineEquation(pl.A, pl.B).c) / createLineEquation(pl.A, pl.B).m) * scaleY + 5, 20, plColor, 'center', 'bold 15px arial', pl.name)
 		ctx.fill()
 		ctx.stroke()
 		ctx.closePath()
@@ -683,7 +761,7 @@ function drawLimit(lim) {
 	}
 }
 
-function drawDerivative(tur) {
+function drawTangent(tur) {
 	if (!tur.visibility) return
 	drawFunction(tur)
 	// Türev (.)
@@ -693,6 +771,7 @@ function drawDerivative(tur) {
 	let vls = new mLineSegment(A, B, true)
 	let hls = new mLineSegment(B, C, true)
 	A.color = B.color = C.color = vls.color = hls.color = tur.color
+	vls.lineDash = hls.lineDash = [2, 5]
 	drawLineSegment(vls)
 	drawLineSegment(hls)
 	drawPoint(A)
@@ -700,13 +779,56 @@ function drawDerivative(tur) {
 	drawPoint(C)
 
 	//Teğet Doğrusu
-	if (tur.id == activeElementID) {
-		let m = math.evaluate(derivative(tur.func), { x: tur.approachVal })
-		let c = math.evaluate(tur.func, { x: tur.approachVal }) - m * tur.approachVal
-		let tLine = new mLineWithEquation(m, c)
-		tLine.color = 'black'
-		drawLineWithEquation(tLine)
-	}
+	let m = math.evaluate(derivative(tur.func), { x: tur.approachVal })
+	let c = math.evaluate(tur.func, { x: tur.approachVal }) - m * tur.approachVal
+	tur.tngLine = new mLineWithEquation(m, c, true)
+	if (tur.id == activeElementID) drawLineWithEquation(tur.tngLine)
+
+}
+
+function drawTangentHX(turHX) {
+	if (!turHX.visibility) return
+	drawFunction(turHX)
+
+	// TürevH (.)
+	let A1 = new mPoint(turHX.aodLine.A.a, 0, true)
+	let C1 = new mPoint(0, turHX.aodLine.A.b, true)
+	let vls = new mLineSegment(A1, turHX.aodLine.A, true)
+	let hls = new mLineSegment(turHX.aodLine.A, C1, true)
+	vls.lineDash = hls.lineDash = [2, 5]
+	drawPoint(A1)
+	drawPoint(turHX.aodLine.A)
+	drawPoint(C1)
+	drawLineSegment(vls)
+	drawLineSegment(hls)
+
+	// TürevH (+h)
+	let A2 = new mPoint(turHX.aodLine.B.a, 0, true)
+	let C2 = new mPoint(0, turHX.aodLine.B.b, true)
+	vls = new mLineSegment(A2, turHX.aodLine.B, true)
+	hls = new mLineSegment(turHX.aodLine.B, C2, true)
+	vls.lineDash = hls.lineDash = [2, 5]
+	drawPoint(A2)
+	drawPoint(turHX.aodLine.B)
+	drawPoint(C2)
+	drawLineSegment(vls)
+	drawLineSegment(hls)
+
+	//Anlık Değişim Oranı
+	drawLineWithPoints(new mLineWithPoints(turHX.aodLine.A, turHX.aodLine.B, true))
+
+	//Teğet Doğrusu
+	if (turHX.aodLine.A.a == turHX.aodLine.B.a && turHX.aodLine.A.b == turHX.aodLine.B.b) drawLineWithEquation(turHX.tngLine)
+}
+
+function drawDerivative(der) {
+	if (!der.visibility) return
+	if (activeElementID == der.id) drawFunction(der.func, true)
+	drawFunction(der.derFunc)
+}
+function drawFunctionComposition(funcComp) {
+	if (!funcComp.visibility) return
+	drawFunction(funcComp)
 }
 
 function drawLineSegment(ls) {
@@ -718,10 +840,12 @@ function drawLineSegment(ls) {
 	ctx.beginPath()
 	ctx.strokeStyle = lsColor
 	ctx.lineWidth = lsSize
+	if (ls.temp) ctx.setLineDash(ls.lineDash)
 	ctx.moveTo((-minX + ls.A.a / unitY) * scaleY, (-minY - ls.A.b / unitX) * scaleX)
 	ctx.lineTo((-minX + ls.B.a / unitY) * scaleY, (-minY - ls.B.b / unitX) * scaleX)
 	if (!ls.temp) text((-minX + ((ls.A.a + ls.B.a) / 2) / unitY) * scaleY - 10, (-minY - ((ls.A.b + ls.B.b) / 2) / unitX) * scaleX - 10, lsColor, 'center', 'bold 15px arial', ls.name)
 	ctx.stroke()
+	ctx.setLineDash([])
 	ctx.closePath()
 }
 
@@ -770,6 +894,8 @@ function drawAngle(ag) {
 
 	//Sembol ve ölçü
 	let angles = calculateAngle(ag)
+	let angleBetween
+	angles.angleBC - angles.angleBA < 0 ? angleBetween = angles.angleBC - angles.angleBA + 360 : angleBetween = angles.angleBC - angles.angleBA
 	let cx = (-minX + ag.B.a / unitY) * scaleY
 	let cy = (-minY - ag.B.b / unitX) * scaleX
 	let startAngle = 360 - angles.angleBC
@@ -781,7 +907,7 @@ function drawAngle(ag) {
 	ctx.arc(cx, cy, 20, startAngle * Math.PI / 180, endAngle * Math.PI / 180)
 	ctx.stroke()
 	ctx.closePath()
-	text(cx, cy - 40, agColor, 'center', 'bold 15px arial', ag.name + '=' + (calculateAngle(ag).angleBC - calculateAngle(ag).angleBA).toFixed(0) + '°')
+	text(cx, cy - 40, agColor, 'center', 'bold 15px arial', ag.name + '=' + angleBetween.toFixed(0) + '°')
 }
 
 function drawSectionalFunctions(sf) {
@@ -917,10 +1043,26 @@ function labelsCreator() {
 			sliderB.hidden = true
 		} else if (item.type == 'limit') {
 			input.value = item.name + ' = Limit(' + item.func + ',' + item.approachVal + ')'
-		} else if (item.type == 'derivative') {
-			input.value = item.name + ' = Türev(' + item.func + ',' + item.approachVal + ')'
+		} else if (item.type == 'tangent') {
+			input.value = 'Teğet(' + item.func + ',' + item.approachVal + ')'
+			output.value = item.name + ': y = ' + item.tngLine.func
 			labelB.hidden = true
 			sliderB.hidden = true
+		} else if (item.type == 'tangentHX') {
+
+			let tan, eq
+			if (item.aodLine.A.a == item.aodLine.B.a && item.aodLine.A.b == item.aodLine.B.b) {
+				eq = item.name + "'(" + item.approachVal + ")="
+				tan = item.tngLine.m
+			} else {
+				eq = ''
+				tan = tan = createLineEquation(item.aodLine.A, item.aodLine.B).m.toFixed(2)
+			}
+
+			let N = item.haveH ? 'H' : 'X'
+			input.value = 'Teğet' + N + '(' + item.func + ',' + item.approachVal + ')'
+			if (item.haveH) output.value = '[' + item.name + '(' + item.approachVal + '+h) - ' + item.name + '(' + item.approachVal + ')] / h = ' + eq + tan
+			if (!item.haveH) output.value = '[' + item.name + '(' + item.h + ') - ' + item.name + '(x₀)] /(' + item.h + '-x₀)  = ' + eq + tan
 		} else if (item.type == 'sectionalFunctions') {
 			input.value = item.name + '(x) = {' + item.cmd + '}'
 			labelA.hidden = true
@@ -933,15 +1075,27 @@ function labelsCreator() {
 			sliderA.hidden = true
 			labelB.hidden = true
 			sliderB.hidden = true
+		} else if (item.type == 'functioncomposition') {
+			input.value = 'Bileşke(' + item.funcs.join(',') + ')'
+			output.value = item.name + ': y = ' + item.func
+			labelA.hidden = true
+			sliderA.hidden = true
+			labelB.hidden = true
+			sliderB.hidden = true
+		} else if (item.type == 'derivative') {
+			input.value = item.func.name + ': y = ' + item.func.func
+			output.value = item.derFunc.name + ': y = ' + item.derFunc.func
+			labelA.hidden = true
+			sliderA.hidden = true
+			labelB.hidden = true
+			sliderB.hidden = true
 		} else {
 			console.log('labelsCreator içinde type bulunamadı.')
 		}
-
 		sliderA.min = minX * unitY - 1
 		sliderA.max = (minX + Math.round(canvas.width / scaleY) + 1) * unitY
 		sliderB.max = -minY * unitX + 1
 		sliderB.min = (minY + Math.round(canvas.height / scaleX) + 1) * -unitX
-
 		if (item.type == 'point') {
 			sliderA.value = item.a
 			labelA.innerHTML = 'a = ' + item.a
@@ -975,16 +1129,27 @@ function labelsCreator() {
 			sliderB.max = item.approachVal * 1
 			sliderB.value = verticalMNumberLeft
 			labelB.innerHTML = sliderB.max + '⁻ = ' + verticalMNumberLeft
-
-		} else if (item.type == 'derivative') {
+		} else if (item.type == 'tangent') {
 			let mostLeft = minX * unitY
 			let mostRight = (minX + Math.round(canvas.width / scaleY) + 1) * unitY
-
 			sliderA.min = mostLeft
 			sliderA.max = mostRight
 			sliderA.step = "0.01"
 			sliderA.value = item.approachVal
 			labelA.innerHTML = 'x = ' + item.approachVal
+		} else if (item.type == 'tangentHX') {
+			let mostLeft = minX * unitY
+			let mostRight = (minX + Math.round(canvas.width / scaleY) + 1) * unitY
+			sliderA.min = mostLeft
+			sliderA.max = mostRight
+			sliderA.step = "1"
+			sliderA.value = item.approachVal
+			labelA.innerHTML = 'x₀ = ' + item.approachVal
+			sliderB.step = "0.1"
+			item.haveH ? sliderB.min = 0 : sliderB.min = mostLeft
+			item.haveH ? sliderB.max = 10 : sliderB.max = mostRight
+			sliderB.value = item.h
+			item.haveH ? labelB.innerHTML = 'h = ' + item.h : labelB.innerHTML = 'x = ' + item.h
 		}
 
 		if (item.id != activeElementID) {
@@ -1104,18 +1269,18 @@ function changeActiveElement(id) {
 	document.getElementById(activeElementID + '-labelB').hidden = false
 	document.getElementById(activeElementID + '-sliderB').hidden = false
 
-	if (activeitem.type == 'derivative' || activeitem.type == "verLine" || activeitem.type == 'circle') {
+	if (activeitem.type == 'tangent' || activeitem.type == "verLine" || activeitem.type == 'circle') {
 		document.getElementById(activeElementID + '-labelB').hidden = true
 		document.getElementById(activeElementID + '-sliderB').hidden = true
 	}
-	if (activeitem.type == 'sequence' || activeitem.type == 'lineSegment' || activeitem.type == 'lineWithPoints' || activeitem.type == 'sectionalFunctions' || activeitem.type == 'function' || activeitem.type == 'circlewithpoints' || activeitem.type == 'angle') {
+	if (activeitem.type == 'sequence' || activeitem.type == 'lineSegment' || activeitem.type == 'lineWithPoints' || activeitem.type == 'sectionalFunctions' || activeitem.type == 'function' || activeitem.type == 'circlewithpoints' || activeitem.type == 'angle' || activeitem.type == 'functioncomposition' || activeitem.type == 'derivative') {
 		document.getElementById(activeElementID + '-labelA').hidden = true
 		document.getElementById(activeElementID + '-sliderA').hidden = true
 		document.getElementById(activeElementID + '-labelB').hidden = true
 		document.getElementById(activeElementID + '-sliderB').hidden = true
 	}
 	drawAll()
-}	
+}
 
 function bileskeProcess(funcs) {
 	return funcs.reduceRight((acc, f) => {
@@ -1602,14 +1767,14 @@ function isLimit(str) {
 	}
 }
 
-function isDerivative(str) {
-	const turevRe = /^\s*Türev\s*\(\s*(.+)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*\)\s*$/i
-	const turevMatch = str.match(turevRe)
-	if (turevMatch) {
-		const func = turevMatch[1] // f
-		const approachVal = turevMatch[2] // c
+function isTangent(str) {
+	const tangentRe = /^\s*Teğet\s*\(\s*(.+)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*\)\s*$/i
+	const tangentMatch = str.match(tangentRe)
+	if (tangentMatch) {
+		const func = tangentMatch[1]
+		const approachVal = tangentMatch[2]
 		return {
-			type: "derivative",
+			type: "tangent",
 			status: true,
 			func,
 			approachVal
@@ -1617,6 +1782,84 @@ function isDerivative(str) {
 	} else {
 		return { status: false }
 	}
+}
+
+function isTangentHX(str) {
+	const tangentReH = /^\s*TeğetH\s*\(\s*(.+)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*\)\s*$/i
+	const tangentReX = /^\s*TeğetX\s*\(\s*(.+)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*\)\s*$/i
+	const tangentMatch = str.match(tangentReH) || str.match(tangentReX)
+	if (tangentMatch) {
+		const func = tangentMatch[1]
+		const approachVal = Number(tangentMatch[2])
+		return {
+			type: "tangentHX",
+			status: true,
+			func,
+			approachVal,
+			haveH: str.match(tangentReH) ? true : false
+		}
+	} else {
+		return { status: false }
+	}
+}
+
+function isDerivative(input) {
+	if (typeof input !== 'string') return { status: false }
+
+	// dış boşlukları temizle
+	const str = input.trim()
+
+	// Türev(...) formatı
+	const match = str.match(/^Türev\s*\((.*)\)$/i)
+	if (!match) return { status: false }
+
+	const inner = match[1].trim()
+	if (!inner) return { status: false }
+
+	// 1) Bileşke fonksiyon (en spesifik)
+	if (isFunctionCompositions(inner)) {
+		return {
+			type: "derivative",
+			subType: "composition",
+			expr: inner,
+			status: true
+		}
+	}
+
+	// 2) Analitik fonksiyon
+	const funcCheck = isFunction(inner)
+	if (funcCheck.status) {
+		return {
+			type: "derivative",
+			subType: "function",
+			expr: inner,
+			status: true
+		}
+	}
+
+	// 3) Fonksiyon işlemleri
+	const opCheck = isFunctionOperations(inner)
+	if (opCheck.status) {
+		return {
+			type: "derivative",
+			subType: "functionOperations",
+			functions: opCheck.functions,
+			coefficients: opCheck.coefficients,
+			status: true
+		}
+	}
+
+	// 4) Sembolik tek fonksiyon (f, g, h, f1, g20...)
+	if (/^[fghpqr][0-9]*$/i.test(inner)) {
+		return {
+			type: "derivative",
+			subType: "symbolic",
+			expr: inner,
+			status: true
+		}
+	}
+
+	return { status: false }
 }
 
 function isFunctionOperations(str) {
@@ -2075,21 +2318,68 @@ function girisKeyDown(event) {
 			} else {
 				showToast('GİRİŞ', 'Hatalı giriş yaptınız. Fonksiyon bulunamadı. (girisKeyDown:Limit içinde)')
 			}
-		} else if (isDerivative(str).status) {
-			console.log('Türev(x^2,1)', isDerivative(str))
+		} else if (isTangent(str).status) {
+			console.log('Teğet(x^2,1)', isTangent(str))
 
 			let funcFound = true
 			let names = arrObjects.map((item) => item.name)
-			if (!isDerivative(str).func.includes('x') && !Number.isFinite(Number(isDerivative(str).func))) {
-				if (!names.includes(isDerivative(str).func)) funcFound = false
+			if (!isTangent(str).func.includes('x') && !Number.isFinite(Number(isTangent(str).func))) {
+				if (!names.includes(isTangent(str).func)) funcFound = false
 			}
 			if (funcFound) {
-				if (!isDerivative(str).func.includes('x') && !Number.isFinite(Number(isDerivative(str).func))) {
-					str = str.replaceAll(isDerivative(str).func, arrObjects.find(o => o.name === isDerivative(str).func).func)
+				if (!isTangent(str).func.includes('x') && !Number.isFinite(Number(isTangent(str).func))) {
+					str = str.replaceAll(isTangent(str).func, arrObjects.find(o => o.name === isTangent(str).func).func)
 				}
-				let tur = new mTurev(isDerivative(str).func, isDerivative(str).approachVal)
-				arrObjects.push(tur)
-				activeElementID = tur.id
+				let tng = new mTangent(isTangent(str).func, isTangent(str).approachVal)
+				arrObjects.push(tng)
+				activeElementID = tng.id
+				undoObjects = []
+				delCount = 0
+			} else {
+				showToast('GİRİŞ', 'Hatalı giriş yaptınız. Fonksiyon bulunamadı. (girisKeyDown:Teğet içinde)')
+			}
+
+		} else if (isTangentHX(str).status) {
+			console.log('TeğetH(x^2,1)', isTangentHX(str))
+
+			let funcFound = true
+			let names = arrObjects.map((item) => item.name)
+			if (!isTangentHX(str).func.includes('x') && !Number.isFinite(Number(isTangentHX(str).func))) {
+				if (!names.includes(isTangentHX(str).func)) funcFound = false
+			}
+			if (funcFound) {
+				if (!isTangentHX(str).func.includes('x') && !Number.isFinite(Number(isTangentHX(str).func))) {
+					str = str.replaceAll(isTangentHX(str).func, arrObjects.find(o => o.name === isTangentHX(str).func).func)
+				}
+				let tngHX = new mTangentHX(isTangentHX(str).func, isTangentHX(str).approachVal, isTangentHX(str).haveH)
+				arrObjects.push(tngHX)
+				activeElementID = tngHX.id
+				undoObjects = []
+				delCount = 0
+			} else {
+				showToast('GİRİŞ', 'Hatalı giriş yaptınız. Fonksiyon bulunamadı. (girisKeyDown:TeğetH içinde)')
+			}
+
+		} else if (isDerivative(str).status) {
+			console.log('Türev(x^2)', isDerivative(str))
+
+			let funcFound = true
+			let names = arrObjects.map((item) => item.name)
+			/* 			if (!isDerivative(str).func.includes('x') && !Number.isFinite(Number(isDerivative(str).func))) {
+							if (!names.includes(isDerivative(str).func)) funcFound = false
+						} */
+			if (funcFound) {
+				/* 				if (!isDerivative(str).func.includes('x') && !Number.isFinite(Number(isDerivative(str).func))) {
+									str = str.replaceAll(isDerivative(str).func, arrObjects.find(o => o.name === isDerivative(str).func).func)
+								} */
+
+				let func = new mFunction(isDerivative(str).expr, true)
+				let derFunc = new mFunction(derivative(isDerivative(str).expr).toString(), true)
+				let der = new mDerivative(func, derFunc)
+				func.name = der.name
+				derFunc.name = der.name + "'"
+				arrObjects.push(der)
+				activeElementID = der.id
 				undoObjects = []
 				delCount = 0
 			} else {
@@ -2111,10 +2401,10 @@ function girisKeyDown(event) {
 						str = str.replaceAll(f, arrObjects.find(o => o.name === f).func)
 					}
 				})
-				let cometoBileske = bileskeProcess(isFunctionCompositions(str).functions)
-				let func = new mFunction(cometoBileske)
-				arrObjects.push(func)
-				activeElementID = func.id
+
+				let funcComps = new mFunctionComposions(isFunctionCompositions(str).functions)
+				arrObjects.push(funcComps)
+				activeElementID = funcComps.id
 				undoObjects = []
 				delCount = 0
 			} else {
@@ -2349,10 +2639,40 @@ function crossSlider() {
 					inputOwner.value = owner.name + ': Açı((' + owner.A.a + ',' + owner.A.b + '),(' + owner.B.a + ',' + owner.B.b + '),(' + owner.C.a + ',' + owner.C.b + '))'
 				}
 			}
-		} else if (item.type == 'derivative') {
-			input.value = 'Türev(' + item.func + ',' + sliderA.value + ')'
-			labelA.innerHTML = 'x = ' + sliderA.value
+		} else if (item.type == 'tangent') {
+			input.value = 'Teğet(' + item.func + ',' + sliderA.value + ')'
 			item.approachVal = Number(sliderA.value)
+			output.value = item.name + ': y = ' + item.tngLine.func
+			labelA.innerHTML = 'x = ' + sliderA.value
+		} else if (item.type == 'tangentHX') {
+
+			item.approachVal = Number(sliderA.value)
+			item.h = Number(sliderB.value)
+
+			let A = new mPoint(item.approachVal, math.evaluate(item.func, { x: item.approachVal }), true)
+			let B = item.haveH ? new mPoint(item.approachVal + item.h, math.evaluate(item.func, { x: item.approachVal + item.h }), true) : new mPoint(item.h, math.evaluate(item.func, { x: item.h }), true)
+			item.aodLine = new mLineWithPoints(A, B, true)
+
+			let m = math.evaluate(derivative(item.func), { x: item.approachVal })
+			let c = math.evaluate(item.func, { x: item.approachVal }) - m * item.approachVal
+			item.tngLine = new mLineWithEquation(m, c, true)
+
+			labelA.innerHTML = 'x₀ = ' + item.approachVal
+			item.haveH ? labelB.innerHTML = 'h = ' + item.h : labelB.innerHTML = 'x = ' + item.h
+
+			let tan, eq
+			if (item.aodLine.A.a == item.aodLine.B.a && item.aodLine.A.b == item.aodLine.B.b) {
+				eq = item.name + "'(" + item.approachVal + ")="
+				tan = item.tngLine.m
+			} else {
+				eq = ''
+				tan = tan = createLineEquation(item.aodLine.A, item.aodLine.B).m.toFixed(2)
+			}
+
+			let N = item.haveH ? 'H' : 'X'
+			input.value = 'Teğet' + N + '(' + item.func + ',' + item.approachVal + ')'
+			if (item.haveH) output.value = '[' + item.name + '(' + item.approachVal + '+h) - ' + item.name + '(' + item.approachVal + ')] / h = ' + eq + tan
+			if (!item.haveH) output.value = '[' + item.name + '(' + item.h.toFixed(2) + ') - ' + item.name + '(x₀)] /(' + item.h.toFixed(2) + '-x₀)  = ' + eq + tan
 		} else if (item.type == 'lineWithEquation') {
 			item.m = Number(sliderA.value)
 			item.n = Number(sliderB.value)
@@ -2540,11 +2860,11 @@ function hitObject(mousePos) {
 			} else {
 				canvas.style.cursor = 'default'
 			}
-		}else if (obj.type == 'angle') {
+		} else if (obj.type == 'angle') {
 			let ab = Math.sqrt((obj.B.a - obj.A.a) ** 2 + (obj.B.b - obj.A.b) ** 2)
 			let bc = Math.sqrt((obj.C.a - obj.B.a) ** 2 + (obj.C.b - obj.B.b) ** 2)
 			let ac = Math.sqrt((obj.C.a - obj.A.a) ** 2 + (obj.C.b - obj.A.b) ** 2)
-			let angle = Math.acos((ab**2 + bc**2 - ac**2) / (2 * ab * bc)) * (180 / Math.PI)
+			let angle = Math.acos((ab ** 2 + bc ** 2 - ac ** 2) / (2 * ab * bc)) * (180 / Math.PI)
 			let angleAtMouse = Math.acos(((mousePos.x - obj.B.a) * (obj.A.a - obj.B.a) + (mousePos.y - obj.B.b) * (obj.A.b - obj.B.b)) / (Math.sqrt((mousePos.x - obj.B.a) ** 2 + (mousePos.y - obj.B.b) ** 2) * ab)) * (180 / Math.PI)
 			if (Math.abs(angleAtMouse - angle) < 5) {
 				canvas.style.cursor = 'pointer'
@@ -2717,15 +3037,8 @@ $(document).ready(function () {
 
 		hitObject(getMousePos(evt))
 
-		//let tempPoint = new mPoint(getMousePos(evt).x, getMousePos(evt).y, true)
-		//activeObject !== 'choice' && (canvas.style.cursor = 'none')
-		//if (activeObject === 'point') {
-		//drawAll()
-		//drawPoint(tempPoint, true)
-		//}
 		if (activeObject === 'line') {
 			drawAll()
-			//drawPoint(tempPoint, true)
 			if (lineDrawing) {
 				let lineB = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
 				drawLineWithPoints(new mLineWithPoints(lineA, lineB, true))
@@ -2733,12 +3046,29 @@ $(document).ready(function () {
 		}
 		if (activeObject === 'linesegment') {
 			drawAll()
-			//drawPoint(tempPoint, true)
 			if (lineSegmentDrawing) {
 				let lineSegmentB = new mPoint(getMousePos(evt).x, getMousePos(evt).y, true)
 				drawAll()
-				//drawPoint(lineSegmentB, true)
 				drawLineSegment(new mLineSegment(lineSegmentA, lineSegmentB, true))
+			}
+		}
+		if (activeObject === 'angle') {
+			drawAll()
+			if (!angleDrawing && angleA && !angleB) {
+				let angleB = new mPoint(getMousePos(evt).x, getMousePos(evt).y, true)
+				drawLineSegment(new mLineSegment(angleA, angleB, true))
+			} else if (angleDrawing && angleA && angleB && !angleC) {
+				let angleC = new mPoint(getMousePos(evt).x, getMousePos(evt).y, true)
+				drawAngle(new mAngle(angleA, angleB, angleC, true))
+			}
+		}
+		if (activeObject === 'circle') {
+			drawAll()
+			if (circleDrawing) {
+				let circleB = new mPoint(getMousePos(evt).x, getMousePos(evt).y, true)
+				drawAll()
+				drawLineSegment(new mLineSegment(circleA, circleB, true))
+				drawCircleWithPoints(new mCircleWithPoints(circleA, circleB, true))
 			}
 		}
 	}, false)
@@ -2757,7 +3087,7 @@ $(document).ready(function () {
 				activeElementID = point.id
 				undoObjects = []
 				delCount = 0
-				drawAll()
+				//drawAll()
 				labelsCreator()
 			}
 			if (activeObject === 'line') {
@@ -2808,8 +3138,8 @@ $(document).ready(function () {
 				}
 			}
 			if (activeObject === 'angle') {
-				if (angleDrawing == false) {
-					if (angleA == null) {
+				if (!angleDrawing) {
+					if (!angleA) {
 						angleA = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
 						arrObjects.push(angleA)
 					} else {
@@ -2862,10 +3192,28 @@ $(document).ready(function () {
 				lineSegmentA = lineSegmentB = null
 				arrObjects.pop()
 			}
+			if (circleDrawing == true) {
+				circleDrawing = false
+				circleA = circleB = null
+				arrObjects.pop()
+			}
+
+			if (angleDrawing == true) {
+				angleDrawing = false
+				if (angleA && angleB) {
+					arrObjects.pop()
+					arrObjects.pop()
+				}
+				angleA = angleB = angleC = null
+			} else {
+				if (angleA) {
+					arrObjects.pop()
+				}
+				angleA = null
+			}
 			activeElementID = null
 
 			activeObject = 'choice'
-			//canvas.style.cursor = 'pointer'
 			document.querySelectorAll('.buttonGroup .button').forEach(b => b.classList.remove('active'))
 			document.getElementById('btnChoice').classList.add('active')
 
