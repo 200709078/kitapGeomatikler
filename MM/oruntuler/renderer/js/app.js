@@ -4,12 +4,12 @@ canvas.width = window.innerWidth - canvas.offsetLeft
 canvas.height = window.innerHeight - canvas.offsetTop
 let ctx = canvas.getContext('2d')
 
-document.getElementById('xCenterRange').value = Math.round((canvas.width - canvas.width * .05) / 2)
-document.getElementById('xCenterLabel').innerHTML = 'Merkez (x): ' + Math.round((canvas.width - canvas.width * .05) / 2)
-document.getElementById('yCenterRange').value = Math.round(canvas.height - canvas.height * .8 / 2)
-document.getElementById('yCenterLabel').innerHTML = 'Merkez (y): ' + Math.round(canvas.height - canvas.height * .8 / 2)
-document.getElementById('radius').value = Math.round(canvas.height * 1.15 / 2)
-document.getElementById('radiusLabel').innerHTML = 'Yarıçap: ' + Math.round(canvas.height * 1.15 / 2)
+document.getElementById('xCenterRange').value = Math.round(canvas.width / 2)
+document.getElementById('xCenterLabel').innerHTML = 'Merkez (x): ' + Math.round(canvas.width / 2)
+document.getElementById('yCenterRange').value = Math.round(canvas.height / 2 + 20)
+document.getElementById('yCenterLabel').innerHTML = 'Merkez (y): ' + Math.round(canvas.height / 2 + 20)
+document.getElementById('radius').value = Math.round(canvas.height / 2)
+document.getElementById('radiusLabel').innerHTML = 'Yarıçap: ' + Math.round(canvas.height / 2)
 
 let missing = 'polygonMiddle'
 
@@ -18,6 +18,7 @@ let stepNum = 1
 let ba
 
 let arrPoly = []
+let colors10 = ["#0000EE", "#000000", "#EE0000"]
 class mPoly {
     constructor(xCenter, yCenter, r) {
         this.xCenter = xCenter
@@ -157,20 +158,18 @@ function updateArrayMiddle() {
 
 function drawPolygonCorner() {
     updateArrayCorner()
-    arrPoly.forEach(mp => {
+    arrPoly.forEach((mp, idx) => {
         ctx.beginPath()
         ctx.moveTo(mp.xCenter + mp.r * Math.cos(ba), mp.yCenter + mp.r * Math.sin(ba))
         for (var i = 1; i <= edgeNum; i += 1) {
             ctx.lineTo(mp.xCenter + mp.r * Math.cos(i * 2 * Math.PI / edgeNum + ba), mp.yCenter + mp.r * Math.sin(i * 2 * Math.PI / edgeNum + ba))
         }
-        ctx.strokeStyle = "#0000EE"
+        ctx.strokeStyle = colors10[idx % 3]
         ctx.lineWidth = 2
         ctx.stroke()
         ctx.closePath()
         ctx.beginPath()
         ctx.arc(mp.xCenter, mp.yCenter, 1, 0, 2 * Math.PI)
-        ctx.fillStyle = "#0000EE"
-        ctx.fill()
         ctx.closePath()
     })
     drawPolyCalculates()
@@ -179,7 +178,7 @@ function drawPolygonCorner() {
 function drawPolygonMiddle() {
     updateArrayMiddle()
     let s = 0
-    arrPoly.forEach(mp => {
+    arrPoly.forEach((mp, idx) => {
         s++
         ctx.beginPath()
         if (s % 2 != 0) {
@@ -194,14 +193,12 @@ function drawPolygonMiddle() {
                 ctx.lineTo(mp.xCenter + mp.r * Math.cos(i * 2 * Math.PI / edgeNum + Math.PI / 2), mp.yCenter + mp.r * Math.sin(i * 2 * Math.PI / edgeNum + Math.PI / 2))
             }
         }
-        ctx.strokeStyle = "#0000EE"
+        ctx.strokeStyle = colors10[idx % 3]
         ctx.lineWidth = 2
         ctx.stroke()
         ctx.closePath()
         ctx.beginPath()
         ctx.arc(mp.xCenter, mp.yCenter, 1, 0, 2 * Math.PI)
-        ctx.fillStyle = "#0000EE"
-        ctx.fill()
         ctx.closePath()
     })
     drawPolyCalculates()

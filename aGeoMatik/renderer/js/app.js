@@ -318,7 +318,7 @@ class mSectionalFunctions {
 function derivative(funcStr, variable = "x") {
 	try {
 		const df = math.derivative(funcStr, variable);
-		return df.toString();
+		return df.toString().replaceAll(' ', '');
 	} catch (err) {
 		return "undefined";
 	}
@@ -823,8 +823,8 @@ function drawTangentHX(turHX) {
 
 function drawDerivative(der) {
 	if (!der.visibility) return
-	if (activeElementID == der.id) drawFunction(der.func, true)
 	drawFunction(der.derFunc)
+	if (activeElementID == der.id) drawFunction(der.func.func, true)
 }
 function drawFunctionComposition(funcComp) {
 	if (!funcComp.visibility) return
@@ -1083,7 +1083,8 @@ function labelsCreator() {
 			labelB.hidden = true
 			sliderB.hidden = true
 		} else if (item.type == 'derivative') {
-			input.value = item.func.name + ': y = ' + item.func.func
+			console.log(item)
+			input.value = item.name + ': y = ' + item.func.func.func
 			output.value = item.derFunc.name + ': y = ' + item.derFunc.func
 			labelA.hidden = true
 			sliderA.hidden = true
@@ -1816,49 +1817,62 @@ function isDerivative(input) {
 	const inner = match[1].trim()
 	if (!inner) return { status: false }
 
-	// 1) Bileşke fonksiyon (en spesifik)
-	if (isFunctionCompositions(inner)) {
+	let fu
+	if (isFunction(inner) && !isFunctionCompositions(inner).status && !isFunctionOperations(inner).status) {
+		fu = new mFunction(inner, true)
 		return {
 			type: "derivative",
-			subType: "composition",
-			expr: inner,
+			inner,
+			subType: 'function',
+			func: fu,
 			status: true
 		}
 	}
 
-	// 2) Analitik fonksiyon
-	const funcCheck = isFunction(inner)
-	if (funcCheck.status) {
+	if (isFunctionCompositions(inner).status) {
+		let funcsFound = true
+		let names = arrObjects.map((item) => item.name)
+		isFunctionCompositions(inner).functions.forEach(f => {
+			if (!names.includes(f)) funcsFound = false
+		});
+		if (funcsFound) {
+			let newInner = inner
+			isFunctionCompositions(inner).functions.forEach(f => {
+				if (!f.includes('x') && !Number.isFinite(Number(f))) {
+					newInner = newInner.replaceAll(f, arrObjects.find(o => o.name === f).func)
+				}
+			})
+			fu = new mFunction(bileskeProcess(isFunctionCompositions(newInner).functions), true)
+		} else {
+			showToast('GİRİŞ', 'Hatalı giriş yaptınız. Fonksiyon bulunamadı. (isDerivative:Function Compositions içinde)')
+		}
 		return {
 			type: "derivative",
-			subType: "function",
-			expr: inner,
+			inner,
+			subType: "functioncompositions",
+			func: fu,
 			status: true
 		}
 	}
-
-	// 3) Fonksiyon işlemleri
-	const opCheck = isFunctionOperations(inner)
-	if (opCheck.status) {
+	if (isFunctionOperations(inner)) {
+		const hepsiVarMi = isFunctionOperations(inner).functions.every(name => arrObjects.some(f => f.name === name));
+		if (hepsiVarMi) {
+			let comeWithFuncs = inner
+			isFunctionOperations(inner).functions.forEach(f => {
+				comeWithFuncs = comeWithFuncs.replaceAll(f, '(' + arrObjects.find(o => o.name === f).func + ')')
+			});
+			fu = new mFunction(comeWithFuncs, true)
+		} else {
+			showToast('GİRİŞ', 'Hatalı giriş yaptınız. Fonksiyon bulunamadı. (isDerivative:Function Operations içinde)')
+		}
 		return {
 			type: "derivative",
-			subType: "functionOperations",
-			functions: opCheck.functions,
-			coefficients: opCheck.coefficients,
+			inner,
+			subType: "functionoperations",
+			func: fu,
 			status: true
 		}
 	}
-
-	// 4) Sembolik tek fonksiyon (f, g, h, f1, g20...)
-	if (/^[fghpqr][0-9]*$/i.test(inner)) {
-		return {
-			type: "derivative",
-			subType: "symbolic",
-			expr: inner,
-			status: true
-		}
-	}
-
 	return { status: false }
 }
 
@@ -2362,23 +2376,13 @@ function girisKeyDown(event) {
 
 		} else if (isDerivative(str).status) {
 			console.log('Türev(x^2)', isDerivative(str))
-
-
-			return
-
 			let funcFound = true
 			let names = arrObjects.map((item) => item.name)
-			if (!isDerivative(str).func.includes('x') && !Number.isFinite(Number(isDerivative(str).func))) {
-				if (!names.includes(isDerivative(str).func)) funcFound = false
-			}
 			if (funcFound) {
-				if (!isDerivative(str).func.includes('x') && !Number.isFinite(Number(isDerivative(str).func))) {
-					str = str.replaceAll(isDerivative(str).func, arrObjects.find(o => o.name === isDerivative(str).func).func)
-				}
-
-				let func = new mFunction(isDerivative(str).expr, true)
-				let derFunc = new mFunction(derivative(isDerivative(str).expr).toString(), true)
+				let func = new mFunction(isDerivative(str).func, true)
+				let derFunc = new mFunction(derivative(func.func.func), true)
 				let der = new mDerivative(func, derFunc)
+				func.id = func.func.id = derFunc.id = derFunc.func.id = der.id
 				func.name = der.name
 				derFunc.name = der.name + "'"
 				arrObjects.push(der)
@@ -2391,6 +2395,7 @@ function girisKeyDown(event) {
 
 		} else if (isFunctionCompositions(str).status) {
 			console.log('Bileşke(x^2,2x+1):', isFunctionCompositions(str))
+
 			let funcsFound = true
 			let names = arrObjects.map((item) => item.name)
 			isFunctionCompositions(str).functions.forEach(f => {
