@@ -50,13 +50,17 @@
 				<img src="img/linesegment.svg">
 				<span>Doğru Parçası</span>
 			</button>
-			<button class="button" id="btnCircle" data-action="circle" data-cursor="crosshair"
+			<button class="button" data-action="circle2" data-cursor="crosshair"
 				data-toast="Çember|Merkez nokta ve ardından çember üzerinde bir nokta seçiniz.">
-				<img src="img/circle.svg">
-				<span>Çember</span>
+				<img src="img/circle2.svg">
+				<span>Çember 2</span>
 			</button>
-			<button class="button" id="btnAngle" data-action="angle" data-cursor="crosshair"
-				data-toast="Açı|Üç nokta seçiniz.">
+			<button class="button" data-action="circle3" data-cursor="crosshair"
+				data-toast="Çember|Çember üzerinde üç nokta seçiniz.">
+				<img src="img/circle3.svg">
+				<span>Çember 3</span>
+			</button>
+			<button class="button" data-action="angle" data-cursor="crosshair" data-toast="Açı|Üç nokta seçiniz.">
 				<img src="img/angle.svg">
 				<span>Açı</span>
 			</button>
@@ -194,22 +198,13 @@
 			<div class="help-section">
 				<h3>Giriş Alanı Komutları</h3>
 
-				<h4>Türev</h4>
-				<pre>Türev(Fonksiyon)
-<code class="example">Türev(x^2)</code></pre>
-
-				<h4>Bileşke Fonksiyon</h4>
-				<pre>Bileşke(Fonksiyon,Fonksiyon,...)
-<code class="example">Bileşke(x-1,x^2-2)</code></pre>
-
 				<h4>Nokta</h4>
 				<pre>(apsis, ordinat)
 <code class="example">(-1, 2)</code></pre>
 
 				<h4>Doğru</h4>
 
-				<pre>
-Eğimli Doğru: ax + b
+				<pre>Eğimli Doğru: ax + b
 <code class="example">2x-3</code>
 Dik Doğru: x = c
 <code class="example">x=2</code>
@@ -225,6 +220,8 @@ Doğru(Nokta, Nokta)
 <code class="example">Çember((-1,2),1)</code></pre>
 				<pre>Çember(Nokta, Nokta)
 <code class="example">Çember((-1,1),(0,2))</code></pre>
+				<pre>Çember(Nokta, Nokta,(Nokta))
+<code class="example">Çember((0,0),(0,2),(-2,0))</code></pre>
 
 				<h4>Açı</h4>
 				<pre>Açı(Nokta, Nokta, Nokta)
@@ -249,6 +246,14 @@ Doğru(Nokta, Nokta)
 				<h4>Limit</h4>
 				<pre>Limit(Fonksiyon,Apsis)
 <code class="example">Limit(sin(2x-1),2)</code></pre>
+
+				<h4>Türev</h4>
+				<pre>Türev(Fonksiyon)
+<code class="example">Türev(sin(x+1))</code></pre>
+
+				<h4>Bileşke Fonksiyon</h4>
+				<pre>Bileşke(Fonksiyon,Fonksiyon,...)
+<code class="example">Bileşke(x-1,x^2-2)</code></pre>
 
 				<h4>Teğet</h4>
 				<pre>Teğet(Fonksiyon,Apsis)

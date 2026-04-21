@@ -2,7 +2,33 @@ const sorularSirali_T = [
     {
         soru: '\\( SORU EKLENECEK. \\)',
         tipi: 'cs',
-        puan: 4,
+        puan: 30,
+        secenekler: [
+            { text: '1', correct: false },
+            { text: '2', correct: false },
+            { text: 'SORU EKLENECEK. <span style="color: #ff0008ff;">*</style>', correct: true },
+            { text: '4', correct: false },
+            { text: '5', correct: false }
+        ],
+        aciklama: ['SORU EKLENECEK.', '\\( SORU EKLENECEK. \\)']
+    },
+    {
+        soru: '\\( SORU EKLENECEK. \\)',
+        tipi: 'cs',
+        puan: 30,
+        secenekler: [
+            { text: '1', correct: false },
+            { text: '2', correct: false },
+            { text: 'SORU EKLENECEK. <span style="color: #ff0008ff;">*</style>', correct: true },
+            { text: '4', correct: false },
+            { text: '5', correct: false }
+        ],
+        aciklama: ['SORU EKLENECEK.', '\\( SORU EKLENECEK. \\)']
+    },
+    {
+        soru: '\\( SORU EKLENECEK. \\)',
+        tipi: 'cs',
+        puan: 40,
         secenekler: [
             { text: '1', correct: false },
             { text: '2', correct: false },
@@ -214,10 +240,10 @@ function puanGoster() {
     secenekButtons.innerHTML = null
     if (topPuan > 49) {
         bittiSound.play()
-        soru.innerHTML = "<p style='color:red; font-size:30px; text-align:center;'>TEBRİKLER!</p><p style='color:red; font-size:25px; text-align:center;'>Toplam " + sorular.length + " adet sorudan " + topPuan + " puan aldınız.</p>"
+        soru.innerHTML = "<p style='color:red; font-size:30px; text-align:center;'>TEBRİKLER!</p><p style='color:red; font-size:25px; text-align:center;'>Toplam " + sorular.length + " adet sorudan " + topPuan + " puan aldınız. Yeni konuya geçebilirsiniz.</p>"
     } else {
         kaldiSound.play()
-        soru.innerHTML = "<p style='color:red; font-size:25px; text-align:center;'>Toplam " + sorular.length + " adet sorudan " + topPuan + " puan aldınız.</p>"
+        soru.innerHTML = "<p style='color:red; font-size:25px; text-align:center;'>Toplam " + sorular.length + " adet sorudan " + topPuan + " puan aldınız. Soruların çözümlerini araştırarak tekrar deneyiniz</p>"
     }
     sonrakiButton.innerHTML = "TEKRAR BAŞLAT"
     sonrakiButton.style.display = "block";

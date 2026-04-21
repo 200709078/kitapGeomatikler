@@ -11,7 +11,7 @@ let lineSegmentDrawing = false
 let circleDrawing = false
 let angleDrawing = false
 let lineSegmentA, lineSegmentB
-let circleA, circleB
+let circleA, circleB, circleC
 let angleA, angleB, angleC
 let scaleX = 100
 let scaleY = 100
@@ -55,8 +55,8 @@ class mPoint {
 }
 class mCircle {
 	constructor(A, r, temp = false) {
-		this.type = 'circle'
-		this.name = createName('circle')
+		this.type = 'circler'
+		this.name = createName('circler')
 		temp ? this.id = null : this.id = idCounter()
 		this.A = A
 		this.r = r
@@ -66,13 +66,28 @@ class mCircle {
 		this.temp = temp
 	}
 }
-class mCircleWithPoints {
+class mCircle2 {
 	constructor(A, B, temp = false) {
-		this.type = 'circlewithpoints'
-		this.name = createName('circle')
+		this.type = 'circle2'
+		this.name = createName('circler')
 		temp ? this.id = null : this.id = idCounter()
 		this.A = A
 		this.B = B
+		this.color = getRandomColor()
+		this.visibility = true
+		this.size = 1
+		this.temp = temp
+	}
+}
+
+class mCircle3 {
+	constructor(A, B, C, temp = false) {
+		this.type = 'circle3'
+		this.name = createName('circler')
+		temp ? this.id = null : this.id = idCounter()
+		this.A = A
+		this.B = B
+		this.C = C
 		this.color = getRandomColor()
 		this.visibility = true
 		this.size = 1
@@ -348,7 +363,7 @@ function createName(type) {
 	let newNames
 	if (type == 'point') {
 		newNames = bigNames
-	} else if (type == 'lineSegment' || type == 'sequence' || type == 'circle') {
+	} else if (type == 'lineSegment' || type == 'sequence' || type == 'circler') {
 		newNames = smallNames
 	} else if (type == 'line' || type == 'limit' || type == 'tangent' || type == 'function' || type == 'sectionalFunctions' || type == 'tangent' || type == 'tangentHX' || type == 'derivative' || type == 'functioncomposition') {
 		newNames = lineNames
@@ -465,10 +480,12 @@ function drawAll() {
 			drawFunction(item)
 		} else if (item.type === 'functioncomposition') {
 			drawFunctionComposition(item)
-		} else if (item.type === 'circle') {
+		} else if (item.type === 'circler') {
 			drawCircle(item)
-		} else if (item.type === 'circlewithpoints') {
-			drawCircleWithPoints(item)
+		} else if (item.type === 'circle2') {
+			drawCircle2(item)
+		} else if (item.type === 'circle3') {
+			drawCircle3(item)
 		} else if (item.type === 'angle') {
 			drawAngle(item)
 		} else if (item.type === 'derivative') {
@@ -517,14 +534,44 @@ function drawCircle(circle) {
 	ctx.closePath()
 }
 
-function drawCircleWithPoints(circle) {
+function getCircleRA(circle) {
+	const D = 2 * (
+		circle.A.a * (circle.B.b - circle.C.b) +
+		circle.B.a * (circle.C.b - circle.A.b) +
+		circle.C.a * (circle.A.b - circle.B.b)
+	)
+
+	if (Math.abs(D) < 1e-10) return { status: false }
+
+	const a2 = circle.A.a * circle.A.a + circle.A.b * circle.A.b
+	const b2 = circle.B.a * circle.B.a + circle.B.b * circle.B.b
+	const c2 = circle.C.a * circle.C.a + circle.C.b * circle.C.b
+
+	const ux = (
+		a2 * (circle.B.b - circle.C.b) +
+		b2 * (circle.C.b - circle.A.b) +
+		c2 * (circle.A.b - circle.B.b)
+	) / D
+
+	const uy = (
+		a2 * (circle.C.a - circle.B.a) +
+		b2 * (circle.A.a - circle.C.a) +
+		c2 * (circle.B.a - circle.A.a)
+	) / D
+
+	const r = Math.sqrt((ux - circle.A.a) ** 2 + (uy - circle.A.b) ** 2)
+
+	return {
+		m: ux,
+		n: uy,
+		r: r,
+	}
+}
+
+function drawCircle2(circle) {
 	if (!circle.visibility) return
 
 	let r = math.sqrt(math.pow(circle.B.a - circle.A.a, 2) + math.pow(circle.B.b - circle.A.b, 2)).toFixed(2)
-
-	let sls = new mLineSegment(circle.A, circle.B, true)
-	drawLineSegment(sls)
-
 	let cSize
 	circle.id == activeElementID ? cSize = circle.size + 1 : cSize = circle.size
 	let cColor = circle.color
@@ -534,7 +581,23 @@ function drawCircleWithPoints(circle) {
 	ctx.arc((-minX + circle.A.a / unitY) * scaleY, (-minY - circle.A.b / unitX) * scaleX, r * scaleX, 0, 2 * Math.PI)
 	ctx.lineWidth = cSize
 	if (!circle.temp) text((-minX + circle.A.a / unitY) * scaleY - r * scaleY * 0.75, (-minY - circle.A.b / unitX) * scaleX - r * scaleX * 0.75, cColor, 'center', 'bold 15px arial', circle.name)
-	text((-minX + (circle.A.a + circle.B.a) / 2 / unitY) * scaleY, (-minY - (circle.A.b + circle.B.b) / 2 / unitX) * scaleX, cColor, 'center', 'bold 15px arial', 'r = ' + r)
+	ctx.stroke()
+	ctx.closePath()
+}
+
+function drawCircle3(circle) {
+	if (!circle.visibility) return
+
+	let mr = getCircleRA(circle)
+	let cSize
+	circle.id == activeElementID ? cSize = circle.size + 1 : cSize = circle.size
+	let cColor = circle.color
+	if (circle.temp) cColor = '#000000'
+	ctx.beginPath()
+	ctx.strokeStyle = cColor
+	ctx.arc((-minX + mr.m / unitY) * scaleY, (-minY - mr.n / unitX) * scaleX, mr.r * scaleX, 0, 2 * Math.PI)
+	ctx.lineWidth = cSize
+	if (!circle.temp) text((-minX + mr.m / unitY) * scaleY - mr.r * scaleY * 0.75, (-minY - mr.n / unitX) * scaleX - mr.r * scaleX * 0.75, cColor, 'center', 'bold 15px arial', circle.name)
 	ctx.stroke()
 	ctx.closePath()
 }
@@ -992,16 +1055,22 @@ function labelsCreator() {
 			labelB.hidden = true
 			sliderB.hidden = true
 			input.value = item.name + ": x = " + item.x
-		} else if (item.type == 'circle') {
+		} else if (item.type == 'circler') {
 			labelB.hidden = true
 			sliderB.hidden = true
 			input.value = item.name + ': Çember((' + item.A.a + ',' + item.A.b + '),' + item.r + ')'
-		} else if (item.type == 'circlewithpoints') {
+		} else if (item.type == 'circle2') {
 			labelA.hidden = true
 			sliderA.hidden = true
 			labelB.hidden = true
 			sliderB.hidden = true
 			input.value = item.name + ': Çember((' + item.A.a + ',' + item.A.b + '),(' + item.B.a + ',' + item.B.b + '))'
+		} else if (item.type == 'circle3') {
+			labelA.hidden = true
+			sliderA.hidden = true
+			labelB.hidden = true
+			sliderB.hidden = true
+			input.value = item.name + ': Çember((' + item.A.a + ',' + item.A.b + '),(' + item.B.a + ',' + item.B.b + '),(' + item.C.a + ',' + item.C.b + '))'
 		} else if (item.type == 'angle') {
 			labelA.hidden = true
 			sliderA.hidden = true
@@ -1083,7 +1152,6 @@ function labelsCreator() {
 			labelB.hidden = true
 			sliderB.hidden = true
 		} else if (item.type == 'derivative') {
-			console.log(item)
 			input.value = item.name + ': y = ' + item.func.func.func
 			output.value = item.derFunc.name + ': y = ' + item.derFunc.func
 			labelA.hidden = true
@@ -1105,7 +1173,7 @@ function labelsCreator() {
 		} else if (item.type == 'verLine') {
 			sliderA.value = item.x
 			labelA.innerHTML = 'x = ' + item.x
-		} else if (item.type == 'circle') {
+		} else if (item.type == 'circler') {
 			sliderA.min = 0
 			sliderA.max = (minX + Math.round(canvas.width / scaleY) + 1) * unitY
 			sliderA.value = item.r
@@ -1198,8 +1266,11 @@ document.querySelector('.buttonGroup').addEventListener('click', e => {
 		case 'linesegment':
 			activeObject = 'linesegment'
 			break
-		case 'circle':
-			activeObject = 'circle'
+		case 'circle2':
+			activeObject = 'circle2'
+			break
+		case 'circle3':
+			activeObject = 'circle3'
 			break
 		case 'angle':
 			activeObject = 'angle'
@@ -1270,11 +1341,11 @@ function changeActiveElement(id) {
 	document.getElementById(activeElementID + '-labelB').hidden = false
 	document.getElementById(activeElementID + '-sliderB').hidden = false
 
-	if (activeitem.type == 'tangent' || activeitem.type == "verLine" || activeitem.type == 'circle') {
+	if (activeitem.type == 'tangent' || activeitem.type == "verLine" || activeitem.type == 'circler') {
 		document.getElementById(activeElementID + '-labelB').hidden = true
 		document.getElementById(activeElementID + '-sliderB').hidden = true
 	}
-	if (activeitem.type == 'sequence' || activeitem.type == 'lineSegment' || activeitem.type == 'lineWithPoints' || activeitem.type == 'sectionalFunctions' || activeitem.type == 'function' || activeitem.type == 'circlewithpoints' || activeitem.type == 'angle' || activeitem.type == 'functioncomposition' || activeitem.type == 'derivative') {
+	if (activeitem.type == 'sequence' || activeitem.type == 'lineSegment' || activeitem.type == 'lineWithPoints' || activeitem.type == 'sectionalFunctions' || activeitem.type == 'function' || activeitem.type == 'circle2' || activeitem.type == 'circle3' || activeitem.type == 'angle' || activeitem.type == 'functioncomposition' || activeitem.type == 'derivative') {
 		document.getElementById(activeElementID + '-labelA').hidden = true
 		document.getElementById(activeElementID + '-sliderA').hidden = true
 		document.getElementById(activeElementID + '-labelB').hidden = true
@@ -2094,7 +2165,7 @@ function isCircle(input) {
 	if (!isFinite(r) || r < 0) return { status: false }
 
 	return {
-		type: "circle",
+		type: "circler",
 		a: point.a,
 		b: point.b,
 		r: r,
@@ -2102,7 +2173,7 @@ function isCircle(input) {
 	}
 }
 
-function isCircleWithPoints(input) {
+function isCircle2(input) {
 	if (typeof input !== 'string') return { status: false }
 
 	const str = input.replace(/\s+/g, '')
@@ -2147,12 +2218,77 @@ function isCircleWithPoints(input) {
 	if (!isFinite(r) || r < 0) return { status: false }
 
 	return {
-		type: "circleWithPoints",
+		type: "circle2",
 		m: center.a,
 		n: center.b,
 		a: point.a,
 		b: point.b,
 		r: r,
+		status: true
+	}
+}
+
+function isCircle3(input) {
+	if (typeof input !== 'string') return { status: false }
+
+	const str = input.replace(/\s+/g, '')
+
+	const match = str.match(/^Çember\((.*)\)$/i)
+	if (!match) return { status: false }
+
+	const inner = match[1]
+
+	// depth ile virgülleri bul
+	let depth = 0
+	let splits = []
+
+	for (let i = 0; i < inner.length; i++) {
+		if (inner[i] === '(') depth++
+		else if (inner[i] === ')') depth--
+		else if (inner[i] === ',' && depth === 0) {
+			splits.push(i)
+		}
+	}
+
+	// tam 2 virgül olmalı
+	if (splits.length !== 2) return { status: false }
+
+	const p1Str = inner.slice(0, splits[0])
+	const p2Str = inner.slice(splits[0] + 1, splits[1])
+	const p3Str = inner.slice(splits[1] + 1)
+
+	// noktaları parse et
+	const p1 = isPoint(p1Str)
+	const p2 = isPoint(p2Str)
+	const p3 = isPoint(p3Str)
+
+	if (!p1.status || !p2.status || !p3.status) return { status: false }
+
+	// aynı noktalar olamaz
+	if (
+		(p1.a === p2.a && p1.b === p2.b) ||
+		(p1.a === p3.a && p1.b === p3.b) ||
+		(p2.a === p3.a && p2.b === p3.b)
+	) {
+		return { status: false }
+	}
+
+	// COLLINEAR KONTROLÜ (alan = 0)
+	const area =
+		p1.a * (p2.b - p3.b) +
+		p2.a * (p3.b - p1.b) +
+		p3.a * (p1.b - p2.b)
+
+	if (Math.abs(area) < 1e-10) return { status: false }
+
+	return {
+		type: "circle3",
+		ax: p1.a,
+		ay: p1.b,
+		bx: p2.a,
+		by: p2.b,
+		cx: p3.a,
+		cy: p3.b,
 		status: true
 	}
 }
@@ -2225,6 +2361,7 @@ function girisKeyDown(event) {
 		let str = event.target.value
 		if (isPoint(str).status) {
 			console.log('Nokta:', isPoint(str))
+
 			let pt = new mPoint(isPoint(str).a, isPoint(str).b)
 			arrObjects.push(pt)
 			activeElementID = pt.id
@@ -2232,6 +2369,7 @@ function girisKeyDown(event) {
 			delCount = 0
 		} else if (isCircle(str).status) {
 			console.log('Çember((a,b),r):', isCircle(str))
+
 			let m = new mPoint(isCircle(str).a, isCircle(str).b)
 			arrObjects.push(m)
 			let c = new mCircle(m, isCircle(str).r)
@@ -2239,13 +2377,27 @@ function girisKeyDown(event) {
 			activeElementID = c.id
 			undoObjects = []
 			delCount = 0
-		} else if (isCircleWithPoints(str).status) {
-			console.log('Çember((a,b),r):', isCircle(str))
-			let A = new mPoint(isCircleWithPoints(str).m, isCircleWithPoints(str).n)
+		} else if (isCircle2(str).status) {
+			console.log('Çember((m,n),(a,b)):', isCircle2(str))
+
+			let A = new mPoint(isCircle2(str).m, isCircle2(str).n)
 			arrObjects.push(A)
-			let B = new mPoint(isCircleWithPoints(str).a, isCircleWithPoints(str).b)
+			let B = new mPoint(isCircle2(str).a, isCircle2(str).b)
 			arrObjects.push(B)
-			let c = new mCircleWithPoints(A, B)
+			let c = new mCircle2(A, B)
+			arrObjects.push(c)
+			activeElementID = c.id
+			undoObjects = []
+			delCount = 0
+		} else if (isCircle3(str).status) {
+			console.log('Çember((a,b),(c,d),(e,f)):', isCircle3(str))
+			let A = new mPoint(isCircle3(str).ax, isCircle3(str).ay)
+			arrObjects.push(A)
+			let B = new mPoint(isCircle3(str).bx, isCircle3(str).by)
+			arrObjects.push(B)
+			let C = new mPoint(isCircle3(str).cx, isCircle3(str).cy)
+			arrObjects.push(C)
+			let c = new mCircle3(A, B, C)
 			arrObjects.push(c)
 			activeElementID = c.id
 			undoObjects = []
@@ -2314,6 +2466,7 @@ function girisKeyDown(event) {
 			delCount = 0
 		} else if (isLimit(str).status) {
 			console.log('Limit(x^2,1)', isLimit(str))
+
 			let funcFound = true
 			let names = arrObjects.map((item) => item.name)
 
@@ -2376,6 +2529,7 @@ function girisKeyDown(event) {
 
 		} else if (isDerivative(str).status) {
 			console.log('Türev(x^2)', isDerivative(str))
+
 			let funcFound = true
 			let names = arrObjects.map((item) => item.name)
 			if (funcFound) {
@@ -2420,6 +2574,7 @@ function girisKeyDown(event) {
 			}
 		} else if (isFunctionOperations(str).status) {
 			console.log('3f+2g, f-4g, 2f*g, f/3g :', isFunctionOperations(str))
+
 			const hepsiVarMi = isFunctionOperations(str).functions.every(name => arrObjects.some(f => f.name === name));
 			if (hepsiVarMi) {
 				let comeWithFuncs = str
@@ -2444,6 +2599,7 @@ function girisKeyDown(event) {
 			delCount = 0
 		} else if (isSectionalFunctions(str).status) {
 			console.log('2x,x<0; x^3, x>=0', isSectionalFunctions(str))
+
 			let allFuncsDrawable = true
 			if (allFuncsDrawable) {
 				let secFuncs = []
@@ -2622,8 +2778,15 @@ function crossSlider() {
 			labelB.innerHTML = 'b = ' + sliderB.value
 			item.b = Number(sliderB.value)
 			input.value = item.name + '(' + item.a + ',' + item.b + ')'
-			let owner = arrObjects.find(obj => (obj.type === "lineSegment" || obj.type === "lineWithPoints" || obj.type === "circle" || obj.type == 'circle' || obj.type == 'circlewithpoints' || obj.type == 'angle') && (obj.A.name === item.name || obj.B.name === item.name || obj.C.name === item.name));
-			if (owner) {
+
+
+			let ownerS = arrObjects.filter(obj => {
+				const validTypes = ['lineSegment', 'lineWithPoints', 'circle', 'circle2', 'circle3', 'angle'];
+				if (!validTypes.includes(obj.type)) return false;
+				return ["A", "B", "C"].some(key => obj[key]?.name === item.name);
+			});
+
+			ownerS.forEach(owner => {
 				if (owner.A.name === item.name) {
 					owner.A.a = item.a
 					owner.A.b = item.b
@@ -2639,21 +2802,22 @@ function crossSlider() {
 					inputOwner.value = owner.name + ': Doğru((' + owner.A.a + ',' + owner.A.b + '),(' + owner.B.a + ',' + owner.B.b + '))'
 				} else if (owner.type === 'lineSegment') {
 					inputOwner.value = owner.name + ': DoğruParçası((' + owner.A.a + ',' + owner.A.b + '),(' + owner.B.a + ',' + owner.B.b + '))'
-				} else if (owner.type === 'circle') {
+				} else if (owner.type === 'circler') {
 					inputOwner.value = owner.name + ': Çember((' + owner.A.a + ',' + owner.A.b + '),' + owner.r + ')'
-				} else if (owner.type === 'circlewithpoints') {
+				} else if (owner.type === 'circle2') {
 					inputOwner.value = owner.name + ': Çember((' + owner.A.a + ',' + owner.A.b + '),(' + owner.B.a + ',' + owner.B.b + '))'
+				} else if (owner.type === 'circle3') {
+					inputOwner.value = owner.name + ': Çember((' + owner.A.a + ',' + owner.A.b + '),(' + owner.B.a + ',' + owner.B.b + '),(' + owner.C.a + ',' + owner.C.b + '))'
 				} else if (owner.type === 'angle') {
 					inputOwner.value = owner.name + ': Açı((' + owner.A.a + ',' + owner.A.b + '),(' + owner.B.a + ',' + owner.B.b + '),(' + owner.C.a + ',' + owner.C.b + '))'
 				}
-			}
+			});
 		} else if (item.type == 'tangent') {
 			input.value = 'Teğet(' + item.func + ',' + sliderA.value + ')'
 			item.approachVal = Number(sliderA.value)
 			output.value = item.name + ': y = ' + item.tngLine.func
 			labelA.innerHTML = 'x = ' + sliderA.value
 		} else if (item.type == 'tangentHX') {
-
 			item.approachVal = Number(sliderA.value)
 			item.h = Number(sliderB.value)
 
@@ -2691,7 +2855,7 @@ function crossSlider() {
 			item.x = Number(sliderA.value)
 			labelA.innerHTML = 'x = ' + item.x
 			input.value = item.name + ': x = ' + item.x
-		} else if (item.type == 'circle') {
+		} else if (item.type == 'circler') {
 			item.r = Number(sliderA.value)
 			labelA.innerHTML = 'r = ' + item.r
 			input.value = item.name + ': Çember((' + item.A.a + ',' + item.A.b + '),' + item.r + ')'
@@ -2858,8 +3022,8 @@ function hitObject(mousePos) {
 			} else {
 				canvas.style.cursor = 'default'
 			}
-		} else if (obj.type == 'circle' || obj.type == 'circlewithpoints') {
-			let r = obj.type == 'circle' ? obj.r : Math.sqrt((obj.B.a - obj.A.a) ** 2 + (obj.B.b - obj.A.b) ** 2)
+		} else if (obj.type == 'circler' || obj.type == 'circle2') {
+			let r = obj.type == 'circler' ? obj.r : Math.sqrt((obj.B.a - obj.A.a) ** 2 + (obj.B.b - obj.A.b) ** 2)
 			let distance = Math.sqrt((mousePos.x - obj.A.a) ** 2 + (mousePos.y - obj.A.b) ** 2)
 			if (Math.abs(distance - r) < .1) {
 				canvas.style.cursor = 'pointer'
@@ -3070,42 +3234,56 @@ $(document).ready(function () {
 				drawAngle(new mAngle(angleA, angleB, angleC, true))
 			}
 		}
-		if (activeObject === 'circle') {
+		if (activeObject === 'circle2') {
 			drawAll()
 			if (circleDrawing) {
 				let circleB = new mPoint(getMousePos(evt).x, getMousePos(evt).y, true)
 				drawAll()
-				drawLineSegment(new mLineSegment(circleA, circleB, true))
-				drawCircleWithPoints(new mCircleWithPoints(circleA, circleB, true))
+				//drawLineSegment(new mLineSegment(circleA, circleB, true))
+				drawCircle2(new mCircle2(circleA, circleB, true))
+			}
+		}
+		if (activeObject === 'circle3') {
+			drawAll()
+			if (!circleDrawing && circleA && !circleB) {
+				let circleB = new mPoint(getMousePos(evt).x, getMousePos(evt).y, true)
+				//drawLineSegment(new mLineSegment(circleA, circleB, true))
+			} else if (circleDrawing && circleA && circleB && !circleC) {
+				let circleC = new mPoint(getMousePos(evt).x, getMousePos(evt).y, true)
+				drawCircle3(new mAngle(circleA, circleB, circleC, true))
 			}
 		}
 	}, false)
 
 	canvas.addEventListener("mousedown", function (evt) {
+		let hit = hitObject(getMousePos(evt))
+		let hitType = ''
+		if (hit) hitType = hit.type
 		if (evt.button == 0) {
 			if (activeObject == 'choice') {
 				canvas.style.cursor = 'grabbing'
 				firstMousePos = getMousePos(evt)
 				findPointPos = getMousePos(evt)
 			}
-			if (activeObject === 'point') {
+			if (activeObject === 'point' && hitType != 'point') {
 				let mousePos = getMousePos(evt)
 				let point = new mPoint(mousePos.x, mousePos.y)
 				arrObjects.push(point)
 				activeElementID = point.id
 				undoObjects = []
 				delCount = 0
-				//drawAll()
 				labelsCreator()
 			}
 			if (activeObject === 'line') {
 				if (lineDrawing == false) {
-					lineA = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
-					arrObjects.push(lineA)
+					lineA
+					hitType == 'point' ? lineA = hit : lineA = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
+					if (!hit) arrObjects.push(lineA)
 					lineDrawing = true
 				} else {
-					lineB = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
-					arrObjects.push(lineB)
+					lineB
+					hitType == 'point' ? lineB = hit : lineB = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
+					if (!hit) arrObjects.push(lineB)
 					let lwp = new mLineWithPoints(lineA, lineB)
 					arrObjects.push(lwp)
 					activeElementID = lwp.id
@@ -3116,12 +3294,14 @@ $(document).ready(function () {
 
 			if (activeObject === 'linesegment') {
 				if (lineSegmentDrawing == false) {
-					lineSegmentA = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
-					arrObjects.push(lineSegmentA)
+					lineSegmentA
+					hitType == 'point' ? lineSegmentA = hit : lineSegmentA = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
+					if (!hit) arrObjects.push(lineSegmentA)
 					lineSegmentDrawing = true
 				} else {
-					lineSegmentB = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
-					arrObjects.push(lineSegmentB)
+					lineSegmentB
+					hitType == 'point' ? lineSegmentB = hit : lineSegmentB = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
+					if (!hit) arrObjects.push(lineSegmentB)
 					let ls = new mLineSegment(lineSegmentA, lineSegmentB)
 					arrObjects.push(ls)
 					activeElementID = ls.id
@@ -3130,34 +3310,62 @@ $(document).ready(function () {
 				}
 			}
 
-			if (activeObject === 'circle') {
+			if (activeObject === 'circle2') {
 				if (circleDrawing == false) {
-					circleA = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
-					arrObjects.push(circleA)
+					circleA
+					hitType == 'point' ? circleA = hit : circleA = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
+					if (!hit) arrObjects.push(circleA)
 					circleDrawing = true
 				} else {
-					circleB = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
-					arrObjects.push(circleB)
-					let c = new mCircleWithPoints(circleA, circleB)
-					arrObjects.push(c)
-					activeElementID = c.id
+					circleB
+					hitType == 'point' ? circleB = hit : circleB = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
+					if (!hit) arrObjects.push(circleB)
+					let c2 = new mCircle2(circleA, circleB)
+					arrObjects.push(c2)
+					activeElementID = c2.id
 					circleDrawing = false
 					circleA = circleB = null
+				}
+			}
+			if (activeObject === 'circle3') {
+				if (!circleDrawing) {
+					if (!circleA) {
+						circleA
+						hitType == 'point' ? circleA = hit : circleA = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
+						if (!hit) arrObjects.push(circleA)
+					} else {
+						circleB
+						hitType == 'point' ? circleB = hit : circleB = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
+						if (!hit) arrObjects.push(circleB)
+						circleDrawing = true
+					}
+				} else {
+					circleC
+					hitType == 'point' ? circleC = hit : circleC = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
+					if (!hit) arrObjects.push(circleC)
+					let c3 = new mCircle3(circleA, circleB, circleC)
+					arrObjects.push(c3)
+					activeElementID = c3.id
+					circleDrawing = false
+					circleA = circleB = circleC = null
 				}
 			}
 			if (activeObject === 'angle') {
 				if (!angleDrawing) {
 					if (!angleA) {
-						angleA = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
-						arrObjects.push(angleA)
+						angleA
+						hitType == 'point' ? angleA = hit : angleA = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
+						if (!hit) arrObjects.push(angleA)
 					} else {
-						angleB = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
-						arrObjects.push(angleB)
+						angleB
+						hitType == 'point' ? angleB = hit : angleB = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
+						if (!hit) arrObjects.push(angleB)
 						angleDrawing = true
 					}
 				} else {
-					angleC = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
-					arrObjects.push(angleC)
+					angleC
+					hitType == 'point' ? angleC = hit : angleC = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
+					if (!hit) arrObjects.push(angleC)
 					let a = new mAngle(angleA, angleB, angleC)
 					arrObjects.push(a)
 					activeElementID = a.id
@@ -3166,7 +3374,7 @@ $(document).ready(function () {
 				}
 			}
 
-			if (hitObject(getMousePos(evt)) != null) {
+			if (hit) {
 				let obj = hitObject(getMousePos(evt))
 				activeElementID = obj.id
 				drawAll()
