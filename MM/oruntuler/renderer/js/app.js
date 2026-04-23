@@ -18,7 +18,7 @@ let stepNum = 1
 let ba
 
 let arrPoly = []
-let colors10 = ["#0000EE", "#000000", "#EE0000"]
+let colors3 = ["#0000EE", "#000000", "#EE0000"]
 class mPoly {
     constructor(xCenter, yCenter, r) {
         this.xCenter = xCenter
@@ -134,17 +134,6 @@ function drawSierCalculates() {
     ctx.closePath
 }
 
-function updateArrayCorner() {
-    ba = (Math.PI - 2 * Math.PI / edgeNum) / 2
-    arrPoly = []
-    let mp = new mPoly(Number(document.getElementById('xCenterRange').value), Number(document.getElementById('yCenterRange').value), Number(document.getElementById('radius').value))
-    arrPoly.push(mp)
-    for (let s = 0; s < stepNum - 1; s++) {
-        mp = new mPoly(arrPoly[s].xCenter - arrPoly[s].r * Math.cos(ba) / 2, arrPoly[s].yCenter + arrPoly[s].r * Math.sin(ba) / 2, arrPoly[s].r / 2)
-        arrPoly.push(mp)
-    }
-}
-
 function updateArrayMiddle() {
     ba = (Math.PI - 2 * Math.PI / edgeNum) / 2
     arrPoly = []
@@ -157,22 +146,46 @@ function updateArrayMiddle() {
 }
 
 function drawPolygonCorner() {
-    updateArrayCorner()
-    arrPoly.forEach((mp, idx) => {
+    ctx.fillStyle = 'white'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+    let r = 650
+    let x = 400
+    let y = 20
+
+    ctx.beginPath()
+    ctx.rect(x, y, r, r)
+    ctx.strokeStyle = colors3[0]
+    ctx.lineWidth = 1
+    ctx.setLineDash([])
+    ctx.stroke()
+    ctx.closePath()
+
+    for (let i = 1; i < stepNum; i++) {
+        let half = r / 2
+        let paintX = x
+        let paintY = y + half
+
         ctx.beginPath()
-        ctx.moveTo(mp.xCenter + mp.r * Math.cos(ba), mp.yCenter + mp.r * Math.sin(ba))
-        for (var i = 1; i <= edgeNum; i += 1) {
-            ctx.lineTo(mp.xCenter + mp.r * Math.cos(i * 2 * Math.PI / edgeNum + ba), mp.yCenter + mp.r * Math.sin(i * 2 * Math.PI / edgeNum + ba))
-        }
-        ctx.strokeStyle = colors10[idx % 3]
-        ctx.lineWidth = 2
+        ctx.rect(paintX, paintY, half, half)
+        ctx.fillStyle = 'orange'
+        ctx.fill()
+        ctx.strokeStyle = colors3[i % 3]
         ctx.stroke()
         ctx.closePath()
-        ctx.beginPath()
-        ctx.arc(mp.xCenter, mp.yCenter, 1, 0, 2 * Math.PI)
+
+        ctx.beginPath
+        ctx.strokeStyle = colors3[i % 3]
+        ctx.moveTo(x + half, y)
+        ctx.lineTo(x + half, y + half)
+        ctx.lineTo(x + 2 * half, y + half)
+        ctx.stroke()
         ctx.closePath()
-    })
-    drawPolyCalculates()
+
+        x = x + half
+        r = half
+
+    }
 }
 
 function drawPolygonMiddle() {
@@ -193,8 +206,8 @@ function drawPolygonMiddle() {
                 ctx.lineTo(mp.xCenter + mp.r * Math.cos(i * 2 * Math.PI / edgeNum + Math.PI / 2), mp.yCenter + mp.r * Math.sin(i * 2 * Math.PI / edgeNum + Math.PI / 2))
             }
         }
-        ctx.strokeStyle = colors10[idx % 3]
-        ctx.lineWidth = 2
+        ctx.strokeStyle = colors3[idx % 3]
+        ctx.lineWidth = 1
         ctx.stroke()
         ctx.closePath()
         ctx.beginPath()
@@ -344,19 +357,18 @@ radioPolyCorner.addEventListener('change', e => {
     document.getElementById('stepNumLabel').innerHTML = 'Adım Sayısı: 1'
     document.getElementById('stepNum').value = stepNum = 1
     document.getElementById('stepNum').max = 10
-    document.getElementById('edgeNumLabel').style.display = 'block'
-    document.getElementById('edgeNum').style.display = 'block'
-    document.getElementById('radiusLabel').style.display = 'block'
-    document.getElementById('radius').style.display = 'block'
-    document.getElementById('xCenterLabel').style.display = 'block'
-    document.getElementById('xCenterRange').style.display = 'block'
-    document.getElementById('yCenterLabel').style.display = 'block'
-    document.getElementById('yCenterRange').style.display = 'block'
+    document.getElementById('edgeNumLabel').style.display = 'none'
+    document.getElementById('edgeNum').style.display = 'none'
+    document.getElementById('radiusLabel').style.display = 'none'
+    document.getElementById('radius').style.display = 'none'
+    document.getElementById('xCenterLabel').style.display = 'none'
+    document.getElementById('xCenterRange').style.display = 'none'
+    document.getElementById('yCenterLabel').style.display = 'none'
+    document.getElementById('yCenterRange').style.display = 'none'
 
     missing = 'polygonCorner'
     ctx.strokeStyle = ctx.fillStyle = 'white'
     ctx.fillRect(0, 0, canvas.width, canvas.height)
-    updateArrayCorner()
     drawPolygonCorner()
 })
 
@@ -422,18 +434,17 @@ if (checkedType == "polygonMiddle") {
     document.getElementById('stepNumLabel').innerHTML = 'Adım Sayısı: 1'
     document.getElementById('stepNum').value = stepNum = 1
     document.getElementById('stepNum').max = 10
-    document.getElementById('edgeNumLabel').style.display = 'block'
-    document.getElementById('edgeNum').style.display = 'block'
-    document.getElementById('radiusLabel').style.display = 'block'
-    document.getElementById('radius').style.display = 'block'
-    document.getElementById('xCenterLabel').style.display = 'block'
-    document.getElementById('xCenterRange').style.display = 'block'
-    document.getElementById('yCenterLabel').style.display = 'block'
-    document.getElementById('yCenterRange').style.display = 'block'
+    document.getElementById('edgeNumLabel').style.display = 'none'
+    document.getElementById('edgeNum').style.display = 'none'
+    document.getElementById('radiusLabel').style.display = 'none'
+    document.getElementById('radius').style.display = 'none'
+    document.getElementById('xCenterLabel').style.display = 'none'
+    document.getElementById('xCenterRange').style.display = 'none'
+    document.getElementById('yCenterLabel').style.display = 'none'
+    document.getElementById('yCenterRange').style.display = 'none'
     missing = 'polygonCorner'
     ctx.strokeStyle = ctx.fillStyle = 'white'
     ctx.fillRect(0, 0, canvas.width, canvas.height)
-    updateArrayCorner()
     drawPolygonCorner()
 } else if (checkedType == "sierpinski") {
     document.getElementById("sierpinski").checked = true
