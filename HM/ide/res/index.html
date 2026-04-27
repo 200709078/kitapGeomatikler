@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="tr" lang="tr">
+
+<head>
+    <title>IDE - GEOMATİK</title>
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" />
+    <meta name="description" content="..." />
+    <meta name="keywords" content="Graph, functions, axis, javascript, canvas, ide" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="..." />
+    <link rel="shortcut icon" href="img/favicon.svg" />
+    <link rel="stylesheet" href="css/style.css" />
+
+<!--     <link rel="stylesheet" href="https://pyscript.net/alpha/pyscript.css" />
+    <script defer src="https://pyscript.net/alpha/pyscript.js"></script> -->
+
+    <link rel="stylesheet" href="https://pyscript.net/releases/2023.03.1/pyscript.css" />
+    <script defer src="https://pyscript.net/releases/2023.03.1/pyscript.js"></script>
+
+</head>
+
+<body>
+    <div class="header">PROGRAM GELİŞTİRME ORTAMI
+        <h6 class="subtitle">Kodu çalıştırmak için SHIFT+ENTER tuşlarını veya kod bloğunun sonundaki yeşil oku kullanabilirsiniz.</h6>
+    </div>
+<div class="editor" id="editor">
+<div>
+<py-repl output="terminal" auto-generate="true">
+def dogruDenklemi(x, katsayi, sabit):
+    y=katsayi*x+sabit
+    return y
+
+hiz=60 #Aracın hızı
+zaman=2 #Aracın yol aldığı süre
+baslangic_konumu=10 #Aracın başlangıç konumu
+
+#Aracın 2 saat sonraki konumunu hesaplama
+son_konumu=dogruDenklemi(zaman,hiz,baslangic_konumu)
+
+print(f'Başlangıç konumu {baslangic_konumu} km olan bir araç {hiz} km/sa. sabit hızla yol alırsa {zaman} saat sonra {son_konumu} km uzaklıkta olacaktır.')
+</py-repl>
+</div>
+</div>
+<div id="terminal"></div>
+
+<!--     <div class="terminalWrapper">
+        <div>
+            <div class="output" id="term"></div>
+        </div>
+    </div>-->
+<script src="js/app.js"></script> 
+</body>
+
+</html>
