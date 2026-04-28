@@ -16,11 +16,17 @@ export class LineSegment {
     this.mesh.castShadow = true
     this.mesh.receiveShadow = true
 
-    this.startPoint.userData.lineSegments ??= []
-    this.endPoint.userData.lineSegments ??= []
+    /*     this.startPoint.userData.lineSegments ??= []
+        this.endPoint.userData.lineSegments ??= []
+    
+        this.startPoint.userData.lineSegments.push(this)
+        this.endPoint.userData.lineSegments.push(this) */
 
-    this.startPoint.userData.lineSegments.push(this)
-    this.endPoint.userData.lineSegments.push(this)
+    this.startPoint.userData.dependents ??= []
+    this.endPoint.userData.dependents ??= []
+
+    this.startPoint.userData.dependents.push(this)
+    this.endPoint.userData.dependents.push(this)
 
     this.update()
   }

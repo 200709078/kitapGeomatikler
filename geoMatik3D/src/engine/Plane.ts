@@ -10,4 +10,5 @@ export function createPlane(scene: THREE.Scene) {
   plane.receiveShadow = true
 
   scene.add(plane)
+  return plane
 }

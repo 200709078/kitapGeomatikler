@@ -9,28 +9,38 @@ export class ToolManager {
     }
 
     this.activeTool = tool
-
-    if (this.activeTool) {
-      this.activeTool.activate()
-    }
+    this.activeTool.activate()
   }
 
   onMouseMove(event: MouseEvent) {
-    this.activeTool?.onMouseMove(event)
+    if (!this.activeTool) return
+    this.activeTool.onMouseMove(event)
   }
 
   onClick(event: MouseEvent) {
-    this.activeTool?.onClick(event)
+    if (!this.activeTool) return
+    this.activeTool.onClick(event)
   }
 
   onMouseDown(event: MouseEvent) {
-    this.activeTool?.onMouseDown?.(event)
+    if (!this.activeTool) return
+    this.activeTool.onMouseDown(event)
   }
 
   onMouseUp(event: MouseEvent) {
-    this.activeTool?.onMouseUp?.(event)
+    if (!this.activeTool) return
+    this.activeTool.onMouseUp(event)
   }
+
   onKeyDown(event: KeyboardEvent) {
-    this.activeTool?.onKeyDown(event)
+    if (!this.activeTool) return
+    this.activeTool.onKeyDown(event)
   }
+
+
+  onWheel(event: WheelEvent) {
+    if (!this.activeTool) return
+    this.activeTool.onWheel(event)
+  }
+
 }

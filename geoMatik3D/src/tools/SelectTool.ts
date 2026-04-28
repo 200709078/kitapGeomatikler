@@ -10,6 +10,7 @@ export class SelectTool extends BaseTool {
     isDragging = false
 
     controls: any
+
     constructor(
         scene: THREE.Scene,
         camera: THREE.PerspectiveCamera,
@@ -19,17 +20,23 @@ export class SelectTool extends BaseTool {
         this.controls = controls
     }
 
-
     setSelectableObjects(objects: THREE.Object3D[]) {
         this.selectableObjects = objects
     }
+
     getMousePositionOnPlane(event: MouseEvent) {
         this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1
         this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
 
         this.raycaster.setFromCamera(this.mouse, this.camera)
 
-        const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
+        const dragY = this.selectedObject ? this.selectedObject.position.y : 0
+
+        const plane = new THREE.Plane(
+            new THREE.Vector3(0, 1, 0),
+            -dragY
+        )
+
         const point = new THREE.Vector3()
 
         this.raycaster.ray.intersectPlane(plane, point)
@@ -63,6 +70,7 @@ export class SelectTool extends BaseTool {
             })
         }
     }
+
     onMouseDown(event: MouseEvent) {
         this.onClick(event)
 
@@ -78,34 +86,32 @@ export class SelectTool extends BaseTool {
     onMouseMove(event: MouseEvent) {
         if (!this.isDragging || !this.selectedObject) return
 
+        if (this.selectedObject.userData.lockMouseDrag) return
+
         event.preventDefault()
         event.stopPropagation()
 
         const pos = this.getMousePositionOnPlane(event)
         this.selectedObject.position.copy(pos)
 
-        const lineSegments = this.selectedObject.userData.lineSegments
-        if (lineSegments) {
-            lineSegments.forEach((lineSegment: any) => {
-                lineSegment.update()
-            })
-        }
-
-        const rays = this.selectedObject.userData.rays
-        if (rays) {
-            rays.forEach((ray: any) => {
-                ray.update()
-            })
-        }
-
-        const angles = this.selectedObject.userData.angles
-
-        if (angles) {
-            angles.forEach((angle: any) => {
-                angle.update()
-            })
-        }
+        this.syncPrismPairY(this.selectedObject)
+        this.updateDependents(this.selectedObject)
     }
+
+
+
+    /*  onMouseMove(event: MouseEvent) {
+         if (!this.isDragging || !this.selectedObject) return
+ 
+         event.preventDefault()
+         event.stopPropagation()
+ 
+         const pos = this.getMousePositionOnPlane(event)
+         this.selectedObject.position.copy(pos)
+ 
+         this.syncPrismPairY(this.selectedObject)
+         this.updateDependents(this.selectedObject)
+     } */
 
     onMouseUp(event: MouseEvent) {
         if (this.isDragging) {
@@ -117,4 +123,69 @@ export class SelectTool extends BaseTool {
         this.controls.enabled = true
     }
 
+    onWheel(event: WheelEvent) {
+        if (!event.shiftKey) return
+        if (!this.selectedObject) return
+
+        event.preventDefault()
+        event.stopPropagation()
+
+        const delta = event.deltaY < 0 ? 0.25 : -0.25
+
+        const normalWheelController =
+            this.selectedObject.userData.normalWheelController
+
+        if (normalWheelController) {
+            normalWheelController.moveAlongNormal(delta)
+            return
+        }
+
+        this.controls.enabled = false
+
+        this.selectedObject.position.y += delta
+
+        this.syncPrismPairY(this.selectedObject)
+        this.updateDependents(this.selectedObject)
+
+        this.controls.enabled = true
+    }
+
+
+
+    /*    onWheel(event: WheelEvent) {
+           if (!event.shiftKey) return
+           if (!this.selectedObject) return
+   
+           event.preventDefault()
+           event.stopPropagation()
+   
+           this.controls.enabled = false
+   
+           const delta = event.deltaY < 0 ? 0.25 : -0.25
+           this.selectedObject.position.y += delta
+   
+           this.syncPrismPairY(this.selectedObject)
+           this.updateDependents(this.selectedObject)
+   
+           this.controls.enabled = true
+       } */
+
+    syncPrismPairY(object: THREE.Object3D) {
+        const prismPair = object.userData.prismPair as THREE.Object3D | undefined
+
+        if (!prismPair) return
+
+        prismPair.position.y = object.position.y
+        this.updateDependents(prismPair)
+    }
+
+    updateDependents(object: THREE.Object3D) {
+        const dependents = object.userData.dependents
+
+        if (!dependents) return
+
+        dependents.forEach((dependent: any) => {
+            dependent.update()
+        })
+    }
 }

@@ -6,6 +6,6 @@ export function createPoint(position: THREE.Vector3) {
 
   const mesh = new THREE.Mesh(geo, mat)
   mesh.position.copy(position)
-
+  
   return mesh
 }

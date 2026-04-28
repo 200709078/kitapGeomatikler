@@ -18,12 +18,17 @@ export class RayObject {
         this.mesh.castShadow = true
         this.mesh.receiveShadow = true
 
-        this.startPoint.userData.rays ??= []
-        this.directionPoint.userData.rays ??= []
+        /*         this.startPoint.userData.rays ??= []
+                this.directionPoint.userData.rays ??= []
+        
+                this.startPoint.userData.rays.push(this)
+                this.directionPoint.userData.rays.push(this) */
 
-        this.startPoint.userData.rays.push(this)
-        this.directionPoint.userData.rays.push(this)
+        this.startPoint.userData.dependents ??= []
+        this.directionPoint.userData.dependents ??= []
 
+        this.startPoint.userData.dependents.push(this)
+        this.directionPoint.userData.dependents.push(this)
         this.update()
     }
 

@@ -12,6 +12,9 @@ export class BaseTool {
     onMouseDown(_event: MouseEvent) { }
     onMouseUp(_event: MouseEvent) { }
     onKeyDown(_event: KeyboardEvent) { }
+
+    onWheel(_event: WheelEvent) {}
+
     reset() { }
     activate() { }
     deactivate() { }

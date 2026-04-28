@@ -2,7 +2,7 @@ import * as THREE from "three"
 import { BaseTool } from "./BaseTool"
 import { getMouseIntersection } from "../interaction/Raycaster"
 import { createPoint } from "../objects/Point"
-import { RayObject } from "../objects/RayObject"
+import { RayObject } from "../objects/Ray"
 
 export class RayTool extends BaseTool {
     startPoint: THREE.Vector3 | null = null
