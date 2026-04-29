@@ -23,14 +23,6 @@ export class Plane {
 
         this.mesh = new THREE.Mesh(geometry, material)
 
-        /*         this.pointA.userData.planes ??= []
-                this.pointB.userData.planes ??= []
-                this.pointC.userData.planes ??= []
-        
-                this.pointA.userData.planes.push(this)
-                this.pointB.userData.planes.push(this)
-                this.pointC.userData.planes.push(this) */
-
         this.pointA.userData.dependents ??= []
         this.pointB.userData.dependents ??= []
         this.pointC.userData.dependents ??= []

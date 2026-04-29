@@ -29,13 +29,6 @@ export function createToolbar(onToolSelect: (toolName: ToolName) => void) {
 
       const toolName = button.dataset.tool as ToolName
       onToolSelect(toolName)
-
-      if (toolName === "select") {
-        document.body.style.cursor = "default"
-      } else {
-        document.body.style.cursor = "crosshair"
-      }
-
     })
   })
 

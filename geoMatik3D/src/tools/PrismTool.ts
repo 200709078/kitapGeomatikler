@@ -4,6 +4,7 @@ import { getMouseIntersection } from "../interaction/Raycaster"
 import { createPoint } from "../objects/Point"
 import { LineSegment } from "../objects/LineSegment"
 import { Prism } from "../objects/Prism"
+import { getNearestSelectablePoint, updatePointHoverCursor } from "../interaction/getNearestSelectablePoint"
 
 export class PrismTool extends BaseTool {
   selectableObjects: THREE.Object3D[]
@@ -55,6 +56,27 @@ export class PrismTool extends BaseTool {
     })
   }
 
+  private getOrCreatePoint(event: MouseEvent) {
+    const existingPoint = getNearestSelectablePoint(
+      event,
+      this.camera,
+      this.selectableObjects,
+      0.35
+    )
+
+    if (existingPoint) {
+      return existingPoint
+    }
+
+    const pos = this.cursorPreview.position.clone()
+    const point = createPoint(pos)
+
+    this.scene.add(point)
+    this.selectableObjects.push(point)
+
+    return point
+  }
+
   setSideCount(n: number) {
     console.log("slider:", n)
     this.sideCount = n
@@ -100,6 +122,13 @@ export class PrismTool extends BaseTool {
   }
 
   onMouseMove(event: MouseEvent) {
+
+    updatePointHoverCursor(
+      event,
+      this.camera,
+      this.selectableObjects
+    )
+
     const pos = getMouseIntersection(event, this.camera)
 
     this.cursorPreview.position.copy(pos)
@@ -116,30 +145,22 @@ export class PrismTool extends BaseTool {
     this.updatePrismPreview(A, B)
   }
 
-  onClick(_event: MouseEvent) {
-    const pos = this.cursorPreview.position.clone()
+  onClick(event: MouseEvent) {
+    const point = this.getOrCreatePoint(event)
 
     if (!this.pointA) {
-      const pointA = createPoint(pos)
-      this.scene.add(pointA)
-      this.selectableObjects.push(pointA)
-
-      this.pointA = pointA
+      this.pointA = point
       return
     }
 
-    const pointB = createPoint(pos)
-    this.scene.add(pointB)
-    this.selectableObjects.push(pointB)
-
-    const edge = new LineSegment(this.pointA, pointB)
+    const edge = new LineSegment(this.pointA, point)
     this.scene.add(edge.mesh)
 
     this.lastPrism = new Prism(
       this.scene,
       this.selectableObjects,
       this.pointA,
-      pointB,
+      point,
       this.sideCount
     )
 
@@ -363,295 +384,3 @@ export class PrismTool extends BaseTool {
       .add(center)
   }
 }
-
-
-/* import * as THREE from "three"
-import { BaseTool } from "./BaseTool"
-import { getMouseIntersection } from "../interaction/Raycaster"
-import { createPoint } from "../objects/Point"
-import { LineSegment } from "../objects/LineSegment"
-import { Prism } from "../objects/Prism"
-
-export class PrismTool extends BaseTool {
-  selectableObjects: THREE.Object3D[]
-  sideCount = 4
-
-  pointA: THREE.Mesh | null = null
-
-  cursorPreview: THREE.Mesh
-  edgePreview: THREE.Line | null = null
-
-  constructor(
-    scene: THREE.Scene,
-    camera: THREE.PerspectiveCamera,
-    selectableObjects: THREE.Object3D[]
-  ) {
-    super(scene, camera)
-    this.selectableObjects = selectableObjects
-
-    const geo = new THREE.SphereGeometry(0.1, 16, 16)
-    const mat = new THREE.MeshBasicMaterial({ color: 0xff0000 })
-
-    this.cursorPreview = new THREE.Mesh(geo, mat)
-  }
-
-  setSideCount(n: number) {
-    this.sideCount = n
-  }
-
-  activate() {
-    this.cursorPreview.visible = false
-
-    if (!this.cursorPreview.parent) {
-      this.scene.add(this.cursorPreview)
-    }
-  }
-
-  deactivate() {
-    this.reset()
-
-    if (this.cursorPreview.parent) {
-      this.scene.remove(this.cursorPreview)
-    }
-  }
-
-  reset() {
-    if (this.edgePreview) {
-      this.scene.remove(this.edgePreview)
-      this.edgePreview.geometry.dispose()
-      this.edgePreview = null
-    }
-
-    this.pointA = null
-    this.cursorPreview.visible = false
-  }
-
-  onMouseMove(event: MouseEvent) {
-    const pos = getMouseIntersection(event, this.camera)
-
-    this.cursorPreview.position.copy(pos)
-    this.cursorPreview.visible = true
-
-    if (!this.pointA) return
-
-    const pointAPos = this.pointA.position.clone()
-    const pointBPos = pos.clone()
-
-    if (pointAPos.distanceTo(pointBPos) < 0.001) return
-
-    this.updateEdgePreview(pointAPos, pointBPos)
-  }
-
-  onClick(_event: MouseEvent) {
-    const pos = this.cursorPreview.position.clone()
-
-    if (!this.pointA) {
-      const pointA = createPoint(pos)
-      this.scene.add(pointA)
-      this.selectableObjects.push(pointA)
-
-      this.pointA = pointA
-      return
-    }
-
-    const pointB = createPoint(pos)
-    this.scene.add(pointB)
-    this.selectableObjects.push(pointB)
-
-    const edge = new LineSegment(this.pointA, pointB)
-    this.scene.add(edge.mesh)
-
-    new Prism(
-      this.scene,
-      this.selectableObjects,
-      this.pointA,
-      pointB,
-      this.sideCount
-    )
-
-    this.reset()
-  }
-
-  private updateEdgePreview(pointA: THREE.Vector3, pointB: THREE.Vector3) {
-    if (this.edgePreview) {
-      this.scene.remove(this.edgePreview)
-      this.edgePreview.geometry.dispose()
-      this.edgePreview = null
-    }
-
-    const geometry = new THREE.BufferGeometry().setFromPoints([pointA, pointB])
-    const material = new THREE.LineBasicMaterial({ color: 0xff0000 })
-
-    this.edgePreview = new THREE.Line(geometry, material)
-    this.scene.add(this.edgePreview)
-  }
-}
-
-
-/* import * as THREE from "three"
-import { BaseTool } from "./BaseTool"
-import { getMouseIntersection } from "../interaction/Raycaster"
-import { createPoint } from "../objects/Point"
-import { LineSegment } from "../objects/LineSegment"
-import { Prism } from "../objects/Prism"
-
-export class PrismTool extends BaseTool {
-  selectableObjects: THREE.Object3D[]
-  sideCount = 5
-
-  pointA: THREE.Mesh | null = null
-
-  cursorPreview: THREE.Mesh
-  edgePreview: THREE.Line | null = null
-  prismPreview: THREE.Mesh | null = null
-
-  constructor(
-    scene: THREE.Scene,
-    camera: THREE.PerspectiveCamera,
-    selectableObjects: THREE.Object3D[]
-  ) {
-    super(scene, camera)
-    this.selectableObjects = selectableObjects
-
-    const geo = new THREE.SphereGeometry(0.1, 16, 16)
-    const mat = new THREE.MeshBasicMaterial({ color: 0xff0000 })
-
-    this.cursorPreview = new THREE.Mesh(geo, mat)
-  }
-
-  activate() {
-    this.cursorPreview.visible = false
-
-    if (!this.cursorPreview.parent) {
-      this.scene.add(this.cursorPreview)
-    }
-  }
-
-  deactivate() {
-    this.reset()
-
-    if (this.cursorPreview.parent) {
-      this.scene.remove(this.cursorPreview)
-    }
-  }
-
-  reset() {
-    if (this.edgePreview) {
-      this.scene.remove(this.edgePreview)
-      this.edgePreview.geometry.dispose()
-      this.edgePreview = null
-    }
-
-    if (this.prismPreview) {
-      this.scene.remove(this.prismPreview)
-      this.prismPreview.geometry.dispose()
-      this.prismPreview = null
-    }
-
-    this.pointA = null
-    this.cursorPreview.visible = false
-  }
-
-  onMouseMove(event: MouseEvent) {
-    const pos = getMouseIntersection(event, this.camera)
-
-    this.cursorPreview.position.copy(pos)
-    this.cursorPreview.visible = true
-
-    if (!this.pointA) return
-
-    const pointAPos = this.pointA.position.clone()
-    const pointBPos = pos.clone()
-
-    const sideLength = pointAPos.distanceTo(pointBPos)
-
-    if (sideLength < 0.001) return
-
-    this.updateEdgePreview(pointAPos, pointBPos)
-    this.updatePrismPreview(pointAPos, pointBPos, sideLength)
-  }
-
-  onClick(_event: MouseEvent) {
-    const pos = this.cursorPreview.position.clone()
-
-    if (!this.pointA) {
-      const pointA = createPoint(pos)
-      this.scene.add(pointA)
-      this.selectableObjects.push(pointA)
-
-      this.pointA = pointA
-      return
-    }
-
-    const pointB = createPoint(pos)
-    this.scene.add(pointB)
-    this.selectableObjects.push(pointB)
-
-    const edge = new LineSegment(this.pointA, pointB)
-    this.scene.add(edge.mesh)
-
-    const sideLength = this.pointA.position.distanceTo(pointB.position)
-    const height = sideLength
-
-    const prism = new Prism(
-      this.pointA,
-      pointB,
-      this.sideCount,
-      height
-    )
-
-    this.scene.add(prism.mesh)
-    this.reset()
-  }
-
-  private updateEdgePreview(pointA: THREE.Vector3, pointB: THREE.Vector3) {
-    if (this.edgePreview) {
-      this.scene.remove(this.edgePreview)
-      this.edgePreview.geometry.dispose()
-      this.edgePreview = null
-    }
-
-    const geometry = new THREE.BufferGeometry().setFromPoints([pointA, pointB])
-    const material = new THREE.LineBasicMaterial({ color: 0xff0000 })
-
-    this.edgePreview = new THREE.Line(geometry, material)
-    this.scene.add(this.edgePreview)
-  }
-
-  private updatePrismPreview(
-    pointA: THREE.Vector3,
-    pointB: THREE.Vector3,
-    sideLength: number
-  ) {
-    if (this.prismPreview) {
-      this.scene.remove(this.prismPreview)
-      this.prismPreview.geometry.dispose()
-      this.prismPreview = null
-    }
-
-    const height = sideLength
-
-    const tempA = new THREE.Mesh()
-    tempA.position.copy(pointA)
-
-    const tempB = new THREE.Mesh()
-    tempB.position.copy(pointB)
-
-    const previewPrism = new Prism(
-      tempA,
-      tempB,
-      this.sideCount,
-      height
-    )
-
-    previewPrism.mesh.material = new THREE.MeshStandardMaterial({
-      color: 0xd2a679,
-      transparent: true,
-      opacity: 0.35,
-      side: THREE.DoubleSide,
-    })
-
-    this.prismPreview = previewPrism.mesh
-    this.scene.add(this.prismPreview)
-  }
-} */

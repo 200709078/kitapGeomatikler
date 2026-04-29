@@ -16,12 +16,7 @@ export class LineSegment {
     this.mesh.castShadow = true
     this.mesh.receiveShadow = true
 
-    /*     this.startPoint.userData.lineSegments ??= []
-        this.endPoint.userData.lineSegments ??= []
-    
-        this.startPoint.userData.lineSegments.push(this)
-        this.endPoint.userData.lineSegments.push(this) */
-
+    // dependents bağla
     this.startPoint.userData.dependents ??= []
     this.endPoint.userData.dependents ??= []
 
@@ -38,14 +33,16 @@ export class LineSegment {
     const direction = new THREE.Vector3().subVectors(end, start)
     const length = direction.length()
 
+    if (length < 0.0001) return
+
     const midpoint = new THREE.Vector3()
       .addVectors(start, end)
       .multiplyScalar(0.5)
 
+    // pozisyon
     this.mesh.position.copy(midpoint)
 
-    this.mesh.scale.set(1, length, 1)
-
+    // ROTASYON
     const quaternion = new THREE.Quaternion()
     quaternion.setFromUnitVectors(
       new THREE.Vector3(0, 1, 0),
@@ -53,5 +50,9 @@ export class LineSegment {
     )
 
     this.mesh.quaternion.copy(quaternion)
+
+    // SCALE (önce sıfırla sonra ver → önemli)
+    this.mesh.scale.set(1, 1, 1)
+    this.mesh.scale.set(1, length, 1)
   }
 }

@@ -19,13 +19,6 @@ export class SphereObject {
     this.mesh = new THREE.Mesh(geometry, material)
     this.mesh.castShadow = true
     this.mesh.receiveShadow = true
-
-    /*     this.centerPoint.userData.spheres ??= []
-        this.surfacePoint.userData.spheres ??= []
-    
-        this.centerPoint.userData.spheres.push(this)
-        this.surfacePoint.userData.spheres.push(this) */
-
     this.centerPoint.userData.dependents ??= []
     this.surfacePoint.userData.dependents ??= []
 

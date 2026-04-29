@@ -1,5 +1,6 @@
 import * as THREE from "three"
 import { BaseTool } from "./BaseTool"
+import { updatePointHoverCursor } from "../interaction/getNearestSelectablePoint"
 
 export class SelectTool extends BaseTool {
     raycaster = new THREE.Raycaster()
@@ -8,7 +9,6 @@ export class SelectTool extends BaseTool {
     selectedObject: THREE.Object3D | null = null
     originalMaterial: THREE.Material | THREE.Material[] | null = null
     isDragging = false
-
     controls: any
 
     constructor(
@@ -84,6 +84,14 @@ export class SelectTool extends BaseTool {
     }
 
     onMouseMove(event: MouseEvent) {
+
+        updatePointHoverCursor(
+            event,
+            this.camera,
+            this.selectableObjects,
+        )
+
+
         if (!this.isDragging || !this.selectedObject) return
 
         if (this.selectedObject.userData.lockMouseDrag) return
@@ -98,21 +106,6 @@ export class SelectTool extends BaseTool {
         this.updateDependents(this.selectedObject)
     }
 
-
-
-    /*  onMouseMove(event: MouseEvent) {
-         if (!this.isDragging || !this.selectedObject) return
- 
-         event.preventDefault()
-         event.stopPropagation()
- 
-         const pos = this.getMousePositionOnPlane(event)
-         this.selectedObject.position.copy(pos)
- 
-         this.syncPrismPairY(this.selectedObject)
-         this.updateDependents(this.selectedObject)
-     } */
-
     onMouseUp(event: MouseEvent) {
         if (this.isDragging) {
             event.preventDefault()
@@ -126,6 +119,8 @@ export class SelectTool extends BaseTool {
     onWheel(event: WheelEvent) {
         if (!event.shiftKey) return
         if (!this.selectedObject) return
+
+        if (this.selectedObject.userData.lockWheel) return
 
         event.preventDefault()
         event.stopPropagation()
@@ -149,26 +144,6 @@ export class SelectTool extends BaseTool {
 
         this.controls.enabled = true
     }
-
-
-
-    /*    onWheel(event: WheelEvent) {
-           if (!event.shiftKey) return
-           if (!this.selectedObject) return
-   
-           event.preventDefault()
-           event.stopPropagation()
-   
-           this.controls.enabled = false
-   
-           const delta = event.deltaY < 0 ? 0.25 : -0.25
-           this.selectedObject.position.y += delta
-   
-           this.syncPrismPairY(this.selectedObject)
-           this.updateDependents(this.selectedObject)
-   
-           this.controls.enabled = true
-       } */
 
     syncPrismPairY(object: THREE.Object3D) {
         const prismPair = object.userData.prismPair as THREE.Object3D | undefined

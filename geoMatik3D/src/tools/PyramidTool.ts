@@ -4,6 +4,7 @@ import { getMouseIntersection } from "../interaction/Raycaster"
 import { createPoint } from "../objects/Point"
 import { LineSegment } from "../objects/LineSegment"
 import { Pyramid } from "../objects/Pyramid"
+import { getNearestSelectablePoint, updatePointHoverCursor } from "../interaction/getNearestSelectablePoint"
 
 export class PyramidTool extends BaseTool {
   selectableObjects: THREE.Object3D[]
@@ -14,6 +15,13 @@ export class PyramidTool extends BaseTool {
   cursorPreview: THREE.Mesh
   edgePreview: THREE.Line | null = null
   pyramidPreview: THREE.Mesh | null = null
+  previewSideLines: THREE.LineSegments | null = null
+
+  lastPyramid: Pyramid | null = null
+
+  sliderContainer: HTMLElement | null = null
+  sideSlider: HTMLInputElement | null = null
+  sideValue: HTMLSpanElement | null = null
 
   constructor(
     scene: THREE.Scene,
@@ -21,12 +29,60 @@ export class PyramidTool extends BaseTool {
     selectableObjects: THREE.Object3D[]
   ) {
     super(scene, camera)
+
     this.selectableObjects = selectableObjects
 
-    const geo = new THREE.SphereGeometry(0.1, 16, 16)
-    const mat = new THREE.MeshBasicMaterial({ color: 0xff0000 })
+    this.cursorPreview = new THREE.Mesh(
+      new THREE.SphereGeometry(0.1, 16, 16),
+      new THREE.MeshBasicMaterial({ color: 0xff0000 })
+    )
 
-    this.cursorPreview = new THREE.Mesh(geo, mat)
+    this.sliderContainer = document.getElementById("prismSideControl")
+    this.sideSlider = document.getElementById("prismSideSlider") as HTMLInputElement
+    this.sideValue = document.getElementById("prismSideValue") as HTMLSpanElement
+
+    this.sideSlider?.addEventListener("input", () => {
+      const value = parseInt(this.sideSlider!.value)
+
+      this.sideCount = value
+
+      if (this.sideValue) {
+        this.sideValue.textContent = value.toString()
+      }
+
+      if (this.lastPyramid) {
+        this.lastPyramid.setSideCount(value)
+      }
+    })
+  }
+
+  setSideCount(n: number) {
+    this.sideCount = n
+
+    if (this.lastPyramid) {
+      this.lastPyramid.setSideCount(n)
+    }
+  }
+
+  private getOrCreatePoint(event: MouseEvent) {
+    const existingPoint = getNearestSelectablePoint(
+      event,
+      this.camera,
+      this.selectableObjects,
+      0.35
+    )
+
+    if (existingPoint) {
+      return existingPoint
+    }
+
+    const pos = this.cursorPreview.position.clone()
+    const point = createPoint(pos)
+
+    this.scene.add(point)
+    this.selectableObjects.push(point)
+
+    return point
   }
 
   activate() {
@@ -35,6 +91,10 @@ export class PyramidTool extends BaseTool {
     if (!this.cursorPreview.parent) {
       this.scene.add(this.cursorPreview)
     }
+
+    if (this.sliderContainer) {
+      this.sliderContainer.style.display = "block"
+    }
   }
 
   deactivate() {
@@ -42,6 +102,10 @@ export class PyramidTool extends BaseTool {
 
     if (this.cursorPreview.parent) {
       this.scene.remove(this.cursorPreview)
+    }
+
+    if (this.sliderContainer) {
+      this.sliderContainer.style.display = "none"
     }
   }
 
@@ -58,11 +122,24 @@ export class PyramidTool extends BaseTool {
       this.pyramidPreview = null
     }
 
+    if (this.previewSideLines) {
+      this.scene.remove(this.previewSideLines)
+      this.previewSideLines.geometry.dispose()
+      this.previewSideLines = null
+    }
+
     this.pointA = null
     this.cursorPreview.visible = false
   }
 
   onMouseMove(event: MouseEvent) {
+
+    updatePointHoverCursor(
+      event,
+      this.camera,
+      this.selectableObjects
+    )
+
     const pos = getMouseIntersection(event, this.camera)
 
     this.cursorPreview.position.copy(pos)
@@ -70,99 +147,280 @@ export class PyramidTool extends BaseTool {
 
     if (!this.pointA) return
 
-    const pointAPos = this.pointA.position.clone()
-    const pointBPos = pos.clone()
+    const A = this.pointA.position.clone()
+    const B = pos.clone()
 
-    const sideLength = pointAPos.distanceTo(pointBPos)
+    if (A.distanceTo(B) < 0.001) return
 
-    if (sideLength < 0.001) return
-
-    this.updateEdgePreview(pointAPos, pointBPos)
-    this.updatePyramidPreview(pointAPos, pointBPos, sideLength)
+    this.updateEdgePreview(A, B)
+    this.updatePyramidPreview(A, B)
   }
 
-  onClick(_event: MouseEvent) {
-    const pos = this.cursorPreview.position.clone()
+  onClick(event: MouseEvent) {
+    const point = this.getOrCreatePoint(event)
 
     if (!this.pointA) {
-      const pointA = createPoint(pos)
-      this.scene.add(pointA)
-      this.selectableObjects.push(pointA)
-
-      this.pointA = pointA
+      this.pointA = point
       return
     }
 
-    const pointB = createPoint(pos)
-    this.scene.add(pointB)
-    this.selectableObjects.push(pointB)
-
-    const edge = new LineSegment(this.pointA, pointB)
+    const edge = new LineSegment(this.pointA, point)
     this.scene.add(edge.mesh)
 
-    const sideLength = this.pointA.position.distanceTo(pointB.position)
-    const height = sideLength
-
-    const pyramid = new Pyramid(
+    this.lastPyramid = new Pyramid(
+      this.scene,
+      this.selectableObjects,
       this.pointA,
-      pointB,
-      this.sideCount,
-      height
+      point,
+      this.sideCount
     )
-
-    this.scene.add(pyramid.mesh)
 
     this.reset()
   }
 
-  private updateEdgePreview(pointA: THREE.Vector3, pointB: THREE.Vector3) {
+  private updateEdgePreview(A: THREE.Vector3, B: THREE.Vector3) {
     if (this.edgePreview) {
       this.scene.remove(this.edgePreview)
       this.edgePreview.geometry.dispose()
       this.edgePreview = null
     }
 
-    const geometry = new THREE.BufferGeometry().setFromPoints([pointA, pointB])
+    const geometry = new THREE.BufferGeometry().setFromPoints([A, B])
     const material = new THREE.LineBasicMaterial({ color: 0xff0000 })
 
     this.edgePreview = new THREE.Line(geometry, material)
     this.scene.add(this.edgePreview)
   }
 
-  private updatePyramidPreview(
-    pointA: THREE.Vector3,
-    pointB: THREE.Vector3,
-    sideLength: number
-  ) {
-    if (this.pyramidPreview) {
-      this.scene.remove(this.pyramidPreview)
+  private updatePyramidPreview(A: THREE.Vector3, B: THREE.Vector3) {
+    const preview = this.createPreviewGeometry(A, B)
+
+    if (!preview) return
+
+    if (!this.pyramidPreview) {
+      const material = new THREE.MeshStandardMaterial({
+        color: 0xd2a679,
+        transparent: true,
+        opacity: 0.35,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      })
+
+      this.pyramidPreview = new THREE.Mesh(preview.meshGeometry, material)
+      this.scene.add(this.pyramidPreview)
+    } else {
       this.pyramidPreview.geometry.dispose()
-      this.pyramidPreview = null
+      this.pyramidPreview.geometry = preview.meshGeometry
     }
 
-    const height = sideLength
+    if (!this.previewSideLines) {
+      const material = new THREE.LineBasicMaterial({ color: 0x000000 })
+      this.previewSideLines = new THREE.LineSegments(
+        preview.lineGeometry,
+        material
+      )
+      this.scene.add(this.previewSideLines)
+    } else {
+      this.previewSideLines.geometry.dispose()
+      this.previewSideLines.geometry = preview.lineGeometry
+    }
+  }
 
-    const tempA = new THREE.Mesh()
-    tempA.position.copy(pointA)
+  private createPreviewGeometry(A: THREE.Vector3, B: THREE.Vector3) {
+    const C = this.createInitialC(A, B)
+    const baseVertices = this.createPolygonVertices(A, B, C)
 
-    const tempB = new THREE.Mesh()
-    tempB.position.copy(pointB)
+    if (baseVertices.length < 3) return null
 
-    const previewPyramid = new Pyramid(
-      tempA,
-      tempB,
-      this.sideCount,
-      height
+    const normal = this.getBaseNormal(A, B, C)
+    if (!normal) return null
+
+    normal.multiplyScalar(-1)
+
+    const height = A.distanceTo(B)
+    const center = this.getPolygonCenter(baseVertices)
+    const apex = center.clone().add(normal.multiplyScalar(height))
+
+    return {
+      meshGeometry: this.buildMeshGeometry(baseVertices, apex),
+      lineGeometry: this.buildLineGeometry(baseVertices, apex),
+    }
+  }
+
+  private createInitialC(A: THREE.Vector3, B: THREE.Vector3) {
+    const AB = new THREE.Vector3().subVectors(B, A)
+    const length = AB.length()
+
+    const mid = new THREE.Vector3()
+      .addVectors(A, B)
+      .multiplyScalar(0.5)
+
+    const ABxz = new THREE.Vector3(AB.x, 0, AB.z)
+
+    if (ABxz.length() < 0.0001) {
+      return mid.clone().add(new THREE.Vector3(1, 0, 0))
+    }
+
+    ABxz.normalize()
+
+    const perpendicular = new THREE.Vector3(
+      -ABxz.z,
+      0,
+      ABxz.x
     )
 
-    previewPyramid.mesh.material = new THREE.MeshStandardMaterial({
-      color: 0xc084fc,
-      transparent: true,
-      opacity: 0.35,
-      side: THREE.DoubleSide,
-    })
+    return mid.add(perpendicular.multiplyScalar(length))
+  }
 
-    this.pyramidPreview = previewPyramid.mesh
-    this.scene.add(this.pyramidPreview)
+  private createPolygonVertices(
+    A: THREE.Vector3,
+    B: THREE.Vector3,
+    C: THREE.Vector3
+  ) {
+    const n = this.sideCount
+    const theta = (2 * Math.PI) / n
+
+    const AB = new THREE.Vector3().subVectors(B, A)
+    const AC = new THREE.Vector3().subVectors(C, A)
+
+    const sideLength = AB.length()
+
+    if (sideLength < 0.0001) return [A]
+
+    let normal = new THREE.Vector3().crossVectors(AB, AC)
+
+    if (normal.length() < 0.0001) return [A, B]
+
+    normal.normalize()
+
+    const mid = new THREE.Vector3()
+      .addVectors(A, B)
+      .multiplyScalar(0.5)
+
+    let perpendicularInPlane = new THREE.Vector3()
+      .crossVectors(normal, AB)
+      .normalize()
+
+    const centerDistance = sideLength / (2 * Math.tan(Math.PI / n))
+
+    if (new THREE.Vector3().subVectors(C, mid).dot(perpendicularInPlane) > 0) {
+      perpendicularInPlane.multiplyScalar(-1)
+    }
+
+    const center = mid
+      .clone()
+      .add(perpendicularInPlane.multiplyScalar(centerDistance))
+
+    const testB = this.rotateAroundAxis(A, center, normal, theta)
+
+    if (testB.distanceTo(B) > 0.001) {
+      normal.multiplyScalar(-1)
+    }
+
+    const vertices: THREE.Vector3[] = []
+
+    for (let i = 0; i < n; i++) {
+      vertices.push(
+        this.rotateAroundAxis(A, center, normal, theta * i)
+      )
+    }
+
+    return vertices
+  }
+
+  private getBaseNormal(
+    A: THREE.Vector3,
+    B: THREE.Vector3,
+    C: THREE.Vector3
+  ) {
+    const AB = new THREE.Vector3().subVectors(B, A)
+    const AC = new THREE.Vector3().subVectors(C, A)
+
+    const normal = new THREE.Vector3().crossVectors(AB, AC)
+
+    if (normal.length() < 0.0001) return null
+
+    return normal.normalize()
+  }
+
+  private getPolygonCenter(vertices: THREE.Vector3[]) {
+    const center = new THREE.Vector3()
+
+    for (const vertex of vertices) {
+      center.add(vertex)
+    }
+
+    return center.divideScalar(vertices.length)
+  }
+
+  private buildMeshGeometry(
+    baseVertices: THREE.Vector3[],
+    apex: THREE.Vector3
+  ) {
+    const n = baseVertices.length
+
+    const vertices: number[] = []
+    const indices: number[] = []
+
+    for (const p of baseVertices) {
+      vertices.push(p.x, p.y, p.z)
+    }
+
+    vertices.push(apex.x, apex.y, apex.z)
+
+    const apexIndex = n
+
+    for (let i = 1; i < n - 1; i++) {
+      indices.push(0, i, i + 1)
+    }
+
+    for (let i = 0; i < n; i++) {
+      const next = (i + 1) % n
+      indices.push(i, next, apexIndex)
+    }
+
+    const geometry = new THREE.BufferGeometry()
+
+    geometry.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(vertices, 3)
+    )
+
+    geometry.setIndex(indices)
+    geometry.computeVertexNormals()
+
+    return geometry
+  }
+
+  private buildLineGeometry(
+    baseVertices: THREE.Vector3[],
+    apex: THREE.Vector3
+  ) {
+    const points: THREE.Vector3[] = []
+
+    for (let i = 0; i < baseVertices.length; i++) {
+      const next = (i + 1) % baseVertices.length
+
+      points.push(baseVertices[i].clone())
+      points.push(baseVertices[next].clone())
+
+      points.push(baseVertices[i].clone())
+      points.push(apex.clone())
+    }
+
+    return new THREE.BufferGeometry().setFromPoints(points)
+  }
+
+  private rotateAroundAxis(
+    point: THREE.Vector3,
+    center: THREE.Vector3,
+    axis: THREE.Vector3,
+    angle: number
+  ) {
+    return point
+      .clone()
+      .sub(center)
+      .applyAxisAngle(axis, angle)
+      .add(center)
   }
 }

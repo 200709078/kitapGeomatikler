@@ -1,5 +1,7 @@
 import * as THREE from "three"
 import { createPoint } from "./Point"
+import { getNearestSelectablePoint } from "../interaction/getNearestSelectablePoint"
+
 export class Prism {
   pointA: THREE.Mesh
   pointB: THREE.Mesh
@@ -10,6 +12,11 @@ export class Prism {
   baseLine: THREE.LineLoop
   topLine: THREE.LineLoop
   heightLine: THREE.Line
+
+  sideLines: THREE.LineSegments
+  cornerPoints: THREE.Mesh[] = []
+
+  selectableObjects: THREE.Object3D[]
 
   sideCount: number
   height: number
@@ -25,6 +32,7 @@ export class Prism {
     this.pointB = pointB
     this.sideCount = sideCount
     this.height = pointA.position.distanceTo(pointB.position)
+    this.selectableObjects = selectableObjects
 
     const pointCObject = createPoint(
       this.createInitialC(pointA.position, pointB.position)
@@ -68,10 +76,16 @@ export class Prism {
       })
     )
 
+    this.sideLines = new THREE.LineSegments(
+      new THREE.BufferGeometry(),
+      new THREE.LineBasicMaterial({ color: 0x000000 })
+    )
+
     scene.add(this.mesh)
     scene.add(this.baseLine)
     scene.add(this.topLine)
     scene.add(this.heightLine)
+    scene.add(this.sideLines)
 
     this.pointA.userData.dependents ??= []
     this.pointB.userData.dependents ??= []
@@ -120,8 +134,73 @@ export class Prism {
     )
 
     this.updateLines(baseVertices, topVertices)
+    this.updateSideLines(baseVertices, topVertices)
+    this.updateCornerPoints(baseVertices, topVertices)
     this.updateMesh(baseVertices, topVertices)
     this.updateHeightLine()
+  }
+
+  private updateSideLines(
+    baseVertices: THREE.Vector3[],
+    topVertices: THREE.Vector3[]
+  ) {
+    const points: THREE.Vector3[] = []
+
+    for (let i = 1; i < baseVertices.length; i++) {
+      points.push(baseVertices[i].clone())
+      points.push(topVertices[i].clone())
+    }
+
+    this.sideLines.geometry.dispose()
+    this.sideLines.geometry = new THREE.BufferGeometry().setFromPoints(points)
+  }
+
+  private updateCornerPoints(
+    baseVertices: THREE.Vector3[],
+    topVertices: THREE.Vector3[]
+  ) {
+    const allVertices = [
+      ...baseVertices.slice(2),
+      ...topVertices.slice(1)
+    ]
+
+    while (this.cornerPoints.length < allVertices.length) {
+      const point = this.createGrayPoint(new THREE.Vector3())
+
+      point.userData.lockMouseDrag = true
+      point.userData.lockWheel = true
+      point.userData.dependents ??= []
+
+      this.cornerPoints.push(point)
+      this.selectableObjects.push(point)
+      this.mesh.parent?.add(point)
+    }
+
+    for (let i = 0; i < allVertices.length; i++) {
+      this.cornerPoints[i].position.copy(allVertices[i])
+      this.cornerPoints[i].visible = true
+
+      this.cornerPoints[i].userData.dependents?.forEach((dependent: any) => {
+        dependent.update?.()
+      })
+    }
+
+    for (let i = allVertices.length; i < this.cornerPoints.length; i++) {
+      this.cornerPoints[i].visible = false
+    }
+  }
+
+  private createGrayPoint(position: THREE.Vector3) {
+    const geometry = new THREE.SphereGeometry(0.09, 24, 24)
+
+    const material = new THREE.MeshStandardMaterial({
+      color: 0x808080,
+    })
+
+    const mesh = new THREE.Mesh(geometry, material)
+    mesh.position.copy(position)
+
+    return mesh
   }
 
   private createPurplePoint(position: THREE.Vector3) {

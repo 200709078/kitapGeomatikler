@@ -2,6 +2,7 @@ import * as THREE from "three"
 import { BaseTool } from "./BaseTool"
 import { getMouseIntersection } from "../interaction/Raycaster"
 import { createPoint } from "../objects/Point"
+import { getNearestSelectablePoint, updatePointHoverCursor } from "../interaction/getNearestSelectablePoint"
 
 export class PointTool extends BaseTool {
     points: THREE.Mesh[] = []
@@ -18,12 +19,27 @@ export class PointTool extends BaseTool {
         this.preview = new THREE.Mesh(geo, mat)
     }
     onMouseMove(event: MouseEvent) {
+        updatePointHoverCursor(
+            event,
+            this.camera,
+            this.selectableObjects
+        )
         const pos = getMouseIntersection(event, this.camera)
         this.preview.position.copy(pos)
         this.preview.visible = true
     }
 
     onClick(_event: MouseEvent) {
+        const existingPoint = getNearestSelectablePoint(
+            _event,
+            this.camera,
+            this.selectableObjects,
+            0.35
+        )
+
+        if (existingPoint) {
+            return
+        }
         const point = createPoint(this.preview.position.clone())
         this.scene.add(point)
         this.points.push(point)

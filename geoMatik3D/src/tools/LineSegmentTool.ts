@@ -3,7 +3,7 @@ import { BaseTool } from "./BaseTool"
 import { getMouseIntersection } from "../interaction/Raycaster"
 import { createPoint } from "../objects/Point"
 import { LineSegment } from "../objects/LineSegment"
-
+import { getNearestSelectablePoint, updatePointHoverCursor } from "../interaction/getNearestSelectablePoint"
 
 export class LineSegmentTool extends BaseTool {
     previewLine: THREE.Line | null = null
@@ -21,25 +21,36 @@ export class LineSegmentTool extends BaseTool {
     }
 
     onClick(event: MouseEvent) {
-        const pos = getMouseIntersection(event, this.camera)
-        if (!this.startPoint) {
-            this.startPoint = pos
-            const startMesh = createPoint(pos)
-            this.scene.add(startMesh)
-            this.selectableObjects.push(startMesh)
-            this.startPointMesh = startMesh
+        const existingPoint = getNearestSelectablePoint(
+            event,
+            this.camera,
+            this.selectableObjects
+        )
+
+        let pointMesh: THREE.Mesh
+
+        if (existingPoint) {
+            pointMesh = existingPoint
+        } else {
+            const pos = getMouseIntersection(event, this.camera)
+            pointMesh = createPoint(pos)
+
+            this.scene.add(pointMesh)
+            this.selectableObjects.push(pointMesh)
+        }
+
+        if (!this.startPointMesh) {
+            this.startPointMesh = pointMesh
+            this.startPoint = pointMesh.position.clone()
             return
         }
-        const endPoint = pos
-        const endMesh = createPoint(endPoint)
-        this.selectableObjects.push(endMesh)
-        this.scene.add(endMesh)
 
-        const lineSegment = new LineSegment(this.startPointMesh!, endMesh)
+        const lineSegment = new LineSegment(this.startPointMesh, pointMesh)
         this.scene.add(lineSegment.mesh)
 
         if (this.previewLine) {
             this.scene.remove(this.previewLine)
+            this.previewLine.geometry.dispose()
             this.previewLine = null
         }
 
@@ -47,6 +58,11 @@ export class LineSegmentTool extends BaseTool {
         this.startPointMesh = null
     }
     onMouseMove(event: MouseEvent) {
+        updatePointHoverCursor(
+            event,
+            this.camera,
+            this.selectableObjects,
+        )
         const pos = getMouseIntersection(event, this.camera)
 
         this.cursorPreview.position.copy(pos)

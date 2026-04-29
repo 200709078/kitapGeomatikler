@@ -18,12 +18,6 @@ export class LineObject {
     this.mesh.castShadow = true
     this.mesh.receiveShadow = true
 
-    /*     this.pointA.userData.lines ??= []
-        this.pointB.userData.lines ??= []
-    
-        this.pointA.userData.lines.push(this)
-        this.pointB.userData.lines.push(this) */
-
     this.pointA.userData.dependents ??= []
     this.pointB.userData.dependents ??= []
 

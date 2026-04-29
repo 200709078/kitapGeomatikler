@@ -3,100 +3,126 @@ import { BaseTool } from "./BaseTool"
 import { getMouseIntersection } from "../interaction/Raycaster"
 import { createPoint } from "../objects/Point"
 import { RayObject } from "../objects/Ray"
+import { getNearestSelectablePoint, updatePointHoverCursor } from "../interaction/getNearestSelectablePoint"
 
 export class RayTool extends BaseTool {
-    startPoint: THREE.Vector3 | null = null
-    startPointMesh: THREE.Mesh | null = null
+  startPoint: THREE.Vector3 | null = null
+  startPointMesh: THREE.Mesh | null = null
+  selectableObjects: THREE.Object3D[]
+
+  cursorPreview: THREE.Mesh
+  previewRay: THREE.Line | null = null
+
+  constructor(
+    scene: THREE.Scene,
+    camera: THREE.PerspectiveCamera,
     selectableObjects: THREE.Object3D[]
+  ) {
+    super(scene, camera)
+    this.selectableObjects = selectableObjects
 
-    cursorPreview: THREE.Mesh
-    previewRay: THREE.Line | null = null
+    const geo = new THREE.SphereGeometry(0.1, 16, 16)
+    const mat = new THREE.MeshBasicMaterial({ color: 0xff0000 })
 
-    constructor(scene: THREE.Scene, camera: THREE.PerspectiveCamera, selectableObjects: THREE.Object3D[]) {
-        super(scene, camera)
-        this.selectableObjects = selectableObjects
-        const geo = new THREE.SphereGeometry(0.1, 16, 16)
-        const mat = new THREE.MeshBasicMaterial({ color: 0xff0000 })
+    this.cursorPreview = new THREE.Mesh(geo, mat)
+  }
 
-        this.cursorPreview = new THREE.Mesh(geo, mat)
+  activate() {
+    this.cursorPreview.visible = false
+
+    if (!this.cursorPreview.parent) {
+      this.scene.add(this.cursorPreview)
+    }
+  }
+
+  deactivate() {
+    this.reset()
+
+    if (this.cursorPreview.parent) {
+      this.scene.remove(this.cursorPreview)
+    }
+  }
+
+  reset() {
+    if (this.previewRay) {
+      this.scene.remove(this.previewRay)
+      this.previewRay.geometry.dispose()
+      this.previewRay = null
     }
 
-    onMouseMove(event: MouseEvent) {
-        const pos = getMouseIntersection(event, this.camera)
+    this.startPoint = null
+    this.startPointMesh = null
+    this.cursorPreview.visible = false
+  }
 
-        this.cursorPreview.position.copy(pos)
-        this.cursorPreview.visible = true
+  onMouseMove(event: MouseEvent) {
+    updatePointHoverCursor(
+      event,
+      this.camera,
+      this.selectableObjects,
 
-        if (!this.startPoint) return
+    )
+    const pos = getMouseIntersection(event, this.camera)
 
-        const direction = new THREE.Vector3()
-            .subVectors(pos, this.startPoint)
-            .normalize()
+    this.cursorPreview.position.copy(pos)
+    this.cursorPreview.visible = true
 
-        const end = new THREE.Vector3()
-            .copy(this.startPoint)
-            .add(direction.multiplyScalar(50))
+    if (!this.startPoint) return
 
-        const points = [this.startPoint, end]
-        const geometry = new THREE.BufferGeometry().setFromPoints(points)
+    const direction = new THREE.Vector3()
+      .subVectors(pos, this.startPoint)
+      .normalize()
 
-        if (this.previewRay) {
-            this.scene.remove(this.previewRay)
-        }
+    const end = new THREE.Vector3()
+      .copy(this.startPoint)
+      .add(direction.multiplyScalar(50))
 
-        const material = new THREE.LineBasicMaterial({ color: 0xff0000 })
-        this.previewRay = new THREE.Line(geometry, material)
+    const points = [this.startPoint.clone(), end]
+    const geometry = new THREE.BufferGeometry().setFromPoints(points)
 
-        this.scene.add(this.previewRay)
+    if (this.previewRay) {
+      this.scene.remove(this.previewRay)
+      this.previewRay.geometry.dispose()
     }
 
-    onClick(_event: MouseEvent) {
-        const pos = this.cursorPreview.position.clone()
+    const material = new THREE.LineBasicMaterial({ color: 0xff0000 })
+    this.previewRay = new THREE.Line(geometry, material)
 
-        if (!this.startPoint) {
-            this.startPoint = pos
-            const startMesh = createPoint(pos)
-            this.selectableObjects.push(startMesh)
-            this.scene.add(startMesh)
-            this.startPointMesh = startMesh
-            return
-        }
+    this.scene.add(this.previewRay)
+  }
 
-        const directionMesh = createPoint(pos)
-        this.scene.add(directionMesh)
-        this.selectableObjects.push(directionMesh)
+  onClick(event: MouseEvent) {
+    const point = this.getOrCreatePoint(event)
 
-        const ray = new RayObject(this.startPointMesh!, directionMesh, 50)
-        this.scene.add(ray.mesh)
-
-        if (this.previewRay) {
-            this.scene.remove(this.previewRay)
-            this.previewRay = null
-        }
-
-        this.startPoint = null
-        this.startPointMesh = null
-    }
-    activate() {
-        this.cursorPreview.visible = false
-        this.scene.add(this.cursorPreview)
-
+    if (!this.startPointMesh) {
+      this.startPointMesh = point
+      this.startPoint = point.position.clone()
+      return
     }
 
-    deactivate() {
-        this.reset()
-        this.scene.remove(this.cursorPreview)
+    const ray = new RayObject(this.startPointMesh, point, 50)
+    this.scene.add(ray.mesh)
 
+    this.reset()
+  }
+
+  private getOrCreatePoint(event: MouseEvent) {
+    const existingPoint = getNearestSelectablePoint(
+      event,
+      this.camera,
+      this.selectableObjects
+    )
+
+    if (existingPoint) {
+      return existingPoint
     }
 
-    reset() {
-        if (this.previewRay) {
-            this.scene.remove(this.previewRay)
-            this.previewRay = null
-        }
+    const pos = this.cursorPreview.position.clone()
+    const point = createPoint(pos)
 
-        this.startPoint = null
-        this.startPointMesh = null
-        this.cursorPreview.visible = false
-    }
+    this.scene.add(point)
+    this.selectableObjects.push(point)
+
+    return point
+  }
 }
