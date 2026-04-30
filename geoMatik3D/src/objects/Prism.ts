@@ -40,6 +40,11 @@ export class Prism {
     this.pointC = pointCObject
     this.pointAprime = this.createPurplePoint(pointA.position.clone())
 
+    this.pointA.userData.pointRole ??= "free"
+    this.pointB.userData.pointRole ??= "free"
+    this.pointC.userData.pointRole = "free"
+    this.pointAprime.userData.pointRole = "height"
+
     scene.add(this.pointC)
     scene.add(this.pointAprime)
 
@@ -94,10 +99,6 @@ export class Prism {
     this.pointA.userData.dependents.push(this)
     this.pointB.userData.dependents.push(this)
     this.pointC.userData.dependents.push(this)
-    this.pointAprime.userData.dependents.push(this)
-
-    this.pointAprime.userData.normalWheelController = this
-    this.pointAprime.userData.lockMouseDrag = true
 
     this.update()
   }
@@ -127,6 +128,8 @@ export class Prism {
         normal.clone().multiplyScalar(this.height)
       )
     )
+
+    this.updateDependentsOf(this.pointAprime)
 
     const topVertices = baseVertices.map((p) =>
       p.clone().add(normal.clone().multiplyScalar(this.height))
@@ -165,11 +168,6 @@ export class Prism {
 
     while (this.cornerPoints.length < allVertices.length) {
       const point = this.createGrayPoint(new THREE.Vector3())
-
-      point.userData.lockMouseDrag = true
-      point.userData.lockWheel = true
-      point.userData.dependents ??= []
-
       this.cornerPoints.push(point)
       this.selectableObjects.push(point)
       this.mesh.parent?.add(point)
@@ -178,15 +176,19 @@ export class Prism {
     for (let i = 0; i < allVertices.length; i++) {
       this.cornerPoints[i].position.copy(allVertices[i])
       this.cornerPoints[i].visible = true
-
-      this.cornerPoints[i].userData.dependents?.forEach((dependent: any) => {
-        dependent.update?.()
-      })
+      this.updateDependentsOf(this.cornerPoints[i])
     }
 
     for (let i = allVertices.length; i < this.cornerPoints.length; i++) {
       this.cornerPoints[i].visible = false
     }
+  }
+
+  private updateDependentsOf(object: THREE.Object3D) {
+    object.userData.dependents?.forEach((dependent: any) => {
+      if (dependent === this) return
+      dependent.update?.()
+    })
   }
 
   private createGrayPoint(position: THREE.Vector3) {
@@ -199,6 +201,11 @@ export class Prism {
     const mesh = new THREE.Mesh(geometry, material)
     mesh.position.copy(position)
 
+    mesh.userData.pointRole = "locked"
+    mesh.userData.lockMouseDrag = true
+    mesh.userData.lockWheel = true
+    mesh.userData.dependents ??= []
+
     return mesh
   }
 
@@ -210,6 +217,11 @@ export class Prism {
 
     const mesh = new THREE.Mesh(geometry, material)
     mesh.position.copy(position)
+
+    mesh.userData.pointRole = "height"
+    mesh.userData.lockMouseDrag = true
+    mesh.userData.normalWheelController = this
+    mesh.userData.dependents ??= []
 
     return mesh
   }

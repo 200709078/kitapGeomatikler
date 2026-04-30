@@ -33,15 +33,33 @@ export class SelectTool extends BaseTool {
         this.selectableObjects = objects
     }
 
+    deactivate() {
+        this.isDragging = false
+        this.controls.enabled = true
+        this.clearSelection()
+        document.body.style.cursor = "default"
+    }
+
     onMouseDown(event: MouseEvent) {
         const hit = this.pickObject(event)
 
         if (!hit) {
             this.clearSelection()
+            document.body.style.cursor = "default"
             return
         }
 
         this.selectObject(hit)
+
+        const role = this.getPointRole(hit)
+
+        if (role === "locked") {
+            this.isDragging = false
+            this.controls.enabled = true
+            event.preventDefault()
+            event.stopPropagation()
+            return
+        }
 
         this.isDragging = true
         this.controls.enabled = false
@@ -52,7 +70,11 @@ export class SelectTool extends BaseTool {
     }
 
     onMouseMove(event: MouseEvent) {
-        if (!this.isDragging || !this.selectedObject) return
+        if (!this.isDragging || !this.selectedObject) {
+            this.updateHoverCursor(event)
+            this.updateHelperArrowScale()
+            return
+        }
 
         const role = this.getPointRole(this.selectedObject)
 
@@ -192,6 +214,11 @@ export class SelectTool extends BaseTool {
         return null
     }
 
+    private updateHoverCursor(event: MouseEvent) {
+        const hit = this.pickObject(event)
+        document.body.style.cursor = hit ? "pointer" : "default"
+    }
+
     private getMousePositionOnPlane(event: MouseEvent) {
         this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1
         this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
@@ -245,17 +272,20 @@ export class SelectTool extends BaseTool {
             }
 
             this.addDoubleHelperArrow(direction, 0x800080)
+            this.updateHelperArrowScale()
             return
         }
 
         if (role === "free") {
             if (this.verticalMove) {
                 this.addDoubleHelperArrow(new THREE.Vector3(0, 1, 0), 0xffaa00)
+                this.updateHelperArrowScale()
                 return
             }
 
             this.addDoubleHelperArrow(new THREE.Vector3(1, 0, 0), 0xffaa00)
             this.addDoubleHelperArrow(new THREE.Vector3(0, 0, 1), 0xffaa00)
+            this.updateHelperArrowScale()
         }
     }
 
@@ -329,6 +359,27 @@ export class SelectTool extends BaseTool {
         return group
     }
 
+    private updateHelperArrowScale() {
+        if (!this.selectedObject) return
+
+        const scale = this.getHelperArrowScale()
+
+        this.helperArrows.forEach((arrow) => {
+            arrow.scale.setScalar(scale)
+        })
+    }
+
+    private getHelperArrowScale() {
+        if (!this.selectedObject) return 1
+
+        const selectedWorldPosition = new THREE.Vector3()
+        this.selectedObject.getWorldPosition(selectedWorldPosition)
+
+        const distance = this.camera.position.distanceTo(selectedWorldPosition)
+
+        return THREE.MathUtils.clamp(distance * 0.045, 0.7, 2.4)
+    }
+
     private clearHelperArrows() {
         this.helperArrows.forEach((arrow) => {
             if (arrow.parent) {
@@ -347,6 +398,7 @@ export class SelectTool extends BaseTool {
                 }
             })
         })
+
         this.helperArrows = []
     }
 }

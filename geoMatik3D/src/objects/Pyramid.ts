@@ -41,12 +41,12 @@ export class Pyramid {
         this.apexPoint = this.createPurplePoint(pointA.position.clone())
         this.centerPoint = this.createGrayPoint(pointA.position.clone())
 
-        this.apexPoint.userData.normalWheelController = this
-        this.apexPoint.userData.lockMouseDrag = true
 
-        this.centerPoint.userData.lockMouseDrag = true
-        this.centerPoint.userData.lockWheel = true
-        this.centerPoint.userData.dependents ??= []
+        this.pointA.userData.pointRole ??= "free"
+        this.pointB.userData.pointRole ??= "free"
+        this.pointC.userData.pointRole = "free"
+        this.apexPoint.userData.pointRole = "height"
+        this.centerPoint.userData.pointRole = "locked"
 
         scene.add(this.pointC)
         scene.add(this.apexPoint)
@@ -88,7 +88,6 @@ export class Pyramid {
         this.pointA.userData.dependents.push(this)
         this.pointB.userData.dependents.push(this)
         this.pointC.userData.dependents.push(this)
-        //this.apexPoint.userData.dependents.push(this)
 
         this.update()
     }
@@ -139,6 +138,11 @@ export class Pyramid {
         const mesh = new THREE.Mesh(geometry, material)
         mesh.position.copy(position)
 
+        mesh.userData.pointRole = "height"
+        mesh.userData.lockMouseDrag = true
+        mesh.userData.normalWheelController = this
+        mesh.userData.dependents ??= []
+
         return mesh
     }
 
@@ -152,9 +156,13 @@ export class Pyramid {
         const mesh = new THREE.Mesh(geometry, material)
         mesh.position.copy(position)
 
+        mesh.userData.pointRole = "locked"
+        mesh.userData.lockMouseDrag = true
+        mesh.userData.lockWheel = true
+        mesh.userData.dependents ??= []
+
         return mesh
     }
-
     private createInitialC(A: THREE.Vector3, B: THREE.Vector3) {
         const AB = new THREE.Vector3().subVectors(B, A)
         const length = AB.length()
@@ -292,10 +300,6 @@ export class Pyramid {
 
         while (this.cornerPoints.length < verticesForGrayPoints.length) {
             const point = this.createGrayPoint(new THREE.Vector3())
-
-            point.userData.lockMouseDrag = true
-            point.userData.lockWheel = true
-            point.userData.dependents ??= []
 
             this.cornerPoints.push(point)
             this.selectableObjects.push(point)
