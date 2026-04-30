@@ -33,8 +33,7 @@ export class PointTool extends BaseTool {
         const existingPoint = getNearestSelectablePoint(
             _event,
             this.camera,
-            this.selectableObjects,
-            0.35
+            this.selectableObjects
         )
 
         if (existingPoint) {

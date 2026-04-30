@@ -37,10 +37,8 @@ export class ToolManager {
     this.activeTool.onKeyDown(event)
   }
 
-
-  onWheel(event: WheelEvent) {
+  onDoubleClick(event: MouseEvent) {
     if (!this.activeTool) return
-    this.activeTool.onWheel(event)
+    this.activeTool.onDoubleClick?.(event)
   }
-
 }

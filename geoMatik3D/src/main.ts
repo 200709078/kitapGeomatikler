@@ -109,22 +109,9 @@ renderer.domElement.addEventListener("mousedown", (event) => {
 renderer.domElement.addEventListener("mouseup", (event) => {
   toolManager.onMouseUp(event)
 })
-
-
-
-renderer.domElement.addEventListener(
-  "wheel",
-  (event) => {
-    if (event.shiftKey) {
-      event.preventDefault()
-      event.stopPropagation()
-      toolManager.onWheel(event)
-    }
-  },
-  { passive: false, capture: true }
-)
-
-
+renderer.domElement.addEventListener("dblclick", (event) => {
+  toolManager.onDoubleClick(event)
+})
 
 window.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {

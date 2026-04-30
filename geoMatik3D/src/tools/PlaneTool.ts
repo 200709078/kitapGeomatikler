@@ -185,8 +185,7 @@ export class PlaneTool extends BaseTool {
     const existingPoint = getNearestSelectablePoint(
       event,
       this.camera,
-      this.selectableObjects,
-      0.35
+      this.selectableObjects
     )
 
     if (existingPoint) {

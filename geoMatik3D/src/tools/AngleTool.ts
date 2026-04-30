@@ -68,8 +68,7 @@ export class AngleTool extends BaseTool {
     const existingPoint = getNearestSelectablePoint(
       event,
       this.camera,
-      this.selectableObjects,
-      0.35
+      this.selectableObjects
     )
 
     let point: THREE.Mesh
