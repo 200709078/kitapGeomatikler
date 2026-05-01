@@ -9,7 +9,7 @@ export class LineSegment {
     this.startPoint = startPoint
     this.endPoint = endPoint
 
-    const geometry = new THREE.CylinderGeometry(0.035, 0.035, 1, 16)
+    const geometry = new THREE.CylinderGeometry(0.1, 0.1, 1, 16)
     const material = new THREE.MeshStandardMaterial({ color: 0x0066ff })
 
     this.mesh = new THREE.Mesh(geometry, material)

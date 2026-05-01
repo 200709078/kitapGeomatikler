@@ -291,7 +291,6 @@ export class SelectTool extends BaseTool {
 
     private addDoubleHelperArrow(direction: THREE.Vector3, color: number) {
         const dir = direction.clone().normalize()
-
         const positiveArrow = this.createHelperArrow(dir, color)
         const negativeArrow = this.createHelperArrow(
             dir.clone().multiplyScalar(-1),
@@ -309,12 +308,12 @@ export class SelectTool extends BaseTool {
 
         const group = new THREE.Group()
 
-        const offset = 0.18
-        const shaftLength = 0.22
-        const headLength = 0.12
+        const offset = 0.6
+        const shaftLength = 0.66
+        const headLength = 0.36
 
-        const shaftRadius = 0.035
-        const headRadius = 0.07
+        const shaftRadius = 0.105
+        const headRadius = 0.14
 
         const material = new THREE.MeshStandardMaterial({
             color,

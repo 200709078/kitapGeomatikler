@@ -6,7 +6,7 @@ export class Plane {
     pointC: THREE.Mesh
     mesh: THREE.Mesh
 
-    size = 20
+    size = 30
 
     constructor(pointA: THREE.Mesh, pointB: THREE.Mesh, pointC: THREE.Mesh) {
         this.pointA = pointA

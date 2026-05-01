@@ -11,7 +11,7 @@ export class LineObject {
     this.pointB = pointB
     this.length = length
 
-    const geometry = new THREE.CylinderGeometry(0.025, 0.025, 1, 16)
+    const geometry = new THREE.CylinderGeometry(0.1, 0.1, 1, 16)
     const material = new THREE.MeshStandardMaterial({ color: 0x0066ff })
 
     this.mesh = new THREE.Mesh(geometry, material)

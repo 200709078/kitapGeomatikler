@@ -8,10 +8,11 @@ export class AngleObject {
   arc: THREE.Mesh
   label: THREE.Sprite
 
-  lineAB: THREE.Line
-  lineBC: THREE.Line
+  lineAB: THREE.Mesh
+  lineBC: THREE.Mesh
 
-  radius = 0.8
+  arcRadius = 1
+  armRadius = 0.05
 
   constructor(pointA: THREE.Mesh, vertexB: THREE.Mesh, pointC: THREE.Mesh) {
     this.pointA = pointA
@@ -26,10 +27,10 @@ export class AngleObject {
     this.label = this.createAngleLabel("0°")
     this.arc.add(this.label)
 
-    const lineMaterial = new THREE.LineBasicMaterial({ color: 0x000000 })
+    const armMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 })
 
-    this.lineAB = new THREE.Line(new THREE.BufferGeometry(), lineMaterial)
-    this.lineBC = new THREE.Line(new THREE.BufferGeometry(), lineMaterial.clone())
+    this.lineAB = this.createCylinderArm(armMaterial)
+    this.lineBC = this.createCylinderArm(armMaterial.clone())
 
     this.pointA.userData.dependents ??= []
     this.vertexB.userData.dependents ??= []
@@ -50,7 +51,7 @@ export class AngleObject {
     const context = canvas.getContext("2d")!
     context.clearRect(0, 0, canvas.width, canvas.height)
 
-    context.font = "bold 100px Arial"
+    context.font = "bold 200px Arial"
     context.fillStyle = "#ff0000"
     context.textAlign = "center"
     context.textBaseline = "middle"
@@ -120,7 +121,7 @@ export class AngleObject {
       points.push(
         new THREE.Vector3()
           .copy(b)
-          .add(dir.multiplyScalar(this.radius))
+          .add(dir.multiplyScalar(this.arcRadius))
       )
     }
 
@@ -131,7 +132,7 @@ export class AngleObject {
     this.arc.geometry = new THREE.TubeGeometry(
       curve,
       32,
-      0.04,
+      0.1,
       8,
       false
     )
@@ -146,9 +147,22 @@ export class AngleObject {
 
     this.label.position
       .copy(b)
-      .add(middleDir.multiplyScalar(this.radius + 0.35))
+      .add(middleDir.multiplyScalar(this.arcRadius + 1))
 
     this.updateArms(a, b, c)
+  }
+
+  private createCylinderArm(material: THREE.Material) {
+    const geometry = new THREE.CylinderGeometry(
+      this.armRadius,
+      this.armRadius,
+      1,
+      16
+    )
+
+    const mesh = new THREE.Mesh(geometry, material)
+
+    return mesh
   }
 
   private updateArms(
@@ -156,16 +170,45 @@ export class AngleObject {
     b: THREE.Vector3,
     c: THREE.Vector3
   ) {
-    this.lineAB.geometry.dispose()
-    this.lineAB.geometry = new THREE.BufferGeometry().setFromPoints([
-      a.clone(),
-      b.clone(),
-    ])
+    this.updateCylinderBetweenPoints(this.lineAB, a, b)
+    this.updateCylinderBetweenPoints(this.lineBC, b, c)
+  }
 
-    this.lineBC.geometry.dispose()
-    this.lineBC.geometry = new THREE.BufferGeometry().setFromPoints([
-      b.clone(),
-      c.clone(),
-    ])
+  private updateCylinderBetweenPoints(
+    cylinder: THREE.Mesh,
+    start: THREE.Vector3,
+    end: THREE.Vector3
+  ) {
+    const direction = new THREE.Vector3().subVectors(end, start)
+    const length = direction.length()
+
+    if (length < 0.0001) {
+      cylinder.visible = false
+      return
+    }
+
+    cylinder.visible = true
+
+    const midpoint = new THREE.Vector3()
+      .addVectors(start, end)
+      .multiplyScalar(0.5)
+
+    cylinder.position.copy(midpoint)
+
+    cylinder.geometry.dispose()
+    cylinder.geometry = new THREE.CylinderGeometry(
+      this.armRadius,
+      this.armRadius,
+      length,
+      16
+    )
+
+    const yAxis = new THREE.Vector3(0, 1, 0)
+    const quaternion = new THREE.Quaternion().setFromUnitVectors(
+      yAxis,
+      direction.clone().normalize()
+    )
+
+    cylinder.quaternion.copy(quaternion)
   }
 }
