@@ -1,7 +1,8 @@
 import * as THREE from "three"
 import { BaseTool } from "./BaseTool"
+import { getMouseIntersection } from "../interaction/Raycaster"
 import { createPoint } from "../objects/Point"
-import { getNearestSelectablePoint, getPointerIntersection, getPointerPointSize, PREVIEW_POINT_SIZE, shouldShowPointerPreview, updatePointCursor } from "../interaction/Pointer"
+import { getNearestSelectablePoint, updatePointHoverCursor } from "../interaction/getNearestSelectablePoint"
 
 export class PointTool extends BaseTool {
     points: THREE.Mesh[] = []
@@ -12,24 +13,23 @@ export class PointTool extends BaseTool {
         super(scene, camera)
         this.selectableObjects = selectableObjects
         this.points = []
-        const geo = new THREE.SphereGeometry(PREVIEW_POINT_SIZE, 16, 16)
+        const geo = new THREE.SphereGeometry(0.1, 16, 16)
         const mat = new THREE.MeshBasicMaterial({ color: 0xff0000 })
 
         this.preview = new THREE.Mesh(geo, mat)
     }
-    onPointerMove(event: PointerEvent) {
-        updatePointCursor(event, this.camera, this.selectableObjects)
-
-        if (!shouldShowPointerPreview(event)) {
-            this.preview.visible = false
-            return
-        }
-
-        this.preview.position.copy(getPointerIntersection(event, this.camera))
+    onMouseMove(event: MouseEvent) {
+        updatePointHoverCursor(
+            event,
+            this.camera,
+            this.selectableObjects
+        )
+        const pos = getMouseIntersection(event, this.camera)
+        this.preview.position.copy(pos)
         this.preview.visible = true
     }
 
-    onPointerDown(_event: PointerEvent) {
+    onClick(_event: MouseEvent) {
         const existingPoint = getNearestSelectablePoint(
             _event,
             this.camera,
@@ -37,22 +37,13 @@ export class PointTool extends BaseTool {
         )
 
         if (existingPoint) {
-            this.selectPoint(existingPoint)
-            this.complete({ clearSelection: false })
             return
         }
-        const point = createPoint(
-            getPointerIntersection(_event, this.camera),
-            getPointerPointSize(_event)
-        )
+        const point = createPoint(this.preview.position.clone())
         this.scene.add(point)
         this.points.push(point)
         this.selectableObjects.push(point)
-        this.complete()
     }
-
-    onClick(event: MouseEvent) { this.onPointerDown(event as PointerEvent) }
-    onMouseMove(_event: MouseEvent) { }
     activate() {
         this.preview.visible = false
 

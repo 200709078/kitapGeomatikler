@@ -1,9 +1,7 @@
 import * as THREE from "three"
 import { BaseTool } from "./BaseTool"
-import { getNearestSelectablePoint, getPointerIntersection, SELECTED_POINT_DRAG_RADIUS_PX, updatePointCursor } from "../interaction/Pointer"
 
 type PointRole = "free" | "locked" | "height"
-const HELPERS_ENABLED = true
 
 export class SelectTool extends BaseTool {
     raycaster = new THREE.Raycaster()
@@ -17,12 +15,6 @@ export class SelectTool extends BaseTool {
     isDragging = false
     verticalMove = false
     lastMouseY = 0
-    pointerDownPosition = new THREE.Vector2()
-    dragOffset = new THREE.Vector3()
-    hasMoved = false
-    activePointerType = "mouse"
-    lastTapObject: THREE.Mesh | null = null
-    lastTapTime = 0
 
     helperArrows: THREE.Group[] = []
 
@@ -41,10 +33,6 @@ export class SelectTool extends BaseTool {
         this.selectableObjects = objects
     }
 
-    shouldHandleBeforeOrbitControls(event: PointerEvent) {
-        return this.pickObject(event) !== null || this.shouldStartSelectedPointDrag(event)
-    }
-
     deactivate() {
         this.isDragging = false
         this.controls.enabled = true
@@ -52,51 +40,38 @@ export class SelectTool extends BaseTool {
         document.body.style.cursor = "default"
     }
 
-    onPointerDown(event: PointerEvent) {
-        this.activePointerType = event.pointerType || "mouse"
+    onMouseDown(event: MouseEvent) {
         const hit = this.pickObject(event)
-        const dragSelectedPoint = !hit && this.shouldStartSelectedPointDrag(event)
-        this.pointerDownPosition.set(event.clientX, event.clientY)
-        this.hasMoved = false
 
-        if (!hit && !dragSelectedPoint) {
+        if (!hit) {
             this.clearSelection()
             document.body.style.cursor = "default"
-            this.controls.enabled = true
             return
         }
 
-        const target = hit ?? this.selectedObject!
+        this.selectObject(hit)
 
-        this.selectObject(target)
-        this.updateHelperArrows()
-
-        const role = this.getPointRole(target)
+        const role = this.getPointRole(hit)
 
         if (role === "locked") {
             this.isDragging = false
+            this.controls.enabled = true
+            event.preventDefault()
+            event.stopPropagation()
             return
         }
 
         this.isDragging = true
+        this.controls.enabled = false
         this.lastMouseY = event.clientY
-        this.dragOffset.set(0, 0, 0)
 
-        if (role === "free" && !this.verticalMove) {
-            const pointerPosition = this.getPointerPositionOnPlane(event)
-            this.dragOffset.copy(target.position).sub(pointerPosition)
-        }
-
+        event.preventDefault()
+        event.stopPropagation()
     }
 
-    onPointerMove(event: PointerEvent) {
-        updatePointCursor(event, this.camera, this.selectableObjects)
-
-        if (this.pointerDownPosition.distanceTo(new THREE.Vector2(event.clientX, event.clientY)) > 4) {
-            this.hasMoved = true
-        }
-
+    onMouseMove(event: MouseEvent) {
         if (!this.isDragging || !this.selectedObject) {
+            this.updateHoverCursor(event)
             this.updateHelperArrowScale()
             return
         }
@@ -132,8 +107,8 @@ export class SelectTool extends BaseTool {
                 return
             }
 
-            const pos = this.getPointerPositionOnPlane(event)
-            this.selectedObject.position.copy(pos.add(this.dragOffset))
+            const pos = this.getMousePositionOnPlane(event)
+            this.selectedObject.position.copy(pos)
 
             this.syncPrismPairY(this.selectedObject)
             this.updateDependents(this.selectedObject)
@@ -141,47 +116,36 @@ export class SelectTool extends BaseTool {
         }
     }
 
-    onPointerUp(event: PointerEvent) {
-        const hit = this.pickObject(event)
-
-        if (!this.hasMoved && hit && hit === this.selectedObject && this.getPointRole(hit) === "free") {
-            const now = performance.now()
-
-            if (this.lastTapObject === hit && now - this.lastTapTime < 350) {
-                this.verticalMove = !this.verticalMove
-                this.updateHelperArrows()
-                this.lastTapObject = null
-                this.lastTapTime = 0
-            } else {
-                this.lastTapObject = hit
-                this.lastTapTime = now
-            }
+    onMouseUp(event: MouseEvent) {
+        if (this.isDragging) {
+            event.preventDefault()
+            event.stopPropagation()
         }
 
         this.isDragging = false
         this.controls.enabled = true
-        this.updateHelperArrowScale()
     }
 
-    onMouseDown(event: MouseEvent) { this.onPointerDown(event as PointerEvent) }
-    onMouseMove(event: MouseEvent) { this.onPointerMove(event as PointerEvent) }
-    onMouseUp(event: MouseEvent) { this.onPointerUp(event as PointerEvent) }
+    onDoubleClick(event: MouseEvent) {
+        const hit = this.pickObject(event)
 
-    selectPoint(object: THREE.Mesh) {
-        this.selectObject(object)
+        if (!hit) return
+
+        const role = this.getPointRole(hit)
+
+        if (role !== "free") return
+
+        this.selectObject(hit)
+        this.verticalMove = !this.verticalMove
+        this.updateHelperArrows()
+
+        event.preventDefault()
+        event.stopPropagation()
     }
 
-    selectPointWithoutHelpers(object: THREE.Mesh) {
-        this.selectObject(object)
-    }
-
-    private selectObject(object: THREE.Mesh, showHelpers = true) {
+    private selectObject(object: THREE.Mesh) {
         if (this.selectedObject === object) {
-            if (showHelpers) {
-                this.updateHelperArrows()
-            } else {
-                this.clearHelperArrows()
-            }
+            this.updateHelperArrows()
             return
         }
 
@@ -198,17 +162,14 @@ export class SelectTool extends BaseTool {
             })
         }
 
-        if (showHelpers) {
-            this.updateHelperArrows()
-        }
+        this.updateHelperArrows()
     }
 
-    clearSelection() {
+    private clearSelection() {
         this.clearHelperArrows()
         this.restoreOriginalMaterial()
         this.selectedObject = null
         this.verticalMove = false
-        this.controls.enabled = true
     }
 
     private restoreOriginalMaterial() {
@@ -231,14 +192,50 @@ export class SelectTool extends BaseTool {
         )
     }
 
-    private pickObject(event: PointerEvent | MouseEvent): THREE.Mesh | null {
-        return getNearestSelectablePoint(event, this.camera, this.selectableObjects)
+    private pickObject(event: MouseEvent): THREE.Mesh | null {
+        this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1
+        this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
+
+        this.raycaster.setFromCamera(this.mouse, this.camera)
+
+        const intersects = this.raycaster.intersectObjects(
+            this.selectableObjects,
+            false
+        )
+
+        if (intersects.length === 0) return null
+
+        const object = intersects[0].object
+
+        if (object instanceof THREE.Mesh) {
+            return object
+        }
+
+        return null
     }
 
-    private getPointerPositionOnPlane(event: PointerEvent | MouseEvent) {
+    private updateHoverCursor(event: MouseEvent) {
+        const hit = this.pickObject(event)
+        document.body.style.cursor = hit ? "pointer" : "default"
+    }
+
+    private getMousePositionOnPlane(event: MouseEvent) {
+        this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1
+        this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
+
+        this.raycaster.setFromCamera(this.mouse, this.camera)
+
         const y = this.selectedObject ? this.selectedObject.position.y : 0
 
-        return getPointerIntersection(event, this.camera, undefined, y)
+        const plane = new THREE.Plane(
+            new THREE.Vector3(0, 1, 0),
+            -y
+        )
+
+        const point = new THREE.Vector3()
+        this.raycaster.ray.intersectPlane(plane, point)
+
+        return point
     }
 
     private syncPrismPairY(object: THREE.Object3D) {
@@ -257,22 +254,13 @@ export class SelectTool extends BaseTool {
     }
 
     private updateHelperArrows() {
-        if (!HELPERS_ENABLED) {
-            this.clearHelperArrows()
-            return
-        }
-
         this.clearHelperArrows()
 
-        if (!this.selectedObject) {
-            return
-        }
+        if (!this.selectedObject) return
 
         const role = this.getPointRole(this.selectedObject)
 
-        if (role === "locked") {
-            return
-        }
+        if (role === "locked") return
 
         if (role === "height") {
             const controller = this.selectedObject.userData.normalWheelController
@@ -371,9 +359,24 @@ export class SelectTool extends BaseTool {
     }
 
     private updateHelperArrowScale() {
+        if (!this.selectedObject) return
+
+        const scale = this.getHelperArrowScale()
+
         this.helperArrows.forEach((arrow) => {
-            arrow.scale.setScalar(1)
+            arrow.scale.setScalar(scale)
         })
+    }
+
+    private getHelperArrowScale() {
+        if (!this.selectedObject) return 1
+
+        const selectedWorldPosition = new THREE.Vector3()
+        this.selectedObject.getWorldPosition(selectedWorldPosition)
+
+        const distance = this.camera.position.distanceTo(selectedWorldPosition)
+
+        return THREE.MathUtils.clamp(distance * 0.045, 0.7, 2.4)
     }
 
     private clearHelperArrows() {
@@ -396,24 +399,5 @@ export class SelectTool extends BaseTool {
         })
 
         this.helperArrows = []
-    }
-
-    private shouldStartSelectedPointDrag(event: PointerEvent | MouseEvent) {
-        if (!this.selectedObject || this.helperArrows.length === 0) return false
-
-        return this.getScreenDistanceToSelectedPoint(event) <= SELECTED_POINT_DRAG_RADIUS_PX
-    }
-
-    private getScreenDistanceToSelectedPoint(event: PointerEvent | MouseEvent) {
-        if (!this.selectedObject) return Infinity
-
-        const projected = new THREE.Vector3()
-        this.selectedObject.getWorldPosition(projected)
-        projected.project(this.camera)
-
-        const x = (projected.x * 0.5 + 0.5) * window.innerWidth
-        const y = (-projected.y * 0.5 + 0.5) * window.innerHeight
-
-        return Math.hypot(event.clientX - x, event.clientY - y)
     }
 }

@@ -1,0 +1,58 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  overflow: hidden;
+}
+
+#toolbar {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 10;
+
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #cccccc;
+  border-radius: 8px;
+}
+
+#toolbar button {
+  width: 38px;
+  height: 38px;
+
+  border: 1px solid #bbbbbb;
+  border-radius: 6px;
+  background: white;
+
+  font-size: 18px;
+}
+
+#toolbar button:hover {
+  background: #eeeeee;
+}
+
+#toolbar button.active {
+  background: #2563eb;
+  color: white;
+  border-color: #1d4ed8;
+}
+
+#prismSideControl {
+  position: absolute;
+  top: 20px;
+  left: 100px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 10px;
+  border-radius: 8px;
+  font-family: Arial;
+  display: none;
+  z-index: 10;
+}

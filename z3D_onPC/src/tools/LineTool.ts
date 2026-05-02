@@ -1,8 +1,9 @@
 import * as THREE from "three"
 import { BaseTool } from "./BaseTool"
+import { getMouseIntersection } from "../interaction/Raycaster"
 import { createPoint } from "../objects/Point"
 import { LineObject } from "../objects/Line"
-import { getNearestSelectablePoint, getPointerIntersection, getPointerPointSize, PREVIEW_POINT_SIZE, shouldShowPointerPreview, updatePointCursor } from "../interaction/Pointer"
+import { getNearestSelectablePoint, updatePointHoverCursor } from "../interaction/getNearestSelectablePoint"
 
 export class LineTool extends BaseTool {
   selectableObjects: THREE.Object3D[]
@@ -20,7 +21,7 @@ export class LineTool extends BaseTool {
     super(scene, camera)
     this.selectableObjects = selectableObjects
 
-    const geo = new THREE.SphereGeometry(PREVIEW_POINT_SIZE, 16, 16)
+    const geo = new THREE.SphereGeometry(0.1, 16, 16)
     const mat = new THREE.MeshBasicMaterial({ color: 0xff0000 })
 
     this.cursorPreview = new THREE.Mesh(geo, mat)
@@ -53,53 +54,50 @@ export class LineTool extends BaseTool {
     this.cursorPreview.visible = false
   }
 
-  onPointerMove(event: PointerEvent) {
-    updatePointCursor(event, this.camera, this.selectableObjects)
+  onMouseMove(event: MouseEvent) {
 
-    if (!shouldShowPointerPreview(event)) {
-      this.cursorPreview.visible = false
-      return
-    }
+    updatePointHoverCursor(
+      event,
+      this.camera,
+      this.selectableObjects
+    )
 
-    const pos = getPointerIntersection(event, this.camera)
+    const pos = getMouseIntersection(event, this.camera)
 
     this.cursorPreview.position.copy(pos)
     this.cursorPreview.visible = true
 
     if (!this.pointA) return
 
+    const a = this.pointA.position
+    const b = pos
+
     const direction = new THREE.Vector3()
-      .subVectors(pos, this.pointA.position)
+      .subVectors(b, a)
       .normalize()
 
     const length = 100
-    const start = this.pointA.position.clone().add(direction.clone().multiplyScalar(-length / 2))
-    const end = this.pointA.position.clone().add(direction.clone().multiplyScalar(length / 2))
+
+    const start = a.clone().add(direction.clone().multiplyScalar(-length / 2))
+    const end = a.clone().add(direction.clone().multiplyScalar(length / 2))
 
     if (this.previewLine) {
       this.scene.remove(this.previewLine)
       this.previewLine.geometry.dispose()
     }
 
-    this.previewLine = new THREE.Line(
-      new THREE.BufferGeometry().setFromPoints([start, end]),
-      new THREE.LineBasicMaterial({ color: 0xff0000 })
-    )
+    const geometry = new THREE.BufferGeometry().setFromPoints([start, end])
+    const material = new THREE.LineBasicMaterial({ color: 0xff0000 })
+
+    this.previewLine = new THREE.Line(geometry, material)
     this.scene.add(this.previewLine)
   }
-  onMouseMove(_event: MouseEvent) { }
 
-  onPointerDown(event: PointerEvent) {
-    const result = this.getOrCreatePoint(event)
-    const point = result.point
+  onClick(event: MouseEvent) {
+    const point = this.getOrCreatePoint(event)
 
     if (!this.pointA) {
       this.pointA = point
-      return
-    }
-
-    if (point === this.pointA || point.position.distanceTo(this.pointA.position) < 0.001) {
-      if (result.created) this.removeCreatedPoint(point)
       return
     }
 
@@ -107,12 +105,9 @@ export class LineTool extends BaseTool {
     this.scene.add(line.mesh)
 
     this.reset()
-    this.complete()
   }
 
-  onClick(event: MouseEvent) { this.onPointerDown(event as PointerEvent) }
-
-  private getOrCreatePoint(event: PointerEvent | MouseEvent) {
+  private getOrCreatePoint(event: MouseEvent) {
     const existingPoint = getNearestSelectablePoint(
       event,
       this.camera,
@@ -120,23 +115,15 @@ export class LineTool extends BaseTool {
     )
 
     if (existingPoint) {
-      this.selectPoint(existingPoint)
-      return { point: existingPoint, created: false }
+      return existingPoint
     }
 
-    const pos = getPointerIntersection(event, this.camera)
-    const point = createPoint(pos, getPointerPointSize(event))
+    const pos = this.cursorPreview.position.clone()
+    const point = createPoint(pos)
 
     this.scene.add(point)
     this.selectableObjects.push(point)
 
-    return { point, created: true }
-  }
-
-  private removeCreatedPoint(point: THREE.Mesh) {
-    this.scene.remove(point)
-    const index = this.selectableObjects.indexOf(point)
-    if (index >= 0) this.selectableObjects.splice(index, 1)
-    point.geometry.dispose()
+    return point
   }
 }

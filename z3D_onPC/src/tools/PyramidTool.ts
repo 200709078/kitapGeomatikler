@@ -1,11 +1,12 @@
 import * as THREE from "three"
 import { BaseTool } from "./BaseTool"
+import { getMouseIntersection } from "../interaction/Raycaster"
 import { createPoint } from "../objects/Point"
 import { LineSegment } from "../objects/LineSegment"
-import { Prism } from "../objects/Prism"
-import { getNearestSelectablePoint, getPointerIntersection, getPointerPointSize, PREVIEW_POINT_SIZE, shouldShowPointerPreview, updatePointCursor } from "../interaction/Pointer"
+import { Pyramid } from "../objects/Pyramid"
+import { getNearestSelectablePoint, updatePointHoverCursor } from "../interaction/getNearestSelectablePoint"
 
-export class PrismTool extends BaseTool {
+export class PyramidTool extends BaseTool {
   selectableObjects: THREE.Object3D[]
   sideCount = 4
 
@@ -13,15 +14,14 @@ export class PrismTool extends BaseTool {
 
   cursorPreview: THREE.Mesh
   edgePreview: THREE.Line | null = null
-  prismPreview: THREE.Mesh | null = null
-  lastPrism: Prism | null = null
+  pyramidPreview: THREE.Mesh | null = null
+  previewSideLines: THREE.LineSegments | null = null
+
+  lastPyramid: Pyramid | null = null
 
   sliderContainer: HTMLElement | null = null
   sideSlider: HTMLInputElement | null = null
   sideValue: HTMLSpanElement | null = null
-
-
-
 
   constructor(
     scene: THREE.Scene,
@@ -29,10 +29,11 @@ export class PrismTool extends BaseTool {
     selectableObjects: THREE.Object3D[]
   ) {
     super(scene, camera)
+
     this.selectableObjects = selectableObjects
 
     this.cursorPreview = new THREE.Mesh(
-      new THREE.SphereGeometry(PREVIEW_POINT_SIZE, 16, 16),
+      new THREE.SphereGeometry(0.1, 16, 16),
       new THREE.MeshBasicMaterial({ color: 0xff0000 })
     )
 
@@ -49,10 +50,21 @@ export class PrismTool extends BaseTool {
         this.sideValue.textContent = value.toString()
       }
 
+      if (this.lastPyramid) {
+        this.lastPyramid.setSideCount(value)
+      }
     })
   }
 
-  private getOrCreatePoint(event: PointerEvent | MouseEvent) {
+  setSideCount(n: number) {
+    this.sideCount = n
+
+    if (this.lastPyramid) {
+      this.lastPyramid.setSideCount(n)
+    }
+  }
+
+  private getOrCreatePoint(event: MouseEvent) {
     const existingPoint = getNearestSelectablePoint(
       event,
       this.camera,
@@ -60,22 +72,16 @@ export class PrismTool extends BaseTool {
     )
 
     if (existingPoint) {
-      this.selectPoint(existingPoint)
-      return { point: existingPoint, created: false }
+      return existingPoint
     }
 
-    const pos = getPointerIntersection(event, this.camera)
-    const point = createPoint(pos, getPointerPointSize(event))
+    const pos = this.cursorPreview.position.clone()
+    const point = createPoint(pos)
 
     this.scene.add(point)
     this.selectableObjects.push(point)
 
-    return { point, created: true }
-  }
-
-  setSideCount(n: number) {
-    console.log("slider:", n)
-    this.sideCount = n
+    return point
   }
 
   activate() {
@@ -84,6 +90,7 @@ export class PrismTool extends BaseTool {
     if (!this.cursorPreview.parent) {
       this.scene.add(this.cursorPreview)
     }
+
     if (this.sliderContainer) {
       this.sliderContainer.style.display = "block"
     }
@@ -95,6 +102,7 @@ export class PrismTool extends BaseTool {
     if (this.cursorPreview.parent) {
       this.scene.remove(this.cursorPreview)
     }
+
     if (this.sliderContainer) {
       this.sliderContainer.style.display = "none"
     }
@@ -107,25 +115,31 @@ export class PrismTool extends BaseTool {
       this.edgePreview = null
     }
 
-    if (this.prismPreview) {
-      this.scene.remove(this.prismPreview)
-      this.prismPreview.geometry.dispose()
-      this.prismPreview = null
+    if (this.pyramidPreview) {
+      this.scene.remove(this.pyramidPreview)
+      this.pyramidPreview.geometry.dispose()
+      this.pyramidPreview = null
+    }
+
+    if (this.previewSideLines) {
+      this.scene.remove(this.previewSideLines)
+      this.previewSideLines.geometry.dispose()
+      this.previewSideLines = null
     }
 
     this.pointA = null
     this.cursorPreview.visible = false
   }
 
-  onPointerMove(event: PointerEvent) {
-    updatePointCursor(event, this.camera, this.selectableObjects)
+  onMouseMove(event: MouseEvent) {
 
-    if (!shouldShowPointerPreview(event)) {
-      this.cursorPreview.visible = false
-      return
-    }
+    updatePointHoverCursor(
+      event,
+      this.camera,
+      this.selectableObjects
+    )
 
-    const pos = getPointerIntersection(event, this.camera)
+    const pos = getMouseIntersection(event, this.camera)
 
     this.cursorPreview.position.copy(pos)
     this.cursorPreview.visible = true
@@ -138,28 +152,21 @@ export class PrismTool extends BaseTool {
     if (A.distanceTo(B) < 0.001) return
 
     this.updateEdgePreview(A, B)
-    this.updatePrismPreview(A, B)
+    this.updatePyramidPreview(A, B)
   }
-  onMouseMove(_event: MouseEvent) { }
 
-  onPointerDown(event: PointerEvent) {
-    const result = this.getOrCreatePoint(event)
-    const point = result.point
+  onClick(event: MouseEvent) {
+    const point = this.getOrCreatePoint(event)
 
     if (!this.pointA) {
       this.pointA = point
       return
     }
 
-    if (point === this.pointA || point.position.distanceTo(this.pointA.position) < 0.001) {
-      if (result.created) this.removeCreatedPoint(point)
-      return
-    }
-
     const edge = new LineSegment(this.pointA, point)
     this.scene.add(edge.mesh)
 
-    this.lastPrism = new Prism(
+    this.lastPyramid = new Pyramid(
       this.scene,
       this.selectableObjects,
       this.pointA,
@@ -168,12 +175,9 @@ export class PrismTool extends BaseTool {
     )
 
     this.reset()
-    this.complete()
   }
 
-  onClick(event: MouseEvent) { this.onPointerDown(event as PointerEvent) }
-
-  updateEdgePreview(A: THREE.Vector3, B: THREE.Vector3) {
+  private updateEdgePreview(A: THREE.Vector3, B: THREE.Vector3) {
     if (this.edgePreview) {
       this.scene.remove(this.edgePreview)
       this.edgePreview.geometry.dispose()
@@ -187,12 +191,12 @@ export class PrismTool extends BaseTool {
     this.scene.add(this.edgePreview)
   }
 
-  updatePrismPreview(A: THREE.Vector3, B: THREE.Vector3) {
-    const geometry = this.createPreviewGeometry(A, B)
+  private updatePyramidPreview(A: THREE.Vector3, B: THREE.Vector3) {
+    const preview = this.createPreviewGeometry(A, B)
 
-    if (!geometry) return
+    if (!preview) return
 
-    if (!this.prismPreview) {
+    if (!this.pyramidPreview) {
       const material = new THREE.MeshStandardMaterial({
         color: 0xd2a679,
         transparent: true,
@@ -201,13 +205,24 @@ export class PrismTool extends BaseTool {
         depthWrite: false,
       })
 
-      this.prismPreview = new THREE.Mesh(geometry, material)
-      this.scene.add(this.prismPreview)
-      return
+      this.pyramidPreview = new THREE.Mesh(preview.meshGeometry, material)
+      this.scene.add(this.pyramidPreview)
+    } else {
+      this.pyramidPreview.geometry.dispose()
+      this.pyramidPreview.geometry = preview.meshGeometry
     }
 
-    this.prismPreview.geometry.dispose()
-    this.prismPreview.geometry = geometry
+    if (!this.previewSideLines) {
+      const material = new THREE.LineBasicMaterial({ color: 0x000000 })
+      this.previewSideLines = new THREE.LineSegments(
+        preview.lineGeometry,
+        material
+      )
+      this.scene.add(this.previewSideLines)
+    } else {
+      this.previewSideLines.geometry.dispose()
+      this.previewSideLines.geometry = preview.lineGeometry
+    }
   }
 
   private createPreviewGeometry(A: THREE.Vector3, B: THREE.Vector3) {
@@ -217,18 +232,18 @@ export class PrismTool extends BaseTool {
     if (baseVertices.length < 3) return null
 
     const normal = this.getBaseNormal(A, B, C)
-
     if (!normal) return null
 
     normal.multiplyScalar(-1)
 
     const height = A.distanceTo(B)
+    const center = this.getPolygonCenter(baseVertices)
+    const apex = center.clone().add(normal.multiplyScalar(height))
 
-    const topVertices = baseVertices.map((p) =>
-      p.clone().add(normal.clone().multiplyScalar(height))
-    )
-
-    return this.buildGeometry(baseVertices, topVertices)
+    return {
+      meshGeometry: this.buildMeshGeometry(baseVertices, apex),
+      lineGeometry: this.buildLineGeometry(baseVertices, apex),
+    }
   }
 
   private createInitialC(A: THREE.Vector3, B: THREE.Vector3) {
@@ -327,9 +342,19 @@ export class PrismTool extends BaseTool {
     return normal.normalize()
   }
 
-  private buildGeometry(
+  private getPolygonCenter(vertices: THREE.Vector3[]) {
+    const center = new THREE.Vector3()
+
+    for (const vertex of vertices) {
+      center.add(vertex)
+    }
+
+    return center.divideScalar(vertices.length)
+  }
+
+  private buildMeshGeometry(
     baseVertices: THREE.Vector3[],
-    topVertices: THREE.Vector3[]
+    apex: THREE.Vector3
   ) {
     const n = baseVertices.length
 
@@ -340,28 +365,17 @@ export class PrismTool extends BaseTool {
       vertices.push(p.x, p.y, p.z)
     }
 
-    for (const p of topVertices) {
-      vertices.push(p.x, p.y, p.z)
-    }
+    vertices.push(apex.x, apex.y, apex.z)
+
+    const apexIndex = n
 
     for (let i = 1; i < n - 1; i++) {
       indices.push(0, i, i + 1)
     }
 
-    for (let i = 1; i < n - 1; i++) {
-      indices.push(n, n + i + 1, n + i)
-    }
-
     for (let i = 0; i < n; i++) {
       const next = (i + 1) % n
-
-      const a = i
-      const b = next
-      const c = n + next
-      const d = n + i
-
-      indices.push(a, b, d)
-      indices.push(b, c, d)
+      indices.push(i, next, apexIndex)
     }
 
     const geometry = new THREE.BufferGeometry()
@@ -377,6 +391,25 @@ export class PrismTool extends BaseTool {
     return geometry
   }
 
+  private buildLineGeometry(
+    baseVertices: THREE.Vector3[],
+    apex: THREE.Vector3
+  ) {
+    const points: THREE.Vector3[] = []
+
+    for (let i = 0; i < baseVertices.length; i++) {
+      const next = (i + 1) % baseVertices.length
+
+      points.push(baseVertices[i].clone())
+      points.push(baseVertices[next].clone())
+
+      points.push(baseVertices[i].clone())
+      points.push(apex.clone())
+    }
+
+    return new THREE.BufferGeometry().setFromPoints(points)
+  }
+
   private rotateAroundAxis(
     point: THREE.Vector3,
     center: THREE.Vector3,
@@ -388,12 +421,5 @@ export class PrismTool extends BaseTool {
       .sub(center)
       .applyAxisAngle(axis, angle)
       .add(center)
-  }
-
-  private removeCreatedPoint(point: THREE.Mesh) {
-    this.scene.remove(point)
-    const index = this.selectableObjects.indexOf(point)
-    if (index >= 0) this.selectableObjects.splice(index, 1)
-    point.geometry.dispose()
   }
 }

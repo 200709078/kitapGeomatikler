@@ -1,9 +1,10 @@
 import * as THREE from "three"
 import { BaseTool } from "./BaseTool"
+import { getMouseIntersection } from "../interaction/Raycaster"
 import { createPoint } from "../objects/Point"
 import { LineSegment } from "../objects/LineSegment"
 import { Prism } from "../objects/Prism"
-import { getNearestSelectablePoint, getPointerIntersection, getPointerPointSize, PREVIEW_POINT_SIZE, shouldShowPointerPreview, updatePointCursor } from "../interaction/Pointer"
+import { getNearestSelectablePoint, updatePointHoverCursor } from "../interaction/getNearestSelectablePoint"
 
 export class PrismTool extends BaseTool {
   selectableObjects: THREE.Object3D[]
@@ -32,7 +33,7 @@ export class PrismTool extends BaseTool {
     this.selectableObjects = selectableObjects
 
     this.cursorPreview = new THREE.Mesh(
-      new THREE.SphereGeometry(PREVIEW_POINT_SIZE, 16, 16),
+      new THREE.SphereGeometry(0.1, 16, 16),
       new THREE.MeshBasicMaterial({ color: 0xff0000 })
     )
 
@@ -49,10 +50,13 @@ export class PrismTool extends BaseTool {
         this.sideValue.textContent = value.toString()
       }
 
+      if (this.lastPrism) {
+        this.lastPrism.setSideCount(value)
+      }
     })
   }
 
-  private getOrCreatePoint(event: PointerEvent | MouseEvent) {
+  private getOrCreatePoint(event: MouseEvent) {
     const existingPoint = getNearestSelectablePoint(
       event,
       this.camera,
@@ -60,17 +64,16 @@ export class PrismTool extends BaseTool {
     )
 
     if (existingPoint) {
-      this.selectPoint(existingPoint)
-      return { point: existingPoint, created: false }
+      return existingPoint
     }
 
-    const pos = getPointerIntersection(event, this.camera)
-    const point = createPoint(pos, getPointerPointSize(event))
+    const pos = this.cursorPreview.position.clone()
+    const point = createPoint(pos)
 
     this.scene.add(point)
     this.selectableObjects.push(point)
 
-    return { point, created: true }
+    return point
   }
 
   setSideCount(n: number) {
@@ -117,15 +120,15 @@ export class PrismTool extends BaseTool {
     this.cursorPreview.visible = false
   }
 
-  onPointerMove(event: PointerEvent) {
-    updatePointCursor(event, this.camera, this.selectableObjects)
+  onMouseMove(event: MouseEvent) {
 
-    if (!shouldShowPointerPreview(event)) {
-      this.cursorPreview.visible = false
-      return
-    }
+    updatePointHoverCursor(
+      event,
+      this.camera,
+      this.selectableObjects
+    )
 
-    const pos = getPointerIntersection(event, this.camera)
+    const pos = getMouseIntersection(event, this.camera)
 
     this.cursorPreview.position.copy(pos)
     this.cursorPreview.visible = true
@@ -140,19 +143,12 @@ export class PrismTool extends BaseTool {
     this.updateEdgePreview(A, B)
     this.updatePrismPreview(A, B)
   }
-  onMouseMove(_event: MouseEvent) { }
 
-  onPointerDown(event: PointerEvent) {
-    const result = this.getOrCreatePoint(event)
-    const point = result.point
+  onClick(event: MouseEvent) {
+    const point = this.getOrCreatePoint(event)
 
     if (!this.pointA) {
       this.pointA = point
-      return
-    }
-
-    if (point === this.pointA || point.position.distanceTo(this.pointA.position) < 0.001) {
-      if (result.created) this.removeCreatedPoint(point)
       return
     }
 
@@ -168,12 +164,9 @@ export class PrismTool extends BaseTool {
     )
 
     this.reset()
-    this.complete()
   }
 
-  onClick(event: MouseEvent) { this.onPointerDown(event as PointerEvent) }
-
-  updateEdgePreview(A: THREE.Vector3, B: THREE.Vector3) {
+  private updateEdgePreview(A: THREE.Vector3, B: THREE.Vector3) {
     if (this.edgePreview) {
       this.scene.remove(this.edgePreview)
       this.edgePreview.geometry.dispose()
@@ -187,7 +180,7 @@ export class PrismTool extends BaseTool {
     this.scene.add(this.edgePreview)
   }
 
-  updatePrismPreview(A: THREE.Vector3, B: THREE.Vector3) {
+  private updatePrismPreview(A: THREE.Vector3, B: THREE.Vector3) {
     const geometry = this.createPreviewGeometry(A, B)
 
     if (!geometry) return
@@ -388,12 +381,5 @@ export class PrismTool extends BaseTool {
       .sub(center)
       .applyAxisAngle(axis, angle)
       .add(center)
-  }
-
-  private removeCreatedPoint(point: THREE.Mesh) {
-    this.scene.remove(point)
-    const index = this.selectableObjects.indexOf(point)
-    if (index >= 0) this.selectableObjects.splice(index, 1)
-    point.geometry.dispose()
   }
 }

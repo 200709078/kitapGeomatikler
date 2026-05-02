@@ -1,9 +1,8 @@
 import * as THREE from "three"
 import { BaseTool } from "./BaseTool"
-import { getMouseIntersection } from "../interaction/Raycaster"
 import { createPoint } from "../objects/Point"
 import { LineSegment } from "../objects/LineSegment"
-import { getNearestSelectablePoint, updatePointHoverCursor } from "../interaction/getNearestSelectablePoint"
+import { getNearestSelectablePoint, getPointerIntersection, getPointerPointSize, PREVIEW_POINT_SIZE, shouldShowPointerPreview, updatePointCursor } from "../interaction/Pointer"
 
 export class LineSegmentTool extends BaseTool {
     previewLine: THREE.Line | null = null
@@ -14,34 +13,24 @@ export class LineSegmentTool extends BaseTool {
     constructor(scene: THREE.Scene, camera: THREE.PerspectiveCamera, selectableObjects: THREE.Object3D[]) {
         super(scene, camera)
         this.selectableObjects = selectableObjects
-        const geo = new THREE.SphereGeometry(0.1, 16, 16)
+        const geo = new THREE.SphereGeometry(PREVIEW_POINT_SIZE, 16, 16)
         const mat = new THREE.MeshBasicMaterial({ color: 0xff0000 })
 
         this.cursorPreview = new THREE.Mesh(geo, mat)
     }
 
-    onClick(event: MouseEvent) {
-        const existingPoint = getNearestSelectablePoint(
-            event,
-            this.camera,
-            this.selectableObjects
-        )
-
-        let pointMesh: THREE.Mesh
-
-        if (existingPoint) {
-            pointMesh = existingPoint
-        } else {
-            const pos = getMouseIntersection(event, this.camera)
-            pointMesh = createPoint(pos)
-
-            this.scene.add(pointMesh)
-            this.selectableObjects.push(pointMesh)
-        }
+    onPointerDown(event: PointerEvent) {
+        const result = this.getOrCreatePoint(event)
+        const pointMesh = result.point
 
         if (!this.startPointMesh) {
             this.startPointMesh = pointMesh
             this.startPoint = pointMesh.position.clone()
+            return
+        }
+
+        if (pointMesh === this.startPointMesh || pointMesh.position.distanceTo(this.startPointMesh.position) < 0.001) {
+            if (result.created) this.removeCreatedPoint(pointMesh)
             return
         }
 
@@ -56,30 +45,42 @@ export class LineSegmentTool extends BaseTool {
 
         this.startPoint = null
         this.startPointMesh = null
+        this.complete()
     }
-    onMouseMove(event: MouseEvent) {
-        updatePointHoverCursor(
-            event,
-            this.camera,
-            this.selectableObjects,
-        )
-        const pos = getMouseIntersection(event, this.camera)
+    onPointerMove(event: PointerEvent) {
+        updatePointCursor(event, this.camera, this.selectableObjects)
+
+        if (!shouldShowPointerPreview(event)) {
+            this.cursorPreview.visible = false
+            return
+        }
+
+        const pos = getPointerIntersection(event, this.camera)
 
         this.cursorPreview.position.copy(pos)
         this.cursorPreview.visible = true
 
         if (!this.startPoint) return
 
-        const points = [this.startPoint, pos]
-        const geometry = new THREE.BufferGeometry().setFromPoints(points)
+        const geometry = new THREE.BufferGeometry().setFromPoints([
+            this.startPoint,
+            pos,
+        ])
+
         if (this.previewLine) {
             this.scene.remove(this.previewLine)
+            this.previewLine.geometry.dispose()
         }
-        const material = new THREE.LineBasicMaterial({ color: 0xff0000 })
-        this.previewLine = new THREE.Line(geometry, material)
+
+        this.previewLine = new THREE.Line(
+            geometry,
+            new THREE.LineBasicMaterial({ color: 0xff0000 })
+        )
 
         this.scene.add(this.previewLine)
     }
+    onClick(event: MouseEvent) { this.onPointerDown(event as PointerEvent) }
+    onMouseMove(_event: MouseEvent) { }
 
     activate() {
         this.cursorPreview.visible = false
@@ -106,6 +107,36 @@ export class LineSegmentTool extends BaseTool {
         this.startPoint = null
         this.startPointMesh = null
         this.cursorPreview.visible = false
+    }
+
+    private getOrCreatePoint(event: PointerEvent | MouseEvent) {
+        const existingPoint = getNearestSelectablePoint(
+            event,
+            this.camera,
+            this.selectableObjects
+        )
+
+        if (existingPoint) {
+            this.selectPoint(existingPoint)
+            return { point: existingPoint, created: false }
+        }
+
+        const point = createPoint(
+            getPointerIntersection(event, this.camera),
+            getPointerPointSize(event)
+        )
+
+        this.scene.add(point)
+        this.selectableObjects.push(point)
+
+        return { point, created: true }
+    }
+
+    private removeCreatedPoint(point: THREE.Mesh) {
+        this.scene.remove(point)
+        const index = this.selectableObjects.indexOf(point)
+        if (index >= 0) this.selectableObjects.splice(index, 1)
+        point.geometry.dispose()
     }
 
 }

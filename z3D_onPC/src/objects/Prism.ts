@@ -1,6 +1,5 @@
 import * as THREE from "three"
 import { createPoint } from "./Point"
-import { HEIGHT_POINT_SIZE, LOCKED_POINT_SIZE } from "../interaction/Pointer"
 
 export class Prism {
   pointA: THREE.Mesh
@@ -193,7 +192,7 @@ export class Prism {
   }
 
   private createGrayPoint(position: THREE.Vector3) {
-    const geometry = new THREE.SphereGeometry(LOCKED_POINT_SIZE, 24, 24)
+    const geometry = new THREE.SphereGeometry(0.09, 24, 24)
 
     const material = new THREE.MeshStandardMaterial({
       color: 0x808080,
@@ -211,7 +210,7 @@ export class Prism {
   }
 
   private createPurplePoint(position: THREE.Vector3) {
-    const geometry = new THREE.SphereGeometry(HEIGHT_POINT_SIZE, 24, 24)
+    const geometry = new THREE.SphereGeometry(0.09, 24, 24)
     const material = new THREE.MeshStandardMaterial({
       color: 0x800080,
     })
