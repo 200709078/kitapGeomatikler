@@ -94,140 +94,6 @@ function distanceAB(A, B) {
 	return Math.sqrt(Math.pow(B.b - A.b, 2) + Math.pow(B.a - A.a, 2))
 }
 
-
-class mmmmmmmPoint {
-	constructor(a, b, temp = false) {
-		this.type = 'point'
-		temp ? this.name = null : this.name = createName('point')
-		temp ? this.id = null : this.id = idCounter()
-
-		this.a = a
-		this.b = b
-
-		this.color = getRandomColor()
-		this.visibility = true
-		this.size = 3
-		this.temp = temp
-		this.constraints = []
-	}
-
-	set(a, b, context = {}) {
-		this.a = a
-		this.b = b
-		this.applyConstraints(context)
-	}
-
-	applyConstraints(context) {
-		for (let c of this.constraints) {
-			if (c.type === "onCircle") {
-				const circle = context.circles?.find(x => x.id === c.circleId)
-				if (!circle) continue
-
-				if (c.theta == null) {
-					const dx = this.a - circle.A.a
-					const dy = this.b - circle.A.b
-					c.theta = Math.atan2(dy, dx)
-				}
-
-				// 🔥 çember merkez + r + theta ile konum
-				this.a = circle.A.a + circle.r * Math.cos(c.theta)
-				this.b = circle.A.b + circle.r * Math.sin(c.theta)
-			}
-		}
-	}
-}
-
-function aaaaaattachPointToCircle(p, circle) {
-	const dx = p.a - circle.A.a
-	const dy = p.b - circle.A.b
-
-	const theta = Math.atan2(dy, dx)
-
-	p.constraints.push({
-		type: "onCircle",
-		circleId: circle.id,
-		theta
-	})
-
-	// hemen normalize et
-	updatePointFromCircleAngle(p, circle)
-}
-
-function uuuuupdatePointFromCircleAngle(p, circle) {
-	const c = p.constraints.find(x => x.circleId === circle.id)
-	if (!c) return
-
-	p.a = circle.A.a + circle.r * Math.cos(c.theta)
-	p.b = circle.A.b + circle.r * Math.sin(c.theta)
-}
-
-function mmmmmovePoint(p, x, y, context) {
-	p.a = x
-	p.b = y
-
-	for (let c of p.constraints) {
-
-		if (c.type === "onCircle") {
-			const circle = context.circles?.find(x => x.id === c.circleId)
-			if (!circle) continue
-
-			if (c.theta == null) {
-				const dx = p.a - circle.A.a
-				const dy = p.b - circle.A.b
-				c.theta = Math.atan2(dy, dx)
-			}
-
-			p.a = circle.A.a + circle.r * Math.cos(c.theta)
-			p.b = circle.A.b + circle.r * Math.sin(c.theta)
-		}
-	}
-}
-
-function uuuuuupdateCirclePoints(circle, points) {
-	for (let p of points) {
-		for (let c of p.constraints) {
-			if (c.circleId === circle.id) {
-				updatePointFromCircleAngle(p, circle)
-			}
-		}
-	}
-}
-
-class mmmmmCircleR {
-	constructor(A, r, temp = false) {
-		this.type = 'circleR'
-		this.name = createName('circleR')
-		temp ? this.id = null : this.id = idCounter()
-
-		this.A = A
-		this.r = r
-
-		this.color = getRandomColor()
-		this.visibility = true
-		this.size = 1
-		this.temp = temp
-	}
-
-	updatePoints(points) {
-		for (let p of points) {
-			if (!p.constraints) continue
-
-			for (let c of p.constraints) {
-				if (c.type === "onCircle" && c.circleId === this.id) {
-					const dx = p.a - this.A.a
-					const dy = p.b - this.A.b
-					const dist = Math.sqrt(dx * dx + dy * dy)
-
-					if (dist === 0) continue
-
-					p.a = this.A.a + (dx / dist) * this.r
-					p.b = this.A.b + (dy / dist) * this.r
-				}
-			}
-		}
-	}
-}
-
 class mCircleR {
 	constructor(A, r, temp = false) {
 		this.type = 'circleR'
@@ -631,7 +497,9 @@ function drawAll() {
 	if (angleA && angleB) drawLineSegment(new mLineSegment(angleA, angleB, true))
 
 	arrObjects.sort(function (a, b) { return a.id - b.id })
-	arrObjects.findLast((item) => {
+	//arrObjects.findLast((item) => {
+	for (let i = arrObjects.length - 1; i >= 0; i--) {
+		const item = arrObjects[i]
 		if (item.type === 'point') {
 			drawPoint(item)
 		} else if (item.type === 'verLine') {
@@ -667,7 +535,8 @@ function drawAll() {
 		} else if (item.type === 'derivative') {
 			drawDerivative(item)
 		} else { console.log('drawAll içinde type bulunamadı.') }
-	})
+	}
+	//})
 }
 
 function drawPoint(point) {
@@ -1180,12 +1049,15 @@ function labelsCreator() {
 		btnGizle.classList = 'btn gizle'
 		item.visibility ? btnGizle.title = 'Gizle' : btnGizle.title = 'Göster'
 		item.visibility ? btnGizle.style.background = item.color : btnGizle.style.background = 'transparent'
-		let btnDuzenle = document.createElement('button')
-		btnDuzenle.classList = 'btn duzenle'
-		btnDuzenle.title = 'Düzenle'
-		let btnSil = document.createElement('button')
-		btnSil.classList = 'btn sil'
-		btnSil.title = 'Sil'
+
+		/* 		let btnDuzenle = document.createElement('button')
+				btnDuzenle.classList = 'btn duzenle'
+				btnDuzenle.title = 'Düzenle'
+				let btnSil = document.createElement('button')
+				btnSil.classList = 'btn sil'
+				btnSil.title = 'Sil' */
+
+
 		let sliderDiv = document.createElement('div')
 		sliderDiv.classList = 'sliders'
 
@@ -1216,8 +1088,8 @@ function labelsCreator() {
 
 		input.addEventListener('click', () => changeActiveElement(input.id))
 		input.addEventListener('keydown', (e) => digerKeyDown(e, input.id))
-		btnSil.addEventListener('click', (e) => delBtnClick(e))
-		btnDuzenle.addEventListener('click', (e) => ayarBtnClick(e))
+		//btnSil.addEventListener('click', (e) => delBtnClick(e))
+		//btnDuzenle.addEventListener('click', (e) => ayarBtnClick(e))
 		btnGizle.addEventListener('click', (e) => visibilityBtnClick(e))
 
 		sliderA.addEventListener('input', () => crossSlider())
@@ -1414,8 +1286,8 @@ function labelsCreator() {
 		exprDiv.appendChild(input)
 		exprDiv.appendChild(output)
 		exprDiv.appendChild(btnGizle)
-		exprDiv.appendChild(btnDuzenle)
-		exprDiv.appendChild(btnSil)
+		//exprDiv.appendChild(btnDuzenle)
+		//exprDiv.appendChild(btnSil)
 		emptyDiv.appendChild(exprDiv)
 		emptyDiv.appendChild(sliderDiv)
 		emptyDiv.appendChild(document.createElement('hr'))
@@ -3662,32 +3534,6 @@ $(document).ready(function () {
 	}, false)
 
 	canvas.addEventListener("mousedown", function (evt) {
-
-		/* 		return
-				let A = new mPoint(-2, 1)
-				let c = new mCircleR(A, 1)
-		
-				let cA = new mPoint(-1.5, 0.5)
-		
-				cA.constraints.push({
-					type: "onCircle",
-					circleId: c.id
-				})
-		
-				cA.applyConstraints({ circles: [c] })
-		
-				let lsp = new mPoint(1, 1)
-				arrObjects.push(lsp)
-				let ls = new mLineSegment(cA, lsp)
-		
-				arrObjects.push(ls)
-				arrObjects.push(A)
-				arrObjects.push(c)
-				arrObjects.push(cA)
-				drawAll()
-				return */
-
-
 		hitObject = getHitObject(getMousePos(evt))
 		if (evt.button == 0) {
 			if (activeObject === 'point') {
@@ -3730,7 +3576,6 @@ $(document).ready(function () {
 					console.log('Type bulunamadı. mousedown içinde.')
 				}
 
-				//console.log(point)
 				arrObjects.push(point)
 				activeElementID = point.id
 				undoObjects = []
@@ -3794,7 +3639,7 @@ $(document).ready(function () {
 				if (!circleDrawing) {
 					if (!circleA) {
 						circleA
-						hitObject.hit == 'point' ? circleA = hitObject.hit : circleA = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
+						hitObject.hitType == 'point' ? circleA = hitObject.hit : circleA = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
 						if (!hitObject.hit) arrObjects.push(circleA)
 					} else {
 						circleB

@@ -8,7 +8,6 @@ import { createLoop } from './core/Loop'
 import { setupResize } from './core/Resize'
 import { createLighting } from './engine/Lighting'
 import { createPlane } from './engine/Plane'
-//import { createGrid } from './engine/Grid'
 import { ToolManager } from './tools/ToolManager'
 import { createToolbar } from './ui/Toolbar'
 import { PointTool } from './tools/PointTool'
@@ -22,6 +21,7 @@ import { SphereTool } from './tools/SphereTool'
 import { PrismTool } from './tools/PrismTool'
 import { PyramidTool } from './tools/PyramidTool'
 import { createGrid } from './engine/Grid'
+import type { ToolCompleteOptions } from './tools/BaseTool'
 
 const scene = createScene()
 const camera = createCamera()
@@ -29,7 +29,6 @@ const renderer = createRenderer()
 createLighting(scene)
 const plane = createPlane(scene)
 createGrid(scene)
-//const grid = createGrid(scene)
 
 const controls = createControls(camera, renderer)
 setupResize(camera, renderer)
@@ -40,6 +39,8 @@ const toolManager = new ToolManager()
 const selectableObjects: THREE.Object3D[] = []
 const selectTool = new SelectTool(scene, camera, controls)
 selectTool.setSelectableObjects(selectableObjects)
+toolManager.setSelectTool(selectTool)
+toolManager.setControls(controls)
 
 const pointTool = new PointTool(scene, camera, selectableObjects)
 const lineSegmentTool = new LineSegmentTool(scene, camera, selectableObjects)
@@ -51,12 +52,42 @@ const sphereTool = new SphereTool(scene, camera, selectableObjects)
 const prismTool = new PrismTool(scene, camera, selectableObjects)
 const pyramidTool = new PyramidTool(scene, camera, selectableObjects)
 
+const returnToSelectTool = (options?: ToolCompleteOptions) => {
+  if (options?.clearSelection !== false) {
+    selectTool.clearSelection()
+  }
+
+  toolManager.setTool(selectTool)
+
+  document
+    .querySelectorAll<HTMLButtonElement>("#toolbar button")
+    .forEach((btn) => btn.classList.remove("active"))
+
+  document
+    .querySelector<HTMLButtonElement>('#toolbar button[data-tool="select"]')
+    ?.classList.add("active")
+}
+
+[
+  pointTool,
+  lineSegmentTool,
+  lineTool,
+  rayTool,
+  planeTool,
+  angleTool,
+  sphereTool,
+  prismTool,
+  pyramidTool,
+].forEach((tool) => {
+  tool.setCompleteHandler(returnToSelectTool)
+  tool.setPointSelectHandler((point) => selectTool.selectPointWithoutHelpers(point))
+})
+
 toolManager.setTool(selectTool)
 
 createToolbar((toolName) => {
   if (toolName === "togglePlane") {
     plane.visible = !plane.visible
-    //grid.visible = !grid.visible
   }
   if (toolName === "select") {
     toolManager.setTool(selectTool)
@@ -94,38 +125,40 @@ createToolbar((toolName) => {
   }
 })
 
-renderer.domElement.addEventListener("mousemove", (event) => {
-  toolManager.onMouseMove(event)
+renderer.domElement.style.touchAction = "none"
+
+renderer.domElement.addEventListener("pointerdown", (event) => {
+  const activeTool = toolManager.activeTool
+  const shouldToolHandleFirst = activeTool === selectTool
+    ? selectTool.shouldHandleBeforeOrbitControls(event)
+    : activeTool !== null
+
+  if (shouldToolHandleFirst) {
+    toolManager.onPointerDown(event)
+    event.preventDefault()
+    event.stopImmediatePropagation()
+  }
+}, { capture: true })
+
+renderer.domElement.addEventListener("pointerdown", (event) => {
+  toolManager.onPointerDown(event)
 })
 
-renderer.domElement.addEventListener("click", (event) => {
-  toolManager.onClick(event)
+renderer.domElement.addEventListener("pointermove", (event) => {
+  toolManager.onPointerMove(event)
 })
 
-renderer.domElement.addEventListener("mousedown", (event) => {
-  toolManager.onMouseDown(event)
+renderer.domElement.addEventListener("pointerup", (event) => {
+  toolManager.onPointerUp(event)
 })
 
-renderer.domElement.addEventListener("mouseup", (event) => {
-  toolManager.onMouseUp(event)
-})
-renderer.domElement.addEventListener("dblclick", (event) => {
-  toolManager.onDoubleClick(event)
+renderer.domElement.addEventListener("pointercancel", (event) => {
+  toolManager.onPointerCancel(event)
 })
 
 window.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
-    toolManager.setTool(selectTool)
-
-    document
-      .querySelectorAll<HTMLButtonElement>("#toolbar button")
-      .forEach((btn) => btn.classList.remove("active"))
-
-    document
-      .querySelector<HTMLButtonElement>('#toolbar button[data-tool="select"]')
-      ?.classList.add("active")
-
-    document.body.style.cursor = "default"
+    returnToSelectTool()
 
     return
   }

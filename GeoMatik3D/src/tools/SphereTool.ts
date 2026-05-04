@@ -1,6 +1,6 @@
 import * as THREE from "three"
 import { BaseTool } from "./BaseTool"
-import { getMouseIntersection } from "../interaction/Raycaster"
+import { getNearestSelectablePoint, getPointerIntersection, getPointerPointSize, PREVIEW_POINT_SIZE, shouldShowPointerPreview, updatePointCursor } from "../interaction/Pointer"
 import { createPoint } from "../objects/Point"
 import { LineSegment } from "../objects/LineSegment"
 import { SphereObject } from "../objects/Sphere"
@@ -22,7 +22,7 @@ export class SphereTool extends BaseTool {
     super(scene, camera)
     this.selectableObjects = selectableObjects
 
-    const geo = new THREE.SphereGeometry(0.1, 16, 16)
+    const geo = new THREE.SphereGeometry(PREVIEW_POINT_SIZE, 16, 16)
     const mat = new THREE.MeshBasicMaterial({ color: 0xff0000 })
 
     this.cursorPreview = new THREE.Mesh(geo, mat)
@@ -58,59 +58,89 @@ export class SphereTool extends BaseTool {
     this.cursorPreview.visible = false
   }
 
-  onMouseMove(event: MouseEvent) {
-    const pos = getMouseIntersection(event, this.camera)
+  onPointerMove(event: PointerEvent) {
+    updatePointCursor(event, this.camera, this.selectableObjects)
+
+    if (!shouldShowPointerPreview(event)) {
+      this.cursorPreview.visible = false
+      return
+    }
+
+    const pos = getPointerIntersection(event, this.camera)
 
     this.cursorPreview.position.copy(pos)
     this.cursorPreview.visible = true
 
     if (!this.centerPoint) return
 
-    const points = [this.centerPoint.position, pos]
-
     if (this.radiusPreview) {
       this.scene.remove(this.radiusPreview)
     }
 
-    const radiusGeometry = new THREE.BufferGeometry().setFromPoints(points)
-    const radiusMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 })
-
-    this.radiusPreview = new THREE.Line(radiusGeometry, radiusMaterial)
+    this.radiusPreview = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([this.centerPoint.position, pos]),
+      new THREE.LineBasicMaterial({ color: 0xff0000 })
+    )
     this.scene.add(this.radiusPreview)
 
     const radius = this.centerPoint.position.distanceTo(pos)
 
     if (!this.spherePreview) {
-      const sphereGeometry = new THREE.SphereGeometry(1, 32, 32)
-      const sphereMaterial = new THREE.MeshStandardMaterial({
-        color: 0x44aa88,
-        transparent: true,
-        opacity: 0.35,
-      })
-
-      this.spherePreview = new THREE.Mesh(sphereGeometry, sphereMaterial)
+      this.spherePreview = new THREE.Mesh(
+        new THREE.SphereGeometry(1, 32, 32),
+        new THREE.MeshStandardMaterial({
+          color: 0x44aa88,
+          transparent: true,
+          opacity: 0.35,
+        })
+      )
       this.scene.add(this.spherePreview)
     }
 
     this.spherePreview.position.copy(this.centerPoint.position)
     this.spherePreview.scale.set(radius, radius, radius)
   }
+  onMouseMove(_event: MouseEvent) { }
 
-  onClick(_event: MouseEvent) {
-    const pos = this.cursorPreview.position.clone()
+  onPointerDown(_event: PointerEvent) {
+    const existingPoint = getNearestSelectablePoint(
+      _event,
+      this.camera,
+      this.selectableObjects
+    )
 
     if (!this.centerPoint) {
-      const center = createPoint(pos)
-      this.scene.add(center)
-      this.selectableObjects.push(center)
+      const center = existingPoint ?? createPoint(
+        getPointerIntersection(_event, this.camera),
+        getPointerPointSize(_event)
+      )
+
+      if (existingPoint) {
+        this.selectPoint(existingPoint)
+      } else {
+        this.scene.add(center)
+        this.selectableObjects.push(center)
+      }
 
       this.centerPoint = center
       return
     }
 
-    const surfacePoint = createPoint(pos)
-    this.scene.add(surfacePoint)
-    this.selectableObjects.push(surfacePoint)
+    const surfacePoint = existingPoint ?? createPoint(
+      getPointerIntersection(_event, this.camera),
+      getPointerPointSize(_event)
+    )
+
+    if (surfacePoint === this.centerPoint || surfacePoint.position.distanceTo(this.centerPoint.position) < 0.001) {
+      return
+    }
+
+    if (existingPoint) {
+      this.selectPoint(existingPoint)
+    } else {
+      this.scene.add(surfacePoint)
+      this.selectableObjects.push(surfacePoint)
+    }
 
     const radiusSegment = new LineSegment(this.centerPoint, surfacePoint)
     this.scene.add(radiusSegment.mesh)
@@ -119,5 +149,8 @@ export class SphereTool extends BaseTool {
     this.scene.add(sphere.mesh)
 
     this.reset()
+    this.complete()
   }
+
+  onClick(event: MouseEvent) { this.onPointerDown(event as PointerEvent) }
 }

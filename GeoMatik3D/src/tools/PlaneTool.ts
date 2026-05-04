@@ -1,9 +1,8 @@
 import * as THREE from "three"
 import { BaseTool } from "./BaseTool"
-import { getMouseIntersection } from "../interaction/Raycaster"
 import { createPoint } from "../objects/Point"
 import { Plane } from "../objects/Plane"
-import { getNearestSelectablePoint, updatePointHoverCursor } from "../interaction/getNearestSelectablePoint"
+import { getNearestSelectablePoint, getPointerIntersection, getPointerPointSize, PREVIEW_POINT_SIZE, shouldShowPointerPreview, updatePointCursor } from "../interaction/Pointer"
 
 export class PlaneTool extends BaseTool {
   selectableObjects: THREE.Object3D[]
@@ -21,13 +20,13 @@ export class PlaneTool extends BaseTool {
     super(scene, camera)
     this.selectableObjects = selectableObjects
 
-    const geo = new THREE.SphereGeometry(0.1, 16, 16)
+    const geo = new THREE.SphereGeometry(PREVIEW_POINT_SIZE, 16, 16)
     const mat = new THREE.MeshBasicMaterial({ color: 0xff0000 })
 
     this.cursorPreview = new THREE.Mesh(geo, mat)
   }
 
-  private updatePreviewPlane(
+  updatePreviewPlane(
     pointA: THREE.Mesh,
     pointB: THREE.Mesh,
     currentPoint: THREE.Vector3
@@ -141,34 +140,43 @@ export class PlaneTool extends BaseTool {
     this.clearPreviewPlane()
   }
 
-  onMouseMove(event: MouseEvent) {
+  onPointerMove(event: PointerEvent) {
+    updatePointCursor(event, this.camera, this.selectableObjects)
 
-    updatePointHoverCursor(
-      event,
-      this.camera,
-      this.selectableObjects
-    )
+    if (!shouldShowPointerPreview(event)) {
+      this.cursorPreview.visible = false
+      return
+    }
 
-    const pos = getMouseIntersection(event, this.camera)
+    const pos = getPointerIntersection(event, this.camera)
 
     this.cursorPreview.position.copy(pos)
     this.cursorPreview.visible = true
 
     if (this.points.length === 2) {
-      this.updatePreviewPlane(
-        this.points[0],
-        this.points[1],
-        pos
-      )
+      this.updatePreviewPlane(this.points[0], this.points[1], pos)
     }
   }
+  onMouseMove(_event: MouseEvent) { }
 
-  onClick(event: MouseEvent) {
-    const point = this.getOrCreatePoint(event)
+  onPointerDown(event: PointerEvent) {
+    const result = this.getOrCreatePoint(event)
+    const point = result.point
+
+    if (this.hasPoint(point)) {
+      if (result.created) this.removeCreatedPoint(point)
+      return
+    }
 
     this.points.push(point)
 
     if (this.points.length === 3) {
+      if (this.areCollinear(this.points[0], this.points[1], this.points[2])) {
+        if (result.created) this.removeCreatedPoint(point)
+        this.points.pop()
+        return
+      }
+
       const plane = new Plane(
         this.points[0],
         this.points[1],
@@ -178,10 +186,13 @@ export class PlaneTool extends BaseTool {
       this.scene.add(plane.mesh)
       this.clearPreviewPlane()
       this.points = []
+      this.complete()
     }
   }
 
-  private getOrCreatePoint(event: MouseEvent) {
+  onClick(event: MouseEvent) { this.onPointerDown(event as PointerEvent) }
+
+  private getOrCreatePoint(event: PointerEvent | MouseEvent) {
     const existingPoint = getNearestSelectablePoint(
       event,
       this.camera,
@@ -189,15 +200,36 @@ export class PlaneTool extends BaseTool {
     )
 
     if (existingPoint) {
-      return existingPoint
+      this.selectPoint(existingPoint)
+      return { point: existingPoint, created: false }
     }
 
-    const pos = this.cursorPreview.position.clone()
-    const point = createPoint(pos)
+    const pos = getPointerIntersection(event, this.camera)
+    const point = createPoint(pos, getPointerPointSize(event))
 
     this.scene.add(point)
     this.selectableObjects.push(point)
 
-    return point
+    return { point, created: true }
+  }
+
+  private areCollinear(a: THREE.Mesh, b: THREE.Mesh, c: THREE.Mesh) {
+    const ab = new THREE.Vector3().subVectors(b.position, a.position)
+    const ac = new THREE.Vector3().subVectors(c.position, a.position)
+
+    return new THREE.Vector3().crossVectors(ab, ac).length() < 0.0001
+  }
+
+  private removeCreatedPoint(point: THREE.Mesh) {
+    this.scene.remove(point)
+    const index = this.selectableObjects.indexOf(point)
+    if (index >= 0) this.selectableObjects.splice(index, 1)
+    point.geometry.dispose()
+  }
+
+  private hasPoint(point: THREE.Mesh) {
+    return this.points.some((existing) =>
+      existing === point || existing.position.distanceTo(point.position) < 0.001
+    )
   }
 }
