@@ -35,79 +35,228 @@ canvas {
 	height: 100%;
 }
 
-.buttonGroup {
+.toolWrapper {
 	position: fixed;
 	z-index: 1;
 	top: 0px;
 	left: 0px;
-	background: #eeeeee;
+	right: 320px;
+	background: transparent;
 	border: none;
-	border-right: 1px solid gray;
-	overflow: hidden;
-	height: 100%;
-	padding: 8px;
-	width: 85px;
+	overflow-x: auto;
+	overflow-y: hidden;
+	height: 72px;
+	padding: 8px 8px 8px 96px;
+	display: flex;
+	align-items: flex-start;
+	justify-content: flex-start;
+	gap: 0;
+	pointer-events: none;
 }
 
-.buttonGroup button {
+.toolWrapper .toogleMenuButton {
+	position: fixed;
+	top: 8px;
+	left: 8px;
+	z-index: 3;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin: 0;
+	outline: none;
+	border: 1px solid blue;
+	border-radius: 5px;
+	cursor: pointer;
+	background: #eeeeee;
+	width: 44px;
+	min-width: 44px;
+	height: 44px;
+	pointer-events: auto;
+}
+
+.toolWrapper .toogleMenuButton img {
 	display: block;
 	margin: 0 auto;
+	width: 26px;
+	max-height: 26px;
+	transition: transform 0.2s ease;
+	transform-origin: center;
+}
+
+.toolWrapper .toogleMenuButton:hover {
+	background: #dddddd;
+}
+
+.toolWrapper.vertical .toogleMenuButton img {
+	transform: rotate(90deg) scaleY(-1);
+}
+
+.toolWrapper.vertical {
+	right: auto !important;
+	bottom: 0;
+	width: 60px;
+	height: 100%;
+	flex-direction: column;
+	align-items: center;
+	justify-content: flex-start;
+	overflow-x: hidden;
+	overflow-y: auto;
+	border-bottom: 0;
+	padding: 96px 8px 8px 8px;
+}
+
+.toolWrapper.vertical .toogleMenuButton {
+	margin: 0;
+}
+
+.toolWrapper.tools-hidden {
+	width: 60px;
+	height: 60px;
+	right: auto !important;
+	bottom: auto;
+	padding: 8px;
+	overflow: visible;
+}
+
+.toolWrapper.tools-hidden > .button,
+.toolWrapper.tools-hidden .fourButtons {
+	display: none;
+}
+
+.toolWrapper > .button {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin: 0;
 	outline: none;
 	border: none;
+	border-top: 1px solid blue;
 	border-bottom: 1px solid blue;
-	border-left: 1px solid blue;
+	border-left: 0;
 	border-right: 1px solid blue;
 	cursor: pointer;
 	background: #eeeeee;
-	width: 90%;
+	width: 44px;
+	min-width: 44px;
+	height: 44px;
+	pointer-events: auto;
 }
 
-.buttonGroup button:last-child {
+.toolWrapper > .button:last-of-type {
+	border-bottom-right-radius: 5px;
+	border-top-right-radius: 5px;
+}
+
+.toolWrapper #btnChoice {
+	border-left: 1px solid blue;
+	border-top-left-radius: 5px;
+	border-bottom-left-radius: 5px;
+}
+
+.toolWrapper.vertical > .button {
+	border-top: 0;
+	border-right: 1px solid blue;
+	border-bottom: 1px solid blue;
+	border-left: 1px solid blue;
+}
+
+.toolWrapper.vertical > .button:last-of-type {
+	border-top-right-radius: 0;
 	border-bottom-left-radius: 5px;
 	border-bottom-right-radius: 5px;
 }
 
-.buttonGroup button:first-child {
+.toolWrapper.vertical #btnChoice {
 	border-top: 1px solid blue;
 	border-top-left-radius: 5px;
 	border-top-right-radius: 5px;
+	border-bottom-left-radius: 0;
 }
 
-.buttonGroup button img {
+.toolWrapper > .button img {
 	display: block;
 	margin: 0 auto;
-	width: 25px;
+	width: 26px;
+	max-height: 26px;
 }
 
-.buttonGroup button:hover {
+#btnimgCalc {
+	transform: rotate(0deg);
+}
+
+#btnimgCalc.panel-hidden {
+	transform: rotate(180deg);
+}
+
+.toolWrapper > .button span {
+	display: none;
+}
+
+.toolWrapper > .button:hover {
 	background: #dddddd;
 }
 
-.buttonGroup .active {
+.toolWrapper .active {
 	background: #dddddd;
 }
 
-#leftWrapper {
-	position: relative;
+.calcMenuButton {
+	position: fixed;
+	top: 8px;
+	right: 320px;
+	z-index: 3;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin: 0;
+	outline: none;
+	border: 1px solid gray;
+	border-radius: 5px 0 0 5px;
+	cursor: pointer;
+	background: #eeeeee;
+	width: 44px;
+	min-width: 44px;
+	height: 44px;
+	pointer-events: auto;
+	transition: right 1s;
+}
+
+.calcMenuButton:hover {
+	background: #dddddd;
+}
+
+.calcMenuButton img {
+	display: block;
+	margin: 0 auto;
+	width: 26px;
+	max-height: 26px;
+	filter: grayscale(1) brightness(0.45);
+}
+
+#rightWrapper {
+	position: fixed;
+	z-index: 2;
 	border: 0px;
+	border-left: 1px solid gray;
 	background-color: #eeeeee;
-	left: 0px;
+	right: 0px;
 	top: 0px;
-	overflow-x: hidden;
+	overflow: hidden;
 	width: 320px;
-	min-width: 20%;
+	min-width: 260px;
+	max-width: 70%;
 	height: 100%;
 	transition: all 1s;
-	padding-left: 80px;
+	padding-left: 0;
 }
 
-#leftWrapper.hide {
-	transform: translateX(-100%);
+#rightWrapper.hide {
+	transform: translateX(100%);
 	visibility: hidden;
 }
 
-#leftWrapper,
-#leftWrapper * {
+#rightWrapper,
+#rightWrapper * {
 	font-family: "Arial", sans-serif;
 	font-size: 12px;
 }
@@ -115,7 +264,7 @@ canvas {
 .reSizer {
 	width: 3px;
 	top: 0;
-	right: 0;
+	left: 0;
 	cursor: col-resize;
 	height: 100%;
 	position: absolute;
@@ -126,8 +275,11 @@ canvas {
 	display: flex;
 	flex-direction: column;
 	padding: 10px;
+	padding-left: 13px;
 	gap: 12px;
 	width: 100%;
+	height: 100%;
+	overflow-y: auto;
 	box-sizing: border-box;
 }
 
@@ -239,11 +391,37 @@ canvas {
 .fourButtons {
 	position: absolute;
 	display: grid;
-	grid-template-columns: auto auto auto;
-	grid-template-rows: auto auto auto;
+	grid-template-columns: repeat(3, 1fr);
+	grid-template-rows: repeat(3, 1fr);
 	z-index: 1111;
 	border: 1px solid blue;
+	border-radius: 5px;
 	background: #eeeeee;
+	width: 44px;
+	height: 44px;
+	box-sizing: border-box;
+}
+
+.toolWrapper .fourButtons {
+	position: static;
+	z-index: auto;
+	flex: 0 0 auto;
+	margin-left: 8px;
+	pointer-events: auto;
+}
+
+.toolWrapper #slideButtons {
+	margin-left: 8px;
+}
+
+.toolWrapper.vertical .fourButtons {
+	margin-top: 8px;
+	margin-left: 0;
+}
+
+.toolWrapper.vertical #slideButtons {
+	margin-left: 0;
+	margin-top: 8px;
 }
 
 .fourButtons button {
@@ -253,14 +431,30 @@ canvas {
 	border: none;
 	cursor: pointer;
 	background: transparent;
-	width: 20px;
-	font-size: larger;
+	width: 14px;
+	height: 14px;
+	font-size: 14px;
+	line-height: 14px;
+	padding: 0;
 }
 
 .fourButtons button img {
 	display: block;
 	margin: 0 auto;
-	width: 20px;
+	width: 14px;
+	max-height: 14px;
+}
+
+#up img {
+	transform: rotate(-90deg);
+}
+
+#left img {
+	transform: rotate(180deg);
+}
+
+#down img {
+	transform: rotate(90deg);
 }
 
 #slideButtons {
@@ -276,6 +470,8 @@ canvas {
 #ucrButtons {
 	left: 10px;
 	bottom: 150px;
+	grid-template-rows: 1fr;
+	align-items: center;
 }
 
 .set-popup {

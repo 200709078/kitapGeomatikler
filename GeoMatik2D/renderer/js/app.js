@@ -8,18 +8,21 @@ let activeElementID = null
 let lineDrawing = false
 let lineA, lineB
 let lineSegmentDrawing = false
+let distanceSegmentDrawing = false
 let circleDrawing = false
 let angleDrawing = false
 let lineSegmentA, lineSegmentB
+let distanceSegmentA, distanceSegmentB
 let circleA, circleB, circleC
 let angleA, angleB, angleC
+let circleTangentCircle = null
 let scaleX = 100
 let scaleY = 100
 
-let minX = -8
-let minY = -3
+let minX = -5
+let minY = -5
 
-let units = [1 / 10, 1 / 5, 1 / 2, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000]
+let units = [1 / 10, 1 / 5, 1 / 2, 1, 2, Math.E, Math.PI, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000]
 let tickX = 3
 let unitX = units[tickX]
 let tickY = 3
@@ -239,6 +242,34 @@ class mLineSegment {
 		this.temp = temp
 	}
 }
+
+class mDistanceSegment {
+	constructor(A, B, temp = false) {
+		this.type = 'distanceSegment'
+		this.name = createName('distanceSegment')
+		temp ? this.id = null : this.id = idCounter()
+		this.A = A
+		this.B = B
+		this.color = getRandomColor()
+		this.visibility = true
+		this.size = 2
+		this.temp = temp
+	}
+}
+
+class mCircleTangent {
+	constructor(A, circle, temp = false) {
+		this.type = 'circleTangent'
+		temp ? this.name = null : this.name = createName('line')
+		temp ? this.id = null : this.id = idCounter()
+		this.A = A
+		this.circle = circle
+		this.color = getRandomColor()
+		this.visibility = true
+		this.size = 2
+		this.temp = temp
+	}
+}
 class mSequence {
 	constructor(func, s, e, temp = false) {
 		this.type = 'sequence'
@@ -404,7 +435,7 @@ function createName(type) {
 	let newNames
 	if (type == 'point') {
 		newNames = bigNames
-	} else if (type == 'lineSegment' || type == 'sequence' || type == 'circleR') {
+	} else if (type == 'lineSegment' || type == 'distanceSegment' || type == 'sequence' || type == 'circleR') {
 		newNames = smallNames
 	} else if (type == 'line' || type == 'limit' || type == 'tangent' || type == 'function' || type == 'sectionalFunctions' || type == 'tangent' || type == 'tangentHX' || type == 'derivative' || type == 'functioncomposition') {
 		newNames = lineNames
@@ -429,6 +460,17 @@ function createName(type) {
 		i++
 	}
 	return nm
+}
+
+function formatAxisLabel(n, unit, symbol = null) {
+	if (symbol) {
+		if (n == 0) return '0'
+		if (n == 1) return symbol
+		if (n == -1) return '-' + symbol
+		return n + symbol
+	}
+
+	return Number.isInteger(n * unit) ? n * unit : (n * unit).toFixed(1)
 }
 
 function drawAll() {
@@ -467,10 +509,12 @@ function drawAll() {
 
 	s = -1
 	n = minX
+	let xAxisSymbol = null
+	if (Math.abs(unitY - Math.E) < 0.0001) xAxisSymbol = 'e'
+	if (Math.abs(unitY - Math.PI) < 0.0001) xAxisSymbol = 'π'
 	for (let i = 0; i < (canvas.width / scaleY); i += .2) {
 		s++
-		let txt = null
-		Number.isInteger(n * unitY) ? txt = n * unitY : txt = (n * unitY).toFixed(1)
+		let txt = formatAxisLabel(n, unitY, xAxisSymbol)
 		ctx.beginPath()
 		ctx.lineWidth = 1
 		ctx.strokeStyle = "black"
@@ -510,6 +554,10 @@ function drawAll() {
 			drawLineWithPoints(item)
 		} else if (item.type === 'lineSegment') {
 			drawLineSegment(item)
+		} else if (item.type === 'distanceSegment') {
+			drawDistanceSegment(item)
+		} else if (item.type === 'circleTangent') {
+			drawCircleTangent(item)
 		} else if (item.type === 'sequence') {
 			drawSequence(item)
 		} else if (item.type === 'limit') {
@@ -613,6 +661,81 @@ function getCircle3RA(circle) {
 	}
 }
 
+function getCircleCenterRadius(circle) {
+	if (circle.type == 'circleR') {
+		return {
+			m: Number(circle.A.a),
+			n: Number(circle.A.b),
+			r: Number(circle.r),
+			status: true,
+		}
+	}
+	if (circle.type == 'circle2') {
+		return {
+			m: Number(circle.A.a),
+			n: Number(circle.A.b),
+			r: distanceAB(circle.A, circle.B),
+			status: true,
+		}
+	}
+	if (circle.type == 'circle3') {
+		let data = getCircle3RA(circle)
+		return {
+			m: Number(data.m),
+			n: Number(data.n),
+			r: Number(data.r),
+			status: data.status !== false,
+		}
+	}
+	return { status: false }
+}
+
+function getCircleTangentLines(point, circle) {
+	let circleData = getCircleCenterRadius(circle)
+	if (!circleData.status) return { status: false, reason: 'invalidCircle', lines: [] }
+
+	let px = Number(point.a)
+	let py = Number(point.b)
+	let cx = circleData.m
+	let cy = circleData.n
+	let r = circleData.r
+	let dx = px - cx
+	let dy = py - cy
+	let d = Math.sqrt(dx * dx + dy * dy)
+	let eps = 1e-7
+
+	if (d < r - eps) return { status: false, reason: 'inside', lines: [] }
+	if (d < eps) return { status: false, reason: 'inside', lines: [] }
+
+	if (Math.abs(d - r) <= eps) {
+		let tangentPoint = new mPoint(px - dy, py + dx, true)
+		return {
+			status: true,
+			lines: [new mLineWithPoints(point, tangentPoint, true)],
+		}
+	}
+
+	let ex = dx / d
+	let ey = dy / d
+	let baseDistance = (r * r) / d
+	let height = (r * Math.sqrt(d * d - r * r)) / d
+	let baseX = cx + baseDistance * ex
+	let baseY = cy + baseDistance * ey
+	let perpX = -ey
+	let perpY = ex
+
+	let T1 = new mPoint(baseX + height * perpX, baseY + height * perpY, true)
+	let T2 = new mPoint(baseX - height * perpX, baseY - height * perpY, true)
+
+	return {
+		status: true,
+		lines: [
+			new mLineWithPoints(point, T1, true),
+			new mLineWithPoints(point, T2, true),
+		],
+	}
+}
+
 function drawCircle2(circle) {
 	if (!circle.visibility) return
 
@@ -669,7 +792,7 @@ function drawLineWithEquation(line) {
 	if (!line.visibility) return
 
 	let mostLeft = minX * unitY
-	let mostRight = (minX + Math.round(canvas.width / scaleY) + 1) * unitY
+	let mostRight = (minX + canvas.width / scaleY) * unitY
 	let startX
 	let endX
 	line.startX == null ? startX = -50000 : startX = line.startX
@@ -699,13 +822,13 @@ function drawLineWithEquation(line) {
 	ctx.closePath()
 }
 
-function drawLineWithPoints(pl) {
+function drawLineWithPoints(pl, useOwnColorForTemp = false) {
 	if (!pl.visibility) return
 
 	let plSize
 	pl.id == activeElementID ? plSize = pl.size + 1 : plSize = pl.size
 	let plColor = pl.color
-	if (pl.temp) plColor = '#000000'
+	if (pl.temp && !useOwnColorForTemp) plColor = '#000000'
 
 	if (pl.A.a == pl.B.a && pl.A.b != pl.B.b) {
 		//draw line
@@ -735,6 +858,42 @@ function drawLineWithPoints(pl) {
 	}
 }
 
+function drawCircleTangent(tangent) {
+	if (!tangent.visibility) return
+
+	let tangentData = getCircleTangentLines(tangent.A, tangent.circle)
+	if (!tangentData.status) return
+
+	tangentData.lines.forEach(line => {
+		line.color = tangent.color
+		line.size = tangent.id == activeElementID ? tangent.size + 1 : tangent.size
+		line.visibility = tangent.visibility
+		drawLineWithPoints(line, true)
+	})
+
+	if (!tangent.temp) {
+		let labelX = (-minX + tangent.A.a / unitY) * scaleY + 12
+		let labelY = (-minY - tangent.A.b / unitX) * scaleX - 12
+		text(labelX, labelY, tangent.color, 'center', 'bold 15px arial', tangent.name)
+	}
+}
+
+function getFunctionPoint(funcStr, x) {
+	let y = math.evaluate(funcStr, { x: x })
+	if (!isFinite(y)) return null
+
+	return {
+		x: x,
+		y: y,
+		canvasX: -minX * scaleY + (x * scaleY) / unitY,
+		canvasY: -minY * scaleX - (y * scaleX) / unitX,
+	}
+}
+
+function isCanvasYVisible(canvasY) {
+	return canvasY >= 0 && canvasY <= canvas.height
+}
+
 function drawFunction(func, temp = false) {
 	if (!func.visibility) return
 	let lastFunc = func.func
@@ -760,37 +919,50 @@ function drawFunction(func, temp = false) {
 	ctx.strokeStyle = fColor
 	ctx.lineWidth = fSize
 	if (temp) ctx.setLineDash([2, 5])
-	let step = 0.01
 	let firstPoint = true
-	let x = startX
-	while (x < endX) {
-		let y = math.evaluate(lastFunc, { x: x })
-		if (!isFinite(y)) {
+	let startCanvasX = Math.max(0, Math.ceil((-minX + startX / unitY) * scaleY))
+	let endCanvasX = Math.min(canvas.width, Math.floor((-minX + endX / unitY) * scaleY))
+	let lastInvalidCanvasX = null
+
+	for (let canvasX = startCanvasX; canvasX <= endCanvasX; canvasX++) {
+		let x = (canvasX / scaleY + minX) * unitY
+		let point = getFunctionPoint(lastFunc, x)
+		if (!point) {
 			firstPoint = true
-			x += step
+			prevCanvasY = null
+			lastInvalidCanvasX = canvasX
 			continue
 		}
 
-		let canvasX = -minX * scaleY + (x * scaleY) / unitY
-		let canvasY = -minY * scaleX - (y * scaleX) / unitX
+		let startPoint = null
+		if (firstPoint && lastInvalidCanvasX !== null && isCanvasYVisible(point.canvasY)) {
+			startPoint = {
+				canvasX: lastInvalidCanvasX,
+				canvasY: point.canvasY > canvas.height / 2 ? canvas.height + 100 : -100,
+			}
+		}
 
 		// ASİMPTOT KONTROLÜ
-		if (prevCanvasY !== null && Math.abs(canvasY - prevCanvasY) > jumpThreshold) {
+		if (prevCanvasY !== null && Math.abs(point.canvasY - prevCanvasY) > jumpThreshold) {
 			firstPoint = true
-			prevCanvasY = canvasY
-			x += step
+			prevCanvasY = point.canvasY
 			continue
 		}
 
 		if (firstPoint) {
-			ctx.moveTo(canvasX, canvasY)
+			if (startPoint) {
+				ctx.moveTo(startPoint.canvasX, startPoint.canvasY)
+				ctx.lineTo(point.canvasX, point.canvasY)
+			} else {
+				ctx.moveTo(point.canvasX, point.canvasY)
+			}
 			firstPoint = false
 		} else {
-			ctx.lineTo(canvasX, canvasY)
+			ctx.lineTo(point.canvasX, point.canvasY)
 		}
 
-		prevCanvasY = canvasY
-		x += step
+		lastInvalidCanvasX = null
+		prevCanvasY = point.canvasY
 	}
 	ctx.stroke()
 	if (temp) ctx.setLineDash([])
@@ -957,6 +1129,21 @@ function drawLineSegment(ls) {
 	ctx.closePath()
 }
 
+function formatDistanceValue(value) {
+	return Number.isInteger(value) ? value : Number(value.toFixed(2))
+}
+
+function drawDistanceSegment(ds) {
+	if (!ds.visibility) return
+
+	let dsColor = ds.temp ? '#000000' : ds.color
+	let distance = distanceAB(ds.A, ds.B)
+	let midX = (-minX + ((Number(ds.A.a) + Number(ds.B.a)) / 2) / unitY) * scaleY
+	let midY = (-minY - ((Number(ds.A.b) + Number(ds.B.b)) / 2) / unitX) * scaleX
+	let label = ds.temp ? formatDistanceValue(distance) + ' br' : ds.name + '=' + formatDistanceValue(distance) + ' br'
+	text(midX, midY - 10, dsColor, 'center', 'bold 15px arial', label)
+}
+
 function calculateAngle(ag) {
 	let u = { x: ag.A.a - ag.B.a, y: ag.A.b - ag.B.b }
 	let v = { x: ag.C.a - ag.B.a, y: ag.C.b - ag.B.b }
@@ -1007,7 +1194,7 @@ function drawAngle(ag) {
 	let cx = (-minX + ag.B.a / unitY) * scaleY
 	let cy = (-minY - ag.B.b / unitX) * scaleX
 	let startAngle = 360 - angles.angleBC
-	let endAngle = startAngle + angles.angleBC - angles.angleBA
+	let endAngle = startAngle + angleBetween
 
 	ctx.beginPath()
 	ctx.strokeStyle = agColor
@@ -1015,7 +1202,9 @@ function drawAngle(ag) {
 	ctx.arc(cx, cy, 20, startAngle * Math.PI / 180, endAngle * Math.PI / 180)
 	ctx.stroke()
 	ctx.closePath()
-	text(cx, cy - 40, agColor, 'center', 'bold 15px arial', ag.name + '=' + angleBetween.toFixed(0) + '°')
+	let textAngle = (startAngle + angleBetween / 2) * Math.PI / 180
+	let textRadius = 35
+	text(cx + textRadius * Math.cos(textAngle), cy + textRadius * Math.sin(textAngle), agColor, 'center', 'bold 15px arial', ag.name + '=' + angleBetween.toFixed(0) + '°')
 }
 
 function drawSectionalFunctions(sf) {
@@ -1052,11 +1241,10 @@ function labelsCreator() {
 
 		/* 		let btnDuzenle = document.createElement('button')
 				btnDuzenle.classList = 'btn duzenle'
-				btnDuzenle.title = 'Düzenle'
-				let btnSil = document.createElement('button')
-				btnSil.classList = 'btn sil'
-				btnSil.title = 'Sil' */
-
+				btnDuzenle.title = 'Düzenle'*/
+		let btnSil = document.createElement('button')
+		btnSil.classList = 'btn sil'
+		btnSil.title = 'Sil'
 
 		let sliderDiv = document.createElement('div')
 		sliderDiv.classList = 'sliders'
@@ -1088,7 +1276,7 @@ function labelsCreator() {
 
 		input.addEventListener('click', () => changeActiveElement(input.id))
 		input.addEventListener('keydown', (e) => digerKeyDown(e, input.id))
-		//btnSil.addEventListener('click', (e) => delBtnClick(e))
+		btnSil.addEventListener('click', (e) => delBtnClick(e))
 		//btnDuzenle.addEventListener('click', (e) => ayarBtnClick(e))
 		btnGizle.addEventListener('click', (e) => visibilityBtnClick(e))
 
@@ -1152,6 +1340,18 @@ function labelsCreator() {
 			labelB.hidden = true
 			sliderB.hidden = true
 			input.value = item.name + ': ' + 'DoğruParçası((' + item.A.a + ',' + item.A.b + '), ' + '(' + item.B.a + ',' + item.B.b + '))'
+		} else if (item.type == 'distanceSegment') {
+			labelA.hidden = true
+			sliderA.hidden = true
+			labelB.hidden = true
+			sliderB.hidden = true
+			input.value = item.name + ': Uzaklık((' + item.A.a + ',' + item.A.b + '), ' + '(' + item.B.a + ',' + item.B.b + '))'
+		} else if (item.type == 'circleTangent') {
+			labelA.hidden = true
+			sliderA.hidden = true
+			labelB.hidden = true
+			sliderB.hidden = true
+			input.value = item.name + ': Teğet(' + item.A.name + ',' + item.circle.name + ')'
 		} else if (item.type == 'sequence') {
 			input.value = item.name + 'ₙ = Dizi(' + item.func + ',' + item.start + ',' + item.end + ')'
 			labelA.hidden = true
@@ -1287,7 +1487,7 @@ function labelsCreator() {
 		exprDiv.appendChild(output)
 		exprDiv.appendChild(btnGizle)
 		//exprDiv.appendChild(btnDuzenle)
-		//exprDiv.appendChild(btnSil)
+		exprDiv.appendChild(btnSil)
 		emptyDiv.appendChild(exprDiv)
 		emptyDiv.appendChild(sliderDiv)
 		emptyDiv.appendChild(document.createElement('hr'))
@@ -1295,10 +1495,10 @@ function labelsCreator() {
 	})
 }
 
-document.querySelector('.buttonGroup').addEventListener('click', e => {
+document.querySelector('.toolWrapper').addEventListener('click', e => {
 	const btn = e.target.closest('button')
-	if (!btn) return
-	document.querySelectorAll('.buttonGroup .button').forEach(b => b.classList.remove('active'))
+	if (!btn || !btn.dataset.action) return
+	document.querySelectorAll('.toolWrapper .button').forEach(b => b.classList.remove('active'))
 	btn.classList.add('active')
 	//canvas.style.cursor = btn.dataset.cursor || 'default'
 	switch (btn.dataset.action) {
@@ -1314,6 +1514,9 @@ document.querySelector('.buttonGroup').addEventListener('click', e => {
 		case 'linesegment':
 			activeObject = 'linesegment'
 			break
+		case 'distancesegment':
+			activeObject = 'distancesegment'
+			break
 		case 'circle2':
 			activeObject = 'circle2'
 			break
@@ -1323,10 +1526,9 @@ document.querySelector('.buttonGroup').addEventListener('click', e => {
 		case 'angle':
 			activeObject = 'angle'
 			break
-		case 'calc':
-			activeObject = 'choice'
-			toggleCalcIcon(document.getElementById('btnimgCalc'))
-			document.getElementById('leftWrapper').classList.toggle('hide')
+		case 'circletangent':
+			activeObject = 'circletangent'
+			circleTangentCircle = null
 			break
 		case 'help':
 			document.getElementById('help-popup').style.display = 'flex';
@@ -1341,16 +1543,115 @@ document.querySelector('.buttonGroup').addEventListener('click', e => {
 })
 
 function toggleCalcIcon(imgEl) {
-	const cycle = ["img/left.svg", "img/right.svg"]
-	let current = imgEl.getAttribute("src")
-	let next = cycle[(cycle.indexOf(current) + 1) % cycle.length]
-	imgEl.src = next
+	imgEl.classList.toggle('panel-hidden')
+}
+
+function updateCalcButtonPosition() {
+	let calcButton = document.getElementById('btnCalc')
+	let rightWrapper = document.getElementById('rightWrapper')
+	if (!calcButton || !rightWrapper) return
+
+	calcButton.style.right = rightWrapper.classList.contains('hide') ? '0px' : rightWrapper.getBoundingClientRect().width + 'px'
+}
+
+function observeRightWrapperSize() {
+	let rightWrapper = document.getElementById('rightWrapper')
+	if (!rightWrapper || typeof ResizeObserver === 'undefined') return
+
+	let rightWrapperObserver = new ResizeObserver(updateToolWrapperRight)
+	rightWrapperObserver.observe(rightWrapper)
+	rightWrapper.addEventListener('transitionend', updateToolWrapperRight)
+}
+
+function updateToolWrapperRight() {
+	let toolWrapper = document.getElementById('toolWrapper')
+	let rightWrapper = document.getElementById('rightWrapper')
+	if (!toolWrapper || !rightWrapper) return
+
+	updateCalcButtonPosition()
+
+	if (toolWrapper.classList.contains('vertical')) {
+		toolWrapper.style.right = ''
+		return
+	}
+
+	toolWrapper.style.right = rightWrapper.classList.contains('hide') ? '0px' : rightWrapper.offsetWidth + 'px'
+}
+
+let toogleMenuClickTimer = null
+document.getElementById('toogleMenuButton').addEventListener('click', function () {
+	clearTimeout(toogleMenuClickTimer)
+	toogleMenuClickTimer = setTimeout(function () {
+		document.getElementById('toolWrapper').classList.toggle('vertical')
+		updateToolWrapperRight()
+	}, 200)
+})
+
+document.getElementById('toogleMenuButton').addEventListener('dblclick', function () {
+	clearTimeout(toogleMenuClickTimer)
+	document.getElementById('toolWrapper').classList.toggle('tools-hidden')
+	updateToolWrapperRight()
+})
+
+document.getElementById('btnCalc').addEventListener('click', function () {
+	activeObject = 'choice'
+	document.querySelectorAll('.toolWrapper .button').forEach(b => b.classList.remove('active'))
+	document.getElementById('btnChoice').classList.add('active')
+	toggleCalcIcon(document.getElementById('btnimgCalc'))
+	document.getElementById('rightWrapper').classList.toggle('hide')
+	updateToolWrapperRight()
+	drawAll()
+})
+
+function handleCircleTangentMouseDown(evt) {
+	if (!circleTangentCircle) {
+		if (hitObject.hitType == 'circleR' || hitObject.hitType == 'circle2' || hitObject.hitType == 'circle3') {
+			circleTangentCircle = hitObject.hit
+			activeElementID = circleTangentCircle.id
+			showToast('Teğet', 'Şimdi teğet çizilecek noktayı seçiniz.')
+		} else {
+			showToast('Teğet', 'Önce teğet çizilecek çemberi seçiniz.')
+		}
+		return
+	}
+
+	if (hitObject.hitType == 'point' || !hitObject.hit) {
+		let circleTangentPoint
+		if (hitObject.hitType == 'point') {
+			circleTangentPoint = hitObject.hit
+		} else {
+			circleTangentPoint = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
+			arrObjects.push(circleTangentPoint)
+			undoObjects = []
+			delCount = 0
+			labelsCreator()
+			drawAll()
+		}
+
+		let tangentData = getCircleTangentLines(circleTangentPoint, circleTangentCircle)
+		if (tangentData.status) {
+			let tangent = new mCircleTangent(circleTangentPoint, circleTangentCircle)
+			arrObjects.push(tangent)
+			activeElementID = tangent.id
+			undoObjects = []
+			delCount = 0
+			circleTangentCircle = null
+			labelsCreator()
+			drawAll()
+		} else if (tangentData.reason == 'inside') {
+			showToast('Teğet', 'Seçilen nokta çemberin içinde olduğu için teğet çizilemez.')
+		} else {
+			showToast('Teğet', 'Bu çember için teğet çizilemedi.')
+		}
+	} else {
+		showToast('Teğet', 'İkinci tıkta teğet çizilecek noktayı seçiniz.')
+	}
 }
 
 function closeHelp() {
 	activeObject = 'choice'
 	//canvas.style.cursor = 'pointer'
-	document.querySelectorAll('.buttonGroup .button').forEach(b => b.classList.remove('active'))
+	document.querySelectorAll('.toolWrapper .button').forEach(b => b.classList.remove('active'))
 	document.getElementById('btnChoice').classList.add('active')
 	document.getElementById('help-popup').style.display = 'none';
 }
@@ -1393,7 +1694,7 @@ function changeActiveElement(id) {
 		document.getElementById(activeElementID + '-labelB').hidden = true
 		document.getElementById(activeElementID + '-sliderB').hidden = true
 	}
-	if (activeitem.type == 'sequence' || activeitem.type == 'lineSegment' || activeitem.type == 'lineWithPoints' || activeitem.type == 'sectionalFunctions' || activeitem.type == 'function' || activeitem.type == 'circle2' || activeitem.type == 'circle3' || activeitem.type == 'angle' || activeitem.type == 'functioncomposition' || activeitem.type == 'derivative') {
+	if (activeitem.type == 'sequence' || activeitem.type == 'lineSegment' || activeitem.type == 'distanceSegment' || activeitem.type == 'circleTangent' || activeitem.type == 'lineWithPoints' || activeitem.type == 'sectionalFunctions' || activeitem.type == 'function' || activeitem.type == 'circle2' || activeitem.type == 'circle3' || activeitem.type == 'angle' || activeitem.type == 'functioncomposition' || activeitem.type == 'derivative') {
 		document.getElementById(activeElementID + '-labelA').hidden = true
 		document.getElementById(activeElementID + '-sliderA').hidden = true
 		document.getElementById(activeElementID + '-labelB').hidden = true
@@ -1409,7 +1710,7 @@ function bileskeProcess(funcs) {
 }
 
 function digerKeyDown(evt, id) {
-	let allowKeys = '(){}[],=-+.;<>*^/_bçdğjımnşquüvxyzCÇEFGĞHIJKMNOPQTUVWXYZBackspaceArrowLeftArrowRightShiftDelete'
+	let allowKeys = '(){}[],=-+.;<>*^/_abcçdefgğhıijklmnoöpqrsştuüvwxyzCÇEFGĞHIJKMNOPQTUVWXYZBackspaceArrowLeftArrowRightShiftDelete'
 	if (isNaN(evt.key) && !allowKeys.includes(evt.key)) {
 		evt.preventDefault()
 	}
@@ -1837,6 +2138,26 @@ function isLineSegment(input) {
 	};
 }
 
+function isDistanceSegment(input) {
+	if (typeof input !== 'string') return { status: false }
+
+	let str = input.trim()
+	const match = str.match(/^(uzaklık|distancesegment)\s*\((.*)\)$/i)
+	if (!match) return { status: false }
+
+	let lineSegmentData = isLineSegment('DoğruParçası(' + match[2] + ')')
+	if (!lineSegmentData.status) return { status: false }
+
+	return {
+		type: 'distanceSegment',
+		xA: lineSegmentData.xA,
+		yA: lineSegmentData.yA,
+		xB: lineSegmentData.xB,
+		yB: lineSegmentData.yB,
+		status: true,
+	}
+}
+
 function isSequence(str) {
 	const cleanStr = str.replace(/\s+/g, '');
 
@@ -1885,6 +2206,67 @@ function isLimit(str) {
 	} else {
 		return { status: false }
 	}
+}
+
+function splitTopLevelArgs(inner) {
+	let args = []
+	let current = ''
+	let depth = 0
+
+	for (let i = 0; i < inner.length; i++) {
+		let ch = inner[i]
+		if (ch === '(') depth++
+		if (ch === ')') depth--
+		if (ch === ',' && depth === 0) {
+			args.push(current.trim())
+			current = ''
+		} else {
+			current += ch
+		}
+	}
+	if (current.trim()) args.push(current.trim())
+	return args
+}
+
+function isCircleTangentInput(str) {
+	const match = str.match(/^\s*TeğetC\s*\((.*)\)\s*$/i)
+	if (!match) return { status: false }
+
+	let args = splitTopLevelArgs(match[1])
+	if (args.length !== 2) return { status: false }
+
+	return {
+		type: 'circleTangent',
+		circleName: args[0],
+		pointArg: args[1],
+		status: true,
+	}
+}
+
+function resolveCircleByName(name) {
+	return arrObjects.find(item =>
+		item.name === name &&
+		(item.type == 'circleR' || item.type == 'circle2' || item.type == 'circle3')
+	)
+}
+
+function resolveCircleTangentPoint(pointArg) {
+	let pointByName = arrObjects.find(item => item.name === pointArg && item.type == 'point')
+	if (pointByName) return { status: true, point: pointByName, created: false }
+
+	let pointData = isPoint(pointArg)
+	if (!pointData.status) return { status: false }
+
+	let existingPoint = arrObjects.find(item =>
+		item.type == 'point' &&
+		Number(item.a) === Number(pointData.a) &&
+		Number(item.b) === Number(pointData.b)
+	)
+	if (existingPoint) return { status: true, point: existingPoint, created: false }
+
+	let point = new mPoint(pointData.a, pointData.b)
+	arrObjects.push(point)
+	return { status: true, point: point, created: true }
 }
 
 function isTangent(str) {
@@ -2398,10 +2780,10 @@ function isAngle(input) {
 }
 
 function girisKeyDown(event) {
-	let setform = document.getElementById('set-popup')
-	setform.style.display = 'none'
+	//let setform = document.getElementById('set-popup')
+	//setform.style.display = 'none'
 	handleParanthesis(event)
-	let allowKeys = '(){}[],=-+.;<>*^/_bçdğjımnşquüvxyzCÇEFGĞHIJKMNOPQTUVWXYZBackspaceArrowLeftArrowRightShiftDelete'
+	let allowKeys = '(){}[],=-+.;<>*^/_abcçdefgğhıijklmnoöpqrsştuüvwxyzCÇEFGĞHIJKMNOPQTUVWXYZBackspaceArrowLeftArrowRightShiftDelete'
 	if (isNaN(event.key) && !allowKeys.includes(event.key)) {
 		event.preventDefault()
 	}
@@ -2490,6 +2872,18 @@ function girisKeyDown(event) {
 			activeElementID = lineSegment.id
 			undoObjects = []
 			delCount = 0
+		} else if (isDistanceSegment(str).status) {
+			console.log('Uzaklık:', isDistanceSegment(str))
+
+			let A = new mPoint(isDistanceSegment(str).xA, isDistanceSegment(str).yA)
+			arrObjects.push(A)
+			let B = new mPoint(isDistanceSegment(str).xB, isDistanceSegment(str).yB)
+			arrObjects.push(B)
+			let distanceSegment = new mDistanceSegment(A, B)
+			arrObjects.push(distanceSegment)
+			activeElementID = distanceSegment.id
+			undoObjects = []
+			delCount = 0
 		} else if (isAngle(str).status) {
 			console.log('Açı:', isAngle(str))
 
@@ -2512,6 +2906,34 @@ function girisKeyDown(event) {
 			activeElementID = seq.id
 			undoObjects = []
 			delCount = 0
+		} else if (isCircleTangentInput(str).status) {
+			console.log('TeğetC(c,A):', isCircleTangentInput(str))
+
+			let circleTangentInput = isCircleTangentInput(str)
+			let circle = resolveCircleByName(circleTangentInput.circleName)
+
+			if (!circle) {
+				showToast('GİRİŞ', 'Hatalı giriş yaptınız. Çember bulunamadı. (girisKeyDown:TeğetC içinde)')
+			} else {
+				let pointResult = resolveCircleTangentPoint(circleTangentInput.pointArg)
+				if (!pointResult.status) {
+					showToast('GİRİŞ', 'Hatalı giriş yaptınız. Nokta bulunamadı veya oluşturulamadı. (girisKeyDown:TeğetC içinde)')
+					return
+				}
+
+				let tangentData = getCircleTangentLines(pointResult.point, circle)
+				if (tangentData.status) {
+					let tangent = new mCircleTangent(pointResult.point, circle)
+					arrObjects.push(tangent)
+					activeElementID = tangent.id
+					undoObjects = []
+					delCount = 0
+				} else if (tangentData.reason == 'inside') {
+					showToast('TeğetC', 'Seçilen nokta çemberin içinde olduğu için teğet çizilemez.')
+				} else {
+					showToast('TeğetC', 'Bu çember için teğet çizilemedi.')
+				}
+			}
 		} else if (isLimit(str).status) {
 			console.log('Limit(x^2,1)', isLimit(str))
 
@@ -2740,19 +3162,19 @@ function delBtnClick(e) {
 	activeElementID = null
 	activeObject = 'choice'
 	//canvas.style.cursor = 'pointer'
-	document.querySelectorAll('.buttonGroup .button').forEach(b => b.classList.remove('active'))
+	document.querySelectorAll('.toolWrapper .button').forEach(b => b.classList.remove('active'))
 	document.getElementById('btnChoice').classList.add('active')
-	document.getElementById('set-popup').style.display = 'none'
+	//	document.getElementById('set-popup').style.display = 'none'
 
 	drawAll()
 	labelsCreator()
 }
 
 function ayarBtnClick(e) {
-	let setform = document.getElementById('set-popup')
+	//let setform = document.getElementById('set-popup')
 	let elementid = e.target.closest("div").children[0].id
 	changeActiveElement(elementid)
-	if (setform.style.display != 'block') setform.style.display = 'block'
+	//if (setform.style.display != 'block') setform.style.display = 'block'
 }
 
 function visibilityBtnClick(e) {
@@ -2770,8 +3192,8 @@ function visibilityBtnClick(e) {
 }
 
 function closeSetClick(evt) {
-	let setform = document.getElementById('set-popup')
-	setform.style.display = 'none'
+	//let setform = document.getElementById('set-popup')
+	//setform.style.display = 'none'
 }
 
 function setsizeChanged() {
@@ -2828,7 +3250,7 @@ function crossSlider() {
 			input.value = item.name + '(' + item.a + ',' + item.b + ')'
 
 			let ownerS = arrObjects.filter(obj => {
-				const validTypes = ['lineSegment', 'lineWithPoints', 'circle', 'circle2', 'circle3', 'angle'];
+				const validTypes = ['lineSegment', 'distanceSegment', 'lineWithPoints', 'circle', 'circle2', 'circle3', 'angle'];
 				if (!validTypes.includes(obj.type)) return false;
 				return ["A", "B", "C"].some(key => obj[key]?.name === item.name);
 			});
@@ -2849,6 +3271,8 @@ function crossSlider() {
 					inputOwner.value = owner.name + ': Doğru((' + owner.A.a + ',' + owner.A.b + '),(' + owner.B.a + ',' + owner.B.b + '))'
 				} else if (owner.type === 'lineSegment') {
 					inputOwner.value = owner.name + ': DoğruParçası((' + owner.A.a + ',' + owner.A.b + '),(' + owner.B.a + ',' + owner.B.b + '))'
+				} else if (owner.type === 'distanceSegment') {
+					inputOwner.value = owner.name + ': Uzaklık((' + owner.A.a + ',' + owner.A.b + '),(' + owner.B.a + ',' + owner.B.b + '))'
 				} else if (owner.type === 'circleR') {
 					inputOwner.value = owner.name + ': Çember((' + owner.A.a + ',' + owner.A.b + '),' + owner.r + ')'
 				} else if (owner.type === 'circle2') {
@@ -3005,6 +3429,16 @@ function createLineEquation(A, B) {
 	}
 }
 
+function isMouseNearLineWithPoints(mousePos, A, B, threshold = 0.1) {
+	if (A.a == B.a) {
+		return Math.abs(mousePos.x - A.a) < threshold
+	}
+
+	let lineEq = createLineEquation(A, B)
+	let expectedY = lineEq.m * mousePos.x + lineEq.c
+	return Math.abs(mousePos.y - expectedY) < threshold
+}
+
 function isMobile() {
 	return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
 }
@@ -3076,12 +3510,35 @@ function getHitObject(mousePos) {
 			}
 		}
 
-		// ---- lineWithPoints ----
-		else if (obj.type === 'lineWithPoints') {
+		// ---- distance segment ----
+		else if (obj.type === 'distanceSegment') {
 			let lineEq = createLineEquation(obj.A, obj.B)
 			let expectedY = lineEq.m * mousePos.x + lineEq.c
 
-			if (Math.abs(mousePos.y - expectedY) < threshold) {
+			let withinSegment =
+				mousePos.x >= Math.min(obj.A.a, obj.B.a) - threshold &&
+				mousePos.x <= Math.max(obj.A.a, obj.B.a) + threshold &&
+				mousePos.y >= Math.min(obj.A.b, obj.B.b) - threshold &&
+				mousePos.y <= Math.max(obj.A.b, obj.B.b) + threshold
+
+			if (withinSegment && Math.abs(mousePos.y - expectedY) < threshold) {
+				canvas.style.cursor = 'pointer'
+				return { hit: obj, hitType: obj.type }
+			}
+		}
+
+		// ---- lineWithPoints ----
+		else if (obj.type === 'lineWithPoints') {
+			if (isMouseNearLineWithPoints(mousePos, obj.A, obj.B, threshold)) {
+				canvas.style.cursor = 'pointer'
+				return { hit: obj, hitType: obj.type }
+			}
+		}
+
+		// ---- circleTangent ----
+		else if (obj.type === 'circleTangent') {
+			let tangentData = getCircleTangentLines(obj.A, obj.circle)
+			if (tangentData.status && tangentData.lines.some(line => isMouseNearLineWithPoints(mousePos, line.A, line.B, threshold))) {
 				canvas.style.cursor = 'pointer'
 				return { hit: obj, hitType: obj.type }
 			}
@@ -3270,16 +3727,20 @@ $(document).ready(function () {
 	window.onresize = function () {
 		canvas.width = innerWidth
 		canvas.height = innerHeight
+		updateToolWrapperRight()
 		drawAll()
 	}
 
 	if (isMobile()) {
-		document.getElementById('leftWrapper').classList.toggle('hide')
+		document.getElementById('rightWrapper').classList.toggle('hide')
 		toggleCalcIcon(document.getElementById('btnimgCalc'))
+		updateToolWrapperRight()
 		minX = -2
 		minY = -3
 		drawAll()
 	}
+	updateToolWrapperRight()
+	observeRightWrapperSize()
 
 
 	document.getElementById('undo').addEventListener('click', function (evt) {
@@ -3295,7 +3756,7 @@ $(document).ready(function () {
 			activeElementID = null
 			activeObject = 'choice'
 			//canvas.style.cursor = 'pointer'
-			document.querySelectorAll('.buttonGroup .button').forEach(b => b.classList.remove('active'))
+			document.querySelectorAll('.toolWrapper .button').forEach(b => b.classList.remove('active'))
 			document.getElementById('btnChoice').classList.add('active')
 		}
 		drawAll()
@@ -3303,6 +3764,7 @@ $(document).ready(function () {
 	}, false)
 
 	document.getElementById('clear').addEventListener('click', function (evt) {
+		console.log('sss')
 		if (arrObjects.length != 0) {
 			arrObjects = []
 			undoObjects = []
@@ -3311,10 +3773,12 @@ $(document).ready(function () {
 			clearSound.play()
 			activeObject = 'choice'
 			lineDrawing = false
+			distanceSegmentDrawing = false
+			circleTangentCircle = null
 			//canvas.style.cursor = 'pointer'
-			document.querySelectorAll('.buttonGroup .button').forEach(b => b.classList.remove('active'))
+			document.querySelectorAll('.toolWrapper .button').forEach(b => b.classList.remove('active'))
 			document.getElementById('btnChoice').classList.add('active')
-			document.getElementById('set-popup').style.display = 'none'
+			//document.getElementById('set-popup').style.display = 'none'
 			drawAll()
 			objectsContainer.innerHTML = ''
 		}
@@ -3491,6 +3955,13 @@ $(document).ready(function () {
 				drawLineSegment(new mLineSegment(lineSegmentA, lineSegmentB, true))
 			}
 		}
+		if (activeObject === 'distancesegment') {
+			drawAll()
+			if (distanceSegmentDrawing) {
+				let distanceSegmentB = new mPoint(getMousePos(evt).x, getMousePos(evt).y, true)
+				drawDistanceSegment(new mDistanceSegment(distanceSegmentA, distanceSegmentB, true))
+			}
+		}
 		if (activeObject === 'angle') {
 			drawAll()
 			if (!angleDrawing && angleA && !angleB) {
@@ -3523,11 +3994,11 @@ $(document).ready(function () {
 		if (grabbing && activeObject == 'choice' && hitObject) {
 			canvas.style.cursor = 'grabbing'
 			if (hitObject.hitType == 'point') {
-				drawAll()
 				hitObject.hit.a = getMousePos(evt).x
 				hitObject.hit.b = getMousePos(evt).y
 				reprojectAllOnOther()
-				drawPoint(hitObject.hit)
+				drawAll()
+				labelsCreator()
 			}
 		}
 
@@ -3536,6 +4007,50 @@ $(document).ready(function () {
 	canvas.addEventListener("mousedown", function (evt) {
 		hitObject = getHitObject(getMousePos(evt))
 		if (evt.button == 0) {
+			if (activeObject === 'circletangent') {
+				handleCircleTangentMouseDown(evt)
+				hitObject = { hit: null, hitType: null }
+				return
+			}
+			if (activeObject === 'circletangent') {
+				if (!circleTangentPoint) {
+					if (hitObject.hitType == 'point' || !hitObject.hit) {
+						if (hitObject.hitType == 'point') {
+							circleTangentPoint = hitObject.hit
+						} else {
+							circleTangentPoint = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
+							arrObjects.push(circleTangentPoint)
+							undoObjects = []
+							delCount = 0
+							labelsCreator()
+							drawAll()
+						}
+						activeElementID = circleTangentPoint.id
+						showToast('Teğet', 'Şimdi teğet çizilecek çemberi seçiniz.')
+					} else {
+						showToast('Teğet', 'Önce teğetin çizileceği noktayı seçiniz.')
+					}
+				} else {
+					if (hitObject.hitType == 'circleR' || hitObject.hitType == 'circle2' || hitObject.hitType == 'circle3') {
+						let tangentData = getCircleTangentLines(circleTangentPoint, hitObject.hit)
+						if (tangentData.status) {
+							let tangent = new mCircleTangent(circleTangentPoint, hitObject.hit)
+							arrObjects.push(tangent)
+							activeElementID = tangent.id
+							undoObjects = []
+							delCount = 0
+							circleTangentPoint = null
+						} else if (tangentData.reason == 'inside') {
+							showToast('Teğet', 'Seçilen nokta çemberin içinde olduğu için teğet çizilemez.')
+						} else {
+							showToast('Teğet', 'Bu çember için teğet çizilemedi.')
+						}
+					} else {
+						showToast('Teğet', 'İkinci tıkta teğet çizilecek çemberi seçiniz.')
+					}
+				}
+				hitObject = { hit: null, hitType: null }
+			}
 			if (activeObject === 'point') {
 				//let mousePos = getMousePos(evt)
 				let ownObject = hitObject.hit
@@ -3615,6 +4130,24 @@ $(document).ready(function () {
 					activeElementID = ls.id
 					lineSegmentDrawing = false
 					lineSegmentA = lineSegmentB = null
+				}
+			}
+
+			if (activeObject === 'distancesegment') {
+				if (distanceSegmentDrawing == false) {
+					distanceSegmentA
+					hitObject.hitType == 'point' ? distanceSegmentA = hitObject.hit : distanceSegmentA = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
+					if (!hitObject.hit) arrObjects.push(distanceSegmentA)
+					distanceSegmentDrawing = true
+				} else {
+					distanceSegmentB
+					hitObject.hitType == 'point' ? distanceSegmentB = hitObject.hit : distanceSegmentB = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
+					if (!hitObject.hit) arrObjects.push(distanceSegmentB)
+					let ds = new mDistanceSegment(distanceSegmentA, distanceSegmentB)
+					arrObjects.push(ds)
+					activeElementID = ds.id
+					distanceSegmentDrawing = false
+					distanceSegmentA = distanceSegmentB = null
 				}
 			}
 
@@ -3718,16 +4251,6 @@ $(document).ready(function () {
 			labelsCreator()
 		}
 		firstMousePos = lastMousePos = null
-
-		/* 		if (activeObject == 'choice' && firstMousePos != undefined) {
-					canvas.style.cursor = 'default'
-					lastMousePos = getMousePos(evt)
-					if (lastMousePos.x - firstMousePos.x >= 1 * unitY) minX--
-					if (lastMousePos.x - firstMousePos.x <= -1 * unitY) minX++
-					if (lastMousePos.y - firstMousePos.y >= 1 * unitX) minY++
-					if (lastMousePos.y - firstMousePos.y <= -1 * unitX) minY--
-					drawAll()
-				} */
 	}, false)
 
 	document.addEventListener("keydown", function (evt) {
@@ -3740,6 +4263,11 @@ $(document).ready(function () {
 			if (lineSegmentDrawing == true) {
 				lineSegmentDrawing = false
 				lineSegmentA = lineSegmentB = null
+				arrObjects.pop()
+			}
+			if (distanceSegmentDrawing == true) {
+				distanceSegmentDrawing = false
+				distanceSegmentA = distanceSegmentB = null
 				arrObjects.pop()
 			}
 			if (circleDrawing == true) {
@@ -3761,10 +4289,11 @@ $(document).ready(function () {
 				}
 				angleA = null
 			}
+			circleTangentCircle = null
 			activeElementID = null
 
 			activeObject = 'choice'
-			document.querySelectorAll('.buttonGroup .button').forEach(b => b.classList.remove('active'))
+			document.querySelectorAll('.toolWrapper .button').forEach(b => b.classList.remove('active'))
 			document.getElementById('btnChoice').classList.add('active')
 
 			drawAll()
@@ -3773,47 +4302,39 @@ $(document).ready(function () {
 	}, false)
 
 	let reSizer = document.querySelector(".reSizer")
-	let leftWrapper = document.querySelector(".leftWrapper")
+	let rightWrapper = document.querySelector(".rightWrapper")
 
-	function initResizerFunction(reSizer, leftWrapper) {
-		let x, w, y, h
+	function initResizerFunction(reSizer, rightWrapper) {
+		let x, w
 		function mouseDownHand(e) {
-			leftWrapper.style.transition = "all 0s"
-			if (innerHeight < innerWidth) {
-				x = e.clientX
-				let sbWidth = window.getComputedStyle(leftWrapper).width
-				w = parseInt(sbWidth, 10)
-			} else {
-				y = e.clientY
-				let sbHeight = window.getComputedStyle(leftWrapper).height
-				h = parseInt(sbHeight, 10)
-			}
+			let calcButton = document.getElementById('btnCalc')
+			rightWrapper.style.transition = "all 0s"
+			if (calcButton) calcButton.style.transition = "right 0s"
+			x = e.clientX
+			let sbWidth = window.getComputedStyle(rightWrapper).width
+			w = parseInt(sbWidth, 10)
 			document.addEventListener('mousemove', mouseMoveHand)
 			document.addEventListener('mouseup', mouseUpHand)
 		}
 
 		function mouseMoveHand(evt) {
-			if (innerHeight < innerWidth) {
-				let dx = evt.clientX - x
-				let cw = w + dx
-				if (cw < 700) {
-					leftWrapper.style.width = cw + "px"
-				}
-			} else {
-				let dy = y - evt.clientY
-				let ch = h + dy
-				if (ch < 450) {
-					leftWrapper.style.height = ch + "px"
-				}
-			}
+			let dx = evt.clientX - x
+			let cw = w - dx
+			let minWidth = 260
+			let maxWidth = Math.min(700, innerWidth - 90)
+			cw = Math.max(minWidth, Math.min(maxWidth, cw))
+			rightWrapper.style.width = cw + "px"
+			updateToolWrapperRight()
 		}
 		function mouseUpHand() {
-			leftWrapper.style.transition = "all 1s"
+			let calcButton = document.getElementById('btnCalc')
+			rightWrapper.style.transition = "all 1s"
+			if (calcButton) calcButton.style.transition = ""
 			document.removeEventListener('mouseup', mouseUpHand)
 			document.removeEventListener('mousemove', mouseMoveHand)
 		}
 		reSizer.addEventListener('mousedown', mouseDownHand)
 	}
 
-	initResizerFunction(reSizer, leftWrapper)
+	initResizerFunction(reSizer, rightWrapper)
 })
