@@ -8,10 +8,10 @@
     <lom>
       <general>
         <title>
-          <string language="tr">geoMATIK 2D</string>
+          <string language="tr">GeoMatik 2D</string>
         </title>
         <description>
-          <string language="tr">geoMATIK 2D</string>
+          <string language="tr">GeoMatik 2D</string>
         </description>
         <language>tr</language>
       </general>
@@ -20,9 +20,9 @@
 
   <organizations default="GEOMATIK">
     <organization identifier="GEOMATIK">
-      <title>geoMATIK 2D</title>
+      <title>GeoMatik 2D</title>
       <item identifier="item_geomatik" identifierref="resource_geomatik">
-        <title>geoMATIK 2D</title>
+        <title>GeoMatik 2D</title>
       </item>
     </organization>
   </organizations>
@@ -53,6 +53,7 @@
       <file href="renderer/img/redo.svg" />
       <file href="renderer/img/tooglemenu.svg" />
       <file href="renderer/img/undo.svg" />
+      <file href="renderer/img/yansitnokta.svg" />
 
       <file href="renderer/js/app.js" />
       <file href="renderer/js/func.js" />

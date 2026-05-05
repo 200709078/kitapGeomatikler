@@ -2,17 +2,21 @@
 <manifest identifier="com.scorm.golfsamples.contentpackaging.singlesco.12" version="1"
   xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2"
   xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_rootv1p2">
-<metadata>
-  <schema>ADL SCORM</schema>
-  <schemaversion>1.2</schemaversion>
-  <lom>
-    <general>
-      <title><string language="tr">geoMATIK-Odd-Numbers</string></title>
-      <description><string language="tr">geoMATIK-Odd-Numbers</string></description>
-      <language>tr</language>
-    </general>
-  </lom>
-</metadata>
+  <metadata>
+    <schema>ADL SCORM</schema>
+    <schemaversion>1.2</schemaversion>
+    <lom>
+      <general>
+        <title>
+          <string language="tr">geoMATIK-Odd-Numbers</string>
+        </title>
+        <description>
+          <string language="tr">geoMATIK-Odd-Numbers</string>
+        </description>
+        <language>tr</language>
+      </general>
+    </lom>
+  </metadata>
 
   <organizations default="GEOMATIK">
     <organization identifier="GEOMATIK">

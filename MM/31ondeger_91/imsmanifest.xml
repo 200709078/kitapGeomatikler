@@ -2,23 +2,31 @@
 <manifest identifier="com.scorm.golfsamples.contentpackaging.singlesco.12" version="1"
   xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2"
   xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_rootv1p2">
-<metadata>
-  <schema>ADL SCORM</schema>
-  <schemaversion>1.2</schemaversion>
-  <lom>
-    <general>
-      <title><string language="tr">Ön Değerlendirme-3.1</string></title>
-      <description><string language="tr">Ön Değerlendirme-3.1</string></description>
-      <language>tr</language>
-    </general>
-  </lom>
-</metadata>
+  <metadata>
+    <schema>ADL SCORM</schema>
+    <schemaversion>1.2</schemaversion>
+    <lom>
+      <general>
+        <title>
+          <string language="tr">Matematik 12 - Geometrik Şekiller - Ön Değerlendirme
+            3.1</string>
+        </title>
+        <description>
+          <string language="tr">Matematik 12 - Geometrik Şekiller - Ön Değerlendirme
+            3.1</string>
+        </description>
+        <language>tr</language>
+      </general>
+    </lom>
+  </metadata>
 
   <organizations default="GEOMATIK">
     <organization identifier="GEOMATIK">
-      <title>Ön Değerlendirme-3.1</title>
+      <title>Matematik 12 - Geometrik Şekiller - Ön Değerlendirme
+        3.1</title>
       <item identifier="item_geomatik" identifierref="resource_geomatik">
-        <title>Ön Değerlendirme-3.1</title>
+        <title>Matematik 12 - Geometrik Şekiller - Ön Değerlendirme
+          3.1</title>
       </item>
     </organization>
   </organizations>

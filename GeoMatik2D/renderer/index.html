@@ -57,6 +57,17 @@
 				<img src="img/distancesegment.svg">
 				<span>Uzaklık</span>
 			</button>
+			<button class="button" id="btnReflectPoint" data-action="reflectpoint"
+				data-toast="Yansıt Nokta|Yansıtılacak noktayı ve ardından yansıtma merkezini seçiniz."
+				title="Yansıt Nokta|Yansıtılacak noktayı ve ardından yansıtma merkezini seçiniz.">
+				<img src="img/yansitnokta.svg">
+				<span>Yansıt Nokta</span>
+			</button>
+			<button class="button" id="btnIntersect" data-action="intersect" data-toast="Kesiştir|İki nesne seçiniz."
+				title="Kesiştir|İki nesne seçiniz.">
+				<img src="img/intersect.svg">
+				<span>Kesiştir</span>
+			</button>
 			<button class="button" data-action="circle2"
 				data-toast="Çember|Merkez nokta ve ardından çember üzerinde bir nokta seçiniz."
 				title="Çember|Merkez nokta ve ardından çember üzerinde bir nokta seçiniz.">
@@ -212,6 +223,8 @@
 				<h4>Nokta</h4>
 				<pre>(apsis, ordinat)
 <code class="example">(-1, 2)</code></pre>
+				<pre>YansıtNokta(Nokta, Merkez Nokta)
+<code class="example">YansıtNokta((1,2),(0,0))</code><code class="example">YansıtNokta(A,B)</code></pre>
 
 				<h4>Doğru</h4>
 
@@ -221,6 +234,7 @@ Dik Doğru: x = c
 <code class="example">x=2</code>
 Doğru(Nokta, Nokta)
 <code class="example">Doğru((-1,0),(1,1))</code></pre>
+				<code class="example">Kesiştir(f,g)</code></pre>
 
 				<h4>Doğru Parçası</h4>
 				<pre>DoğruParçası(Nokta, Nokta)
