@@ -2,6 +2,16 @@ let canvas = document.getElementById('canvas')
 ctx = canvas.getContext('2d')
 canvas.width = innerWidth
 canvas.height = innerHeight
+
+function text2canvas(x, y, style, align, font, text) {
+	ctx.fillStyle = style
+	ctx.textAlign = align
+	ctx.font = font
+	ctx.fillText(text, x, y)
+	ctx.textAlign = 'left'
+	ctx.font = '10px arial'
+}
+
 const clearSound = new Audio("sound/clear.mp3")
 let activeObject = 'choice'
 let activeElementID = null
@@ -26,17 +36,18 @@ let scaleY = 100
 let minX = -5
 let minY = -5
 
-let units = [1 / 10, 1 / 5, 1 / 2, 1, 2, Math.E, Math.PI, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000]
+let horizontalUnits = [1 / 10, 1 / 5, 1 / 2, 1, 2, Math.E, Math.PI, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000]
+let verticalUnits = [1 / 10, 1 / 5, 1 / 2, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000]
 let tickX = 3
-let unitX = units[tickX]
+let unitX = verticalUnits[tickX]
 let tickY = 3
-let unitY = units[tickY]
+let unitY = horizontalUnits[tickY]
 let firstMousePos, lastMousePos, findPointPos = null
 let arrObjects = []
 let undoObjects = []
-let bigNames = "ABC"
-let smallNames = "abc"
-let lineNames = "fgh"
+let bigNames = "ABCDEFG"
+let smallNames = "abccdefg"
+let lineNames = "fghpqr"
 let angleNames = "αβθ"
 let sliders = document.getElementById('sliders')
 
@@ -93,6 +104,13 @@ function reprojectAllOnOther() {
 					} else if (o.type == 'onLine') {
 						let line = arrObjects.find(item => item.id == o.lineId)
 						let projection = getProjectionOnLine(line, obj.a, obj.b)
+						if (projection.status) {
+							obj.a = projection.a
+							obj.b = projection.b
+						}
+					} else if (o.type == 'onAngle') {
+						let angle = arrObjects.find(item => item.id == o.angleId)
+						let projection = getProjectionOnAngle(angle, obj.a, obj.b)
 						if (projection.status) {
 							obj.a = projection.a
 							obj.b = projection.b
@@ -253,6 +271,43 @@ function getProjectionOnLine(line, a, b) {
 	return { status: true, a: projectedA, b: projectedB }
 }
 
+function getProjectionOnSegment(A, B, a, b) {
+	A = { a: Number(A.a), b: Number(A.b) }
+	B = { a: Number(B.a), b: Number(B.b) }
+	a = Number(a)
+	b = Number(b)
+
+	let dx = B.a - A.a
+	let dy = B.b - A.b
+	let lengthSquared = dx * dx + dy * dy
+	if (lengthSquared == 0 || !Number.isFinite(a) || !Number.isFinite(b)) return { status: false }
+
+	let t = ((a - A.a) * dx + (b - A.b) * dy) / lengthSquared
+	t = Math.max(0, Math.min(1, t))
+	let projectedA = A.a + t * dx
+	let projectedB = A.b + t * dy
+	let distance = Math.sqrt((a - projectedA) ** 2 + (b - projectedB) ** 2)
+
+	return {
+		status: true,
+		a: projectedA,
+		b: projectedB,
+		distance: distance,
+	}
+}
+
+function getProjectionOnAngle(angle, a, b) {
+	if (!angle || angle.type != 'angle') return { status: false }
+
+	let projectionAB = getProjectionOnSegment(angle.A, angle.B, a, b)
+	let projectionBC = getProjectionOnSegment(angle.B, angle.C, a, b)
+	if (!projectionAB.status && !projectionBC.status) return { status: false }
+	if (!projectionAB.status) return projectionBC
+	if (!projectionBC.status) return projectionAB
+
+	return projectionAB.distance <= projectionBC.distance ? projectionAB : projectionBC
+}
+
 function createPointFromHitOrMouse(hit, mousePos) {
 	if (hit.hitType == 'point') {
 		return { point: hit.hit, created: false }
@@ -282,6 +337,18 @@ function createPointFromHitOrMouse(hit, mousePos) {
 			point.onOther.push({
 				type: "onLine",
 				lineId: hit.hit.id
+			})
+			return { point: point, created: true }
+		}
+	}
+
+	if (hit.hitType == 'angle') {
+		let projection = getProjectionOnAngle(hit.hit, mousePos.x, mousePos.y)
+		if (projection.status) {
+			let point = new mPoint(Number(projection.a).toFixed(2), Number(projection.b).toFixed(2))
+			point.onOther.push({
+				type: "onAngle",
+				angleId: hit.hit.id
 			})
 			return { point: point, created: true }
 		}
@@ -997,7 +1064,7 @@ function drawAll() {
 		ctx.lineTo(canvas.width, i * scaleX)
 		if (s % 5 == 0) {
 			ctx.lineWidth = .5
-			if (n * unitX != 0) text(-minX * scaleY + 10, i * scaleX + 15, 'black', 'center', '15px arial', txt)
+			if (n * unitX != 0) text2canvas(-minX * scaleY + 10, i * scaleX + 15, 'black', 'center', '15px arial', txt)
 			n++
 		} else {
 			ctx.lineWidth = .2
@@ -1029,7 +1096,7 @@ function drawAll() {
 
 		if (s % 5 == 0) {
 			ctx.lineWidth = .6
-			text(i * scaleY + 10, -minY * scaleX + 15, 'black', 'center', '15px arial', txt)
+			text2canvas(i * scaleY + 10, -minY * scaleX + 15, 'black', 'center', '15px arial', txt)
 			n++
 		} else {
 			ctx.lineWidth = .2
@@ -1047,7 +1114,6 @@ function drawAll() {
 	if (angleA && angleB) drawLineSegment(new mLineSegment(angleA, angleB, true))
 
 	arrObjects.sort(function (a, b) { return a.id - b.id })
-	//arrObjects.findLast((item) => {
 	for (let i = arrObjects.length - 1; i >= 0; i--) {
 		const item = arrObjects[i]
 		if (item.type === 'point') {
@@ -1090,7 +1156,6 @@ function drawAll() {
 			drawDerivative(item)
 		} else { console.log('drawAll: Type bulunamadı.') }
 	}
-	//})
 }
 
 function drawPoint(point) {
@@ -1107,7 +1172,7 @@ function drawPoint(point) {
 	ctx.fillStyle = pColor
 	ctx.arc((-minX + point.a / unitY) * scaleY, (-minY - point.b / unitX) * scaleX, pSize, 0, 2 * Math.PI)
 	ctx.lineWidth = 1
-	if (!point.temp) text((-minX + point.a / unitY) * scaleY - 10, (-minY - point.b / unitX) * scaleX - 5, pColor, 'center', 'bold 15px arial', point.name)
+	if (!point.temp) text2canvas((-minX + point.a / unitY) * scaleY - 10, (-minY - point.b / unitX) * scaleX - 5, pColor, 'center', 'bold 15px arial', point.name)
 	ctx.fill()
 	ctx.stroke()
 	ctx.closePath()
@@ -1128,8 +1193,8 @@ function drawCircleR(circle) {
 	ctx.strokeStyle = cColor
 	ctx.arc((-minX + circle.A.a / unitY) * scaleY, (-minY - circle.A.b / unitX) * scaleX, circle.r * scaleX, 0, 2 * Math.PI)
 	ctx.lineWidth = cSize
-	if (!circle.temp) text((-minX + circle.A.a / unitY) * scaleY - circle.r * scaleY * 0.75, (-minY - circle.A.b / unitX) * scaleX - circle.r * scaleX * 0.75, cColor, 'center', 'bold 15px arial', circle.name)
-	text((-minX + (circle.A.a + sp.a) / 2 / unitY) * scaleY, (-minY - (circle.A.b + sp.b) / 2 / unitX) * scaleX, cColor, 'center', 'bold 15px arial', 'r = ' + circle.r)
+	if (!circle.temp) text2canvas((-minX + circle.A.a / unitY) * scaleY - circle.r * scaleY * 0.75, (-minY - circle.A.b / unitX) * scaleX - circle.r * scaleX * 0.75, cColor, 'center', 'bold 15px arial', circle.name)
+	text2canvas((-minX + (circle.A.a + sp.a) / 2 / unitY) * scaleY, (-minY - (circle.A.b + sp.b) / 2 / unitX) * scaleX, cColor, 'center', 'bold 15px arial', 'r = ' + circle.r)
 	ctx.stroke()
 	ctx.closePath()
 }
@@ -1255,7 +1320,7 @@ function drawCircle2(circle) {
 	ctx.strokeStyle = cColor
 	ctx.arc((-minX + circle.A.a / unitY) * scaleY, (-minY - circle.A.b / unitX) * scaleX, r * scaleX, 0, 2 * Math.PI)
 	ctx.lineWidth = cSize
-	if (!circle.temp) text((-minX + circle.A.a / unitY) * scaleY - r * scaleY * 0.75, (-minY - circle.A.b / unitX) * scaleX - r * scaleX * 0.75, cColor, 'center', 'bold 15px arial', circle.name)
+	if (!circle.temp) text2canvas((-minX + circle.A.a / unitY) * scaleY - r * scaleY * 0.75, (-minY - circle.A.b / unitX) * scaleX - r * scaleX * 0.75, cColor, 'center', 'bold 15px arial', circle.name)
 	ctx.stroke()
 	ctx.closePath()
 }
@@ -1272,7 +1337,7 @@ function drawCircle3(circle) {
 	ctx.strokeStyle = cColor
 	ctx.arc((-minX + mr.m / unitY) * scaleY, (-minY - mr.n / unitX) * scaleX, mr.r * scaleX, 0, 2 * Math.PI)
 	ctx.lineWidth = cSize
-	if (!circle.temp) text((-minX + mr.m / unitY) * scaleY - mr.r * scaleY * 0.75, (-minY - mr.n / unitX) * scaleX - mr.r * scaleX * 0.75, cColor, 'center', 'bold 15px arial', circle.name)
+	if (!circle.temp) text2canvas((-minX + mr.m / unitY) * scaleY - mr.r * scaleY * 0.75, (-minY - mr.n / unitX) * scaleX - mr.r * scaleX * 0.75, cColor, 'center', 'bold 15px arial', circle.name)
 	ctx.stroke()
 	ctx.closePath()
 }
@@ -1289,7 +1354,7 @@ function drawVerLine(vline) {
 	ctx.lineWidth = vlSize
 	ctx.moveTo((-minX + vline.x / unitY) * scaleY, canvas.height + 100)
 	ctx.lineTo((-minX + vline.x / unitY) * scaleY, -canvas.height - 100)
-	text((-minX + vline.x / unitY) * scaleY + 10, 15, vlColor, 'center', 'bold 15px arial', vline.name)
+	text2canvas((-minX + vline.x / unitY) * scaleY + 10, 15, vlColor, 'center', 'bold 15px arial', vline.name)
 	ctx.fill()
 	ctx.stroke()
 	ctx.closePath()
@@ -1323,7 +1388,7 @@ function drawLineWithEquation(line) {
 	x = endX
 	y = math.evaluate(line.m + "*" + x + "+" + line.n, { x: x })
 	ctx.lineTo(-minX * scaleY + (x * scaleY) / unitY, -minY * scaleX - (y * scaleX) / unitX)
-	if (!line.temp) text((-minX + (-minY - line.n) / line.m) * scaleY + 5, 20, lColor, 'center', 'bold 15px arial', line.name)
+	if (!line.temp) text2canvas((-minX + (-minY - line.n) / line.m) * scaleY + 5, 20, lColor, 'center', 'bold 15px arial', line.name)
 	ctx.fill()
 	ctx.stroke()
 	ctx.closePath()
@@ -1338,7 +1403,6 @@ function drawLineWithPoints(pl, useOwnColorForTemp = false) {
 	if (pl.temp && !useOwnColorForTemp) plColor = '#000000'
 
 	if (pl.A.a == pl.B.a && pl.A.b != pl.B.b) {
-		//draw line
 		ctx.beginPath()
 		ctx.strokeStyle = ctx.fillStyle = plColor
 		ctx.lineWidth = plSize
@@ -1358,7 +1422,7 @@ function drawLineWithPoints(pl, useOwnColorForTemp = false) {
 		x = 50000
 		y = math.evaluate(createLineEquation(pl.A, pl.B).m + '*x+' + createLineEquation(pl.A, pl.B).c, { x: x })
 		ctx.lineTo(-minX * scaleY + (x * scaleY) / unitY, -minY * scaleX - (y * scaleX) / unitX)
-		if (!pl.temp) text((-minX + (-minY - createLineEquation(pl.A, pl.B).c) / createLineEquation(pl.A, pl.B).m) * scaleY + 5, 20, plColor, 'center', 'bold 15px arial', pl.name)
+		if (!pl.temp) text2canvas((-minX + (-minY - createLineEquation(pl.A, pl.B).c) / createLineEquation(pl.A, pl.B).m) * scaleY + 5, 20, plColor, 'center', 'bold 15px arial', pl.name)
 		ctx.fill()
 		ctx.stroke()
 		ctx.closePath()
@@ -1381,7 +1445,7 @@ function drawCircleTangent(tangent) {
 	if (!tangent.temp) {
 		let labelX = (-minX + tangent.A.a / unitY) * scaleY + 12
 		let labelY = (-minY - tangent.A.b / unitX) * scaleX - 12
-		text(labelX, labelY, tangent.color, 'center', 'bold 15px arial', tangent.name)
+		text2canvas(labelX, labelY, tangent.color, 'center', 'bold 15px arial', tangent.name)
 	}
 }
 
@@ -1449,7 +1513,7 @@ function drawFunction(func, temp = false) {
 			}
 		}
 
-		// ASİMPTOT KONTROLÜ
+		// ASIMPTOT KONTROLÜ
 		if (prevCanvasY !== null && Math.abs(point.canvasY - prevCanvasY) > jumpThreshold) {
 			firstPoint = true
 			prevCanvasY = point.canvasY
@@ -1494,7 +1558,7 @@ function drawSequence(seq) {
 		ctx.lineWidth = 1
 		let y = math.evaluate(seq.func, { n: n })
 		ctx.arc((-minX + n / unitY) * scaleY, (-minY - y / unitX) * scaleX, seqSize, 0, 2 * Math.PI)
-		text((-minX + n / unitY) * scaleY - 10, (-minY - y / unitX) * scaleX - 5, seqColor, 'center', 'bold 15px arial', seq.name + n)
+		text2canvas((-minX + n / unitY) * scaleY - 10, (-minY - y / unitX) * scaleX - 5, seqColor, 'center', 'bold 15px arial', seq.name + n)
 		ctx.fill()
 		ctx.stroke()
 		ctx.closePath()
@@ -1630,7 +1694,7 @@ function drawLineSegment(ls) {
 	if (ls.temp) ctx.setLineDash(ls.lineDash)
 	ctx.moveTo((-minX + ls.A.a / unitY) * scaleY, (-minY - ls.A.b / unitX) * scaleX)
 	ctx.lineTo((-minX + ls.B.a / unitY) * scaleY, (-minY - ls.B.b / unitX) * scaleX)
-	if (!ls.temp) text((-minX + ((ls.A.a + ls.B.a) / 2) / unitY) * scaleY - 10, (-minY - ((ls.A.b + ls.B.b) / 2) / unitX) * scaleX - 10, lsColor, 'center', 'bold 15px arial', ls.name)
+	if (!ls.temp) text2canvas((-minX + ((ls.A.a + ls.B.a) / 2) / unitY) * scaleY - 10, (-minY - ((ls.A.b + ls.B.b) / 2) / unitX) * scaleX - 10, lsColor, 'center', 'bold 15px arial', ls.name)
 	ctx.stroke()
 	ctx.setLineDash([])
 	ctx.closePath()
@@ -1652,7 +1716,7 @@ function drawDistanceSegment(ds) {
 	let midX = (-minX + ((Number(ds.A.a) + Number(ds.B.a)) / 2) / unitY) * scaleY
 	let midY = (-minY - ((Number(ds.A.b) + Number(ds.B.b)) / 2) / unitX) * scaleX
 	let label = ds.temp ? formatDistanceValue(distance) + ' br' : ds.name + '=' + formatDistanceValue(distance) + ' br'
-	text(midX, midY - 10, dsColor, 'center', 'bold 15px arial', label)
+	text2canvas(midX, midY - 10, dsColor, 'center', 'bold 15px arial', label)
 }
 
 function calculateAngle(ag) {
@@ -1772,7 +1836,7 @@ function drawMeasuredArc(arcInfo, color, lineWidth) {
 	let labelRadius = radius + 0.2
 	let labelX = (-minX + (circleData.m + labelRadius * Math.cos(midAngle)) / unitY) * scaleY
 	let labelY = (-minY - (circleData.n + labelRadius * Math.sin(midAngle)) / unitX) * scaleX
-	text(labelX, labelY, color, 'center', 'bold 15px arial', formatAngleValue(arcInfo.span) + '°')
+	text2canvas(labelX, labelY, color, 'center', 'bold 15px arial', formatAngleValue(arcInfo.span) + '°')
 }
 
 
@@ -1808,7 +1872,7 @@ function drawAngle(ag) {
 	ctx.closePath()
 	let textAngle = (startAngle + angleBetween / 2) * Math.PI / 180
 	let textRadius = 35
-	text(cx + textRadius * Math.cos(textAngle), cy + textRadius * Math.sin(textAngle), agColor, 'center', 'bold 15px arial', ag.name + '=' + formatAngleValue(angleBetween) + '°')
+	text2canvas(cx + textRadius * Math.cos(textAngle), cy + textRadius * Math.sin(textAngle), agColor, 'center', 'bold 15px arial', ag.name + '=' + formatAngleValue(angleBetween) + '°')
 	drawMeasuredArc(getAngleArcInfo(ag, angleBetween), agColor, agSize + 1)
 }
 
@@ -1846,9 +1910,6 @@ function labelsCreator() {
 		item.visibility ? btnGizle.title = 'Gizle' : btnGizle.title = 'Göster'
 		item.visibility ? btnGizle.style.background = item.color : btnGizle.style.background = 'transparent'
 
-		/* 		let btnDuzenle = document.createElement('button')
-				btnDuzenle.classList = 'btn duzenle'
-				btnDuzenle.title = 'Düzenle'*/
 		let btnSil = document.createElement('button')
 		btnSil.classList = 'btn sil'
 		btnSil.title = 'Sil'
@@ -1884,7 +1945,6 @@ function labelsCreator() {
 		input.addEventListener('click', () => changeActiveElement(input.id))
 		input.addEventListener('keydown', (e) => digerKeyDown(e, input.id))
 		btnSil.addEventListener('click', (e) => delBtnClick(e))
-		//btnDuzenle.addEventListener('click', (e) => ayarBtnClick(e))
 		btnGizle.addEventListener('click', (e) => visibilityBtnClick(e))
 
 		sliderA.addEventListener('input', () => crossSlider())
@@ -2116,7 +2176,6 @@ function labelsCreator() {
 		exprDiv.appendChild(input)
 		exprDiv.appendChild(output)
 		exprDiv.appendChild(btnGizle)
-		//exprDiv.appendChild(btnDuzenle)
 		exprDiv.appendChild(btnSil)
 		emptyDiv.appendChild(exprDiv)
 		emptyDiv.appendChild(sliderDiv)
@@ -2130,7 +2189,6 @@ document.querySelector('.toolWrapper').addEventListener('click', e => {
 	if (!btn || !btn.dataset.action) return
 	document.querySelectorAll('.toolWrapper .button').forEach(b => b.classList.remove('active'))
 	btn.classList.add('active')
-	//canvas.style.cursor = btn.dataset.cursor || 'default'
 	switch (btn.dataset.action) {
 		case 'choice':
 			activeObject = 'choice'
@@ -2285,13 +2343,12 @@ function handleCircleTangentMouseDown(evt) {
 			showToast('Teğet', 'Bu çember için teğet çizilemedi.')
 		}
 	} else {
-		showToast('Teğet', 'İkinci tıkta teğet çizilecek noktayı seçiniz.')
+		showToast('Teğet', 'Teğet çizilecek noktayı seçiniz.')
 	}
 }
 
 function closeHelp() {
 	activeObject = 'choice'
-	//canvas.style.cursor = 'pointer'
 	document.querySelectorAll('.toolWrapper .button').forEach(b => b.classList.remove('active'))
 	document.getElementById('btnChoice').classList.add('active')
 	document.getElementById('help-popup').style.display = 'none';
@@ -3001,8 +3058,6 @@ function isTangentHX(str) {
 
 function isDerivative(input) {
 	if (typeof input !== 'string') return { status: false }
-
-	// dış boşlukları temizle
 	const str = input.trim()
 
 	// Türev(...) formatı
@@ -3073,7 +3128,6 @@ function isDerivative(input) {
 
 function isFunctionOperations(str) {
 	if (!/log|ln|sin|cos|tan|cot|sqrt/.test(str)) {
-		// ---- f+g, 2f-3g, -f, -3g+1 ----
 		const funcOpRe = /([+-]?\d*)([fghpqr][0-9]*)\b/gi
 		const opMatches = [...str.matchAll(funcOpRe)]
 		if (opMatches.length > 0) {
@@ -3218,7 +3272,7 @@ function isFunction(input) {
 	try {
 		compiled = math.compile(expr);
 	} catch {
-		return { status: false }; // syntax hatası
+		return { status: false };
 	}
 
 	// evaluate dene
@@ -3231,7 +3285,6 @@ function isFunction(input) {
 		if (msg.includes('undefined symbol') || msg.includes('not defined')) {
 			return { status: false };
 		}
-		// diğer tüm hatalar (domain vs) kabul
 	}
 
 	return {
@@ -3474,8 +3527,6 @@ function isAngle(input) {
 }
 
 function girisKeyDown(event) {
-	//let setform = document.getElementById('set-popup')
-	//setform.style.display = 'none'
 	handleParanthesis(event)
 	let allowKeys = '(){}[],=-+.;<>*^/_abcçdefgğhıijklmnoöpqrsştuüvwxyzCÇEFGĞHIJKMNOPQTUVWXYZBackspaceArrowLeftArrowRightShiftDelete'
 	if (isNaN(event.key) && !allowKeys.includes(event.key)) {
@@ -3836,7 +3887,6 @@ function handleParanthesis(e) {
 		'[': ']',
 		'{': '}'
 	}
-	// const closePairs = Object.fromEntries(Object.entries(pairs).map(([o, c]) => [c, o]))
 	// --- Açılış parantezi yazma ---
 	if (pairs[e.key]) {
 		e.preventDefault()
@@ -3889,20 +3939,11 @@ function delBtnClick(e) {
 
 	activeElementID = null
 	activeObject = 'choice'
-	//canvas.style.cursor = 'pointer'
 	document.querySelectorAll('.toolWrapper .button').forEach(b => b.classList.remove('active'))
 	document.getElementById('btnChoice').classList.add('active')
-	//	document.getElementById('set-popup').style.display = 'none'
 
 	drawAll()
 	labelsCreator()
-}
-
-function ayarBtnClick(e) {
-	//let setform = document.getElementById('set-popup')
-	let elementid = e.target.closest("div").children[0].id
-	changeActiveElement(elementid)
-	//if (setform.style.display != 'block') setform.style.display = 'block'
 }
 
 function visibilityBtnClick(e) {
@@ -3916,22 +3957,6 @@ function visibilityBtnClick(e) {
 		activeitem.visibility = true
 		e.target.style.background = activeitem.color
 	}
-	drawAll()
-}
-
-function closeSetClick(evt) {
-	//let setform = document.getElementById('set-popup')
-	//setform.style.display = 'none'
-}
-
-function setsizeChanged() {
-	arrObjects.find(item => item.id == activeElementID).size = document.getElementById('setsize').value
-	setsizelabel.innerHTML = 'Boyut: ' + arrObjects.find(item => item.id == activeElementID).size
-	drawAll()
-}
-
-function setcolorClick() {
-	arrObjects.find(item => item.id == activeElementID).color = setcolor.value
 	drawAll()
 }
 
@@ -4108,19 +4133,19 @@ function defaultClick(evt) {
 		} else {
 			minX = -8
 			scaleX = 100
-			unitX = 1
 			tickX = 3
+			unitX = verticalUnits[tickX]
 		}
 	} else {
 		minX = -8
 		scaleX = 100
-		unitX = 1
 		tickX = 3
+		unitX = verticalUnits[tickX]
 
 		minY = -3
 		scaleY = 100
-		unitY = 1
 		tickY = 3
+		unitY = horizontalUnits[tickY]
 	}
 	drawAll()
 }
@@ -4203,15 +4228,10 @@ function isMobile() {
 
 
 function getHitObject(mousePos) {
-
 	let hit = null
 	let hitType = null
-
 	const threshold = 0.1
 
-	// =========================
-	// 🔥 1. PASS → POINTLER (ÖNCELİK)
-	// =========================
 	for (const obj of arrObjects) {
 		if (obj.type === 'point') {
 			if (!Number.isFinite(Number(obj.a)) || !Number.isFinite(Number(obj.b))) continue
@@ -4226,11 +4246,7 @@ function getHitObject(mousePos) {
 		}
 	}
 
-	// =========================
-	// 🔥 2. PASS → DİĞER TÜM OBJELER
-	// =========================
 	for (const obj of arrObjects) {
-
 		if (obj.type === 'point') continue
 
 		// ---- lineWithEquation ----
@@ -4240,26 +4256,17 @@ function getHitObject(mousePos) {
 				canvas.style.cursor = 'pointer'
 				return { hit: obj, hitType: obj.type }
 			}
-		}
-
-		// ---- vertical line ----
-		else if (obj.type === 'verLine') {
+		} else if (obj.type === 'verLine') {
 			if (Math.abs(mousePos.x - obj.x) < threshold) {
 				canvas.style.cursor = 'pointer'
 				return { hit: obj, hitType: obj.type }
 			}
-		}
-
-		// ---- line segment ----
-		else if (obj.type === 'lineSegment') {
+		} else if (obj.type === 'lineSegment') {
 			if (isMouseNearLineSegment(mousePos, obj.A, obj.B, threshold)) {
 				canvas.style.cursor = 'pointer'
 				return { hit: obj, hitType: obj.type }
 			}
-		}
-
-		// ---- distance segment ----
-		else if (obj.type === 'distanceSegment') {
+		} else if (obj.type === 'distanceSegment') {
 			let lineEq = createLineEquation(obj.A, obj.B)
 			let expectedY = lineEq.m * mousePos.x + lineEq.c
 
@@ -4273,37 +4280,25 @@ function getHitObject(mousePos) {
 				canvas.style.cursor = 'pointer'
 				return { hit: obj, hitType: obj.type }
 			}
-		}
-
-		// ---- lineWithPoints ----
-		else if (obj.type === 'lineWithPoints') {
+		} else if (obj.type === 'lineWithPoints') {
 			if (isMouseNearLineWithPoints(mousePos, obj.A, obj.B, threshold)) {
 				canvas.style.cursor = 'pointer'
 				return { hit: obj, hitType: obj.type }
 			}
-		}
-
-		// ---- circleTangent ----
-		else if (obj.type === 'circleTangent') {
+		} else if (obj.type === 'circleTangent') {
 			let tangentData = getCircleTangentLines(obj.A, obj.circle)
 			if (tangentData.status && tangentData.lines.some(line => isMouseNearLineWithPoints(mousePos, line.A, line.B, threshold))) {
 				canvas.style.cursor = 'pointer'
 				return { hit: obj, hitType: obj.type }
 			}
-		}
-
-		// ---- sequence ----
-		else if (obj.type === 'sequence') {
+		} else if (obj.type === 'sequence') {
 			let expectedY = math.evaluate(obj.func, { n: mousePos.x })
 
 			if (Math.abs(mousePos.y - expectedY) < threshold) {
 				canvas.style.cursor = 'pointer'
 				return { hit: obj, hitType: obj.type }
 			}
-		}
-
-		// ---- circle ----
-		else if (obj.type === 'circleR' || obj.type === 'circle2' || obj.type === 'circle3') {
+		} else if (obj.type === 'circleR' || obj.type === 'circle2' || obj.type === 'circle3') {
 
 			let r, distance
 
@@ -4325,148 +4320,18 @@ function getHitObject(mousePos) {
 				canvas.style.cursor = 'pointer'
 				return { hit: obj, hitType: obj.type }
 			}
-		}
-
-		// ---- angle ----
-		else if (obj.type === 'angle') {
-			let ab = Math.sqrt((obj.B.a - obj.A.a) ** 2 + (obj.B.b - obj.A.b) ** 2)
-			let bc = Math.sqrt((obj.C.a - obj.B.a) ** 2 + (obj.C.b - obj.B.b) ** 2)
-			let ac = Math.sqrt((obj.C.a - obj.A.a) ** 2 + (obj.C.b - obj.A.b) ** 2)
-
-			let angle = Math.acos((ab ** 2 + bc ** 2 - ac ** 2) / (2 * ab * bc)) * (180 / Math.PI)
-
-			let angleAtMouse = Math.acos(
-				((mousePos.x - obj.B.a) * (obj.A.a - obj.B.a) +
-					(mousePos.y - obj.B.b) * (obj.A.b - obj.B.b)) /
-				(Math.sqrt((mousePos.x - obj.B.a) ** 2 + (mousePos.y - obj.B.b) ** 2) * ab)
-			) * (180 / Math.PI)
-
-			if (Math.abs(angleAtMouse - angle) < 5) {
+		} else if (obj.type === 'angle') {
+			if (isMouseNearLineSegment(mousePos, obj.A, obj.B, threshold) || isMouseNearLineSegment(mousePos, obj.B, obj.C, threshold)) {
 				canvas.style.cursor = 'pointer'
 				return { hit: obj, hitType: obj.type }
 			}
 		}
 	}
-
-	// =========================
-	// ❌ HİÇBİR ŞEY YOK
-	// =========================
 	canvas.style.cursor = 'default'
 	return { hit: null, hitType: null }
 }
 
-
-function gggggggetHitObject(mousePos) {
-	let hit = null
-	let hitType = null
-	for (const obj of arrObjects) {
-		if (obj.type === 'point') {
-			let distance = Math.sqrt((mousePos.x - obj.a) ** 2 + (mousePos.y - obj.b) ** 2)
-			if (distance < .1) {
-				canvas.style.cursor = 'pointer'
-				return { hit: obj, hitType: obj.type }
-			} else {
-				canvas.style.cursor = 'default'
-			}
-		} else if (obj.type === 'lineWithEquation') {
-			let expectedY = math.evaluate(obj.func, { x: mousePos.x })
-			if (Math.abs(mousePos.y - expectedY) < .1) {
-				canvas.style.cursor = 'pointer'
-				hit = obj
-				hitType = obj.type
-				break
-			} else {
-				canvas.style.cursor = 'default'
-			}
-		} else if (obj.type === 'verLine') {
-			if (Math.abs(mousePos.x - obj.x) < .1) {
-				canvas.style.cursor = 'pointer'
-				hit = obj
-				hitType = obj.type
-				break
-			} else {
-				canvas.style.cursor = 'default'
-			}
-		} else if (obj.type === 'lineSegment') {
-			let lineEq = createLineEquation(obj.A, obj.B)
-			let expectedY = lineEq.m * mousePos.x + lineEq.c
-			let withinSegment = (mousePos.x >= Math.min(obj.A.a, obj.B.a) - .1 && mousePos.x <= Math.max(obj.A.a, obj.B.a) + .1) &&
-				(mousePos.y >= Math.min(obj.A.b, obj.B.b) - .1 && mousePos.y <= Math.max(obj.A.b, obj.B.b) + .1)
-			if (withinSegment) {
-				canvas.style.cursor = 'pointer'
-				hit = obj
-				hitType = obj.type
-				break
-			} else {
-				canvas.style.cursor = 'default'
-			}
-		} else if (obj.type === 'lineWithPoints') {
-			let lineEq = createLineEquation(obj.A, obj.B)
-			let expectedY = lineEq.m * mousePos.x + lineEq.c
-			if (Math.abs(mousePos.y - expectedY) < .1) {
-				canvas.style.cursor = 'pointer'
-				hit = obj
-				hitType = obj.type
-				break
-			} else {
-				canvas.style.cursor = 'default'
-			}
-		} else if (obj.type === 'sequence') {
-			let expectedY = math.evaluate(obj.func, { n: mousePos.x })
-			if (Math.abs(mousePos.y - expectedY) < .1) {
-				canvas.style.cursor = 'pointer'
-				hit = obj
-				hitType = obj.type
-				break
-			} else {
-				canvas.style.cursor = 'default'
-			}
-		} else if (obj.type == 'circleR' || obj.type == 'circle2' || obj.type == 'circle3') {
-
-
-
-			let r
-			let distance
-			if (obj.type == 'circleR') {
-				r = obj.r
-				distance = Math.sqrt((mousePos.x - obj.A.a) ** 2 + (mousePos.y - obj.A.b) ** 2)
-			} else if (obj.type == 'circle2') {
-				r = Math.sqrt((obj.B.a - obj.A.a) ** 2 + (obj.B.b - obj.A.b) ** 2)
-				distance = Math.sqrt((mousePos.x - obj.A.a) ** 2 + (mousePos.y - obj.A.b) ** 2)
-			} else if (obj.type == 'circle3') {
-				r = getCircle3RA(obj).r
-				let m = getCircle3RA(obj).m
-				let n = getCircle3RA(obj).n
-				distance = Math.sqrt((mousePos.x - m) ** 2 + (mousePos.y - n) ** 2)
-			}
-			if (Math.abs(distance - r) < .1) {
-				canvas.style.cursor = 'pointer'
-				hit = obj
-				hitType = obj.type
-				break
-			} else {
-				canvas.style.cursor = 'default'
-			}
-		} else if (obj.type == 'angle') {
-			let ab = Math.sqrt((obj.B.a - obj.A.a) ** 2 + (obj.B.b - obj.A.b) ** 2)
-			let bc = Math.sqrt((obj.C.a - obj.B.a) ** 2 + (obj.C.b - obj.B.b) ** 2)
-			let ac = Math.sqrt((obj.C.a - obj.A.a) ** 2 + (obj.C.b - obj.A.b) ** 2)
-			let angle = Math.acos((ab ** 2 + bc ** 2 - ac ** 2) / (2 * ab * bc)) * (180 / Math.PI)
-			let angleAtMouse = Math.acos(((mousePos.x - obj.B.a) * (obj.A.a - obj.B.a) + (mousePos.y - obj.B.b) * (obj.A.b - obj.B.b)) / (Math.sqrt((mousePos.x - obj.B.a) ** 2 + (mousePos.y - obj.B.b) ** 2) * ab)) * (180 / Math.PI)
-			if (Math.abs(angleAtMouse - angle) < 5) {
-				canvas.style.cursor = 'pointer'
-				hit = obj
-				hitType = obj.type
-				break
-			} else {
-				canvas.style.cursor = 'default'
-			}
-		}
-	}
-	return { hit, hitType }
-}
-
-$(document).ready(function () {
+document.addEventListener('DOMContentLoaded', function () {
 
 	// document.addEventListener('contextmenu', event => event.preventDefault())
 
@@ -4503,7 +4368,6 @@ $(document).ready(function () {
 		} else {
 			activeElementID = null
 			activeObject = 'choice'
-			//canvas.style.cursor = 'pointer'
 			document.querySelectorAll('.toolWrapper .button').forEach(b => b.classList.remove('active'))
 			document.getElementById('btnChoice').classList.add('active')
 		}
@@ -4563,10 +4427,10 @@ $(document).ready(function () {
 	}, false)
 
 	document.getElementById('minusX').addEventListener('click', function (evt) {
-		if (tickY < units.length - 1) {
+		if (tickY < horizontalUnits.length - 1) {
 			scaleY *= .95
 			tickY++
-			unitY = units[tickY]
+			unitY = horizontalUnits[tickY]
 			drawAll()
 		}
 	}, false)
@@ -4575,16 +4439,16 @@ $(document).ready(function () {
 		if (0 < tickY) {
 			scaleY *= 1.05
 			tickY--
-			unitY = units[tickY]
+			unitY = horizontalUnits[tickY]
 			drawAll()
 		}
 	}, false)
 
 	document.getElementById('minusY').addEventListener('click', function (evt) {
-		if (tickX < units.length - 1) {
+		if (tickX < verticalUnits.length - 1) {
 			scaleX *= .95
 			tickX++
-			unitX = units[tickX]
+			unitX = verticalUnits[tickX]
 			drawAll()
 		}
 	}, false)
@@ -4593,7 +4457,7 @@ $(document).ready(function () {
 		if (0 < tickX) {
 			scaleX *= 1.05
 			tickX--
-			unitX = units[tickX]
+			unitX = verticalUnits[tickX]
 			drawAll()
 		}
 	}, false)
@@ -4603,92 +4467,36 @@ $(document).ready(function () {
 
 
 	canvas.addEventListener("wheel", (e) => {
-		/*
-		return
-		//console.log(arrObjects)
-		let cp = arrObjects[2]
-		let c = arrObjects[1]
-		if (e.deltaY < 0) {
-			// 1. çemberi taşı
-			c.A.b += 0.1
-			// 2. çembere bağlı noktaları güncelle
-			c.updatePoints(arrObjects)
-		} else {
-			apsis += 5
-			ordinat++
-			movePoint(cp, apsis, ordinat, { circles: [c] })
-		}
-		drawAll()
-					let cp = arrObjects[2] //çembere bağlı olan nokta
-				let c = arrObjects[1] //Bu noktanın bağlı olduğu çember
-				if (e.deltaY < 0) { //çember taşıma
-					c.A.b += .1 // çember taşınıyor
-				} else {
-					movePoint(cp, cp.a + 1, cp.b + 1, { circles: [c] }) // nokta taşınıyor
-				}
-		
-				drawAll() */
-
 		if (e.deltaY < 0) {
 			if (0 < tickY) {
 				scaleY *= 1.05
 				tickY--
-				unitY = units[tickY]
+				unitY = horizontalUnits[tickY]
 				drawAll()
 			}
 			if (0 < tickX) {
 				scaleX *= 1.05
 				tickX--
-				unitX = units[tickX]
+				unitX = verticalUnits[tickX]
 				drawAll()
 			}
 		}
 		if (e.deltaY > 0) {
-			if (tickY < units.length - 1) {
+			if (tickY < horizontalUnits.length - 1) {
 				scaleY *= .95
 				tickY++
-				unitY = units[tickY]
+				unitY = horizontalUnits[tickY]
 				drawAll()
 			}
-			if (tickX < units.length - 1) {
+			if (tickX < verticalUnits.length - 1) {
 				scaleX *= .95
 				tickX++
-				unitX = units[tickX]
+				unitX = verticalUnits[tickX]
 				drawAll()
 			}
 		}
 	})
-
-
-	/* 	let A = new mPoint(-2, 1)
-		arrObjects.push(A)
-		let c = new mCircleR(A, 1)
-		arrObjects.push(c)
-		let cA = new mPoint(-1.5, 0.5)
-		cA.constraints.push({
-			type: "onCircle",
-			circleId: c.id
-		})
-		cA.applyConstraints({ circles: [c] })
-		arrObjects.push(cA)
-		let lsp = new mPoint(1, 1)
-		arrObjects.push(lsp)
-		let ls = new mLineSegment(cA, lsp)
-		arrObjects.push(ls)
-		drawAll() */
-
-
 	canvas.addEventListener("mousemove", function (evt) {
-
-		/* 		c.A.a = getMousePos(evt).x
-				c.A.b = getMousePos(evt).y
-				c.updatePoints(arrObjects)
-				//apsis += 5
-				//ordinat++
-				//movePoint(cp, apsis, ordinat, { circles: [c] })
-				drawAll()
-				return */
-
 		getHitObject(getMousePos(evt))
 		if (activeObject === 'line') {
 			drawAll()
@@ -4753,7 +4561,6 @@ $(document).ready(function () {
 			drawAll()
 			if (!circleDrawing && circleA && !circleB) {
 				let circleB = new mPoint(getMousePos(evt).x, getMousePos(evt).y, true)
-				//drawLineSegment(new mLineSegment(circleA, circleB, true))
 			} else if (circleDrawing && circleA && circleB && !circleC) {
 				let circleC = new mPoint(getMousePos(evt).x, getMousePos(evt).y, true)
 				drawCircle3(new mAngle(circleA, circleB, circleC, true))
@@ -4840,13 +4647,12 @@ $(document).ready(function () {
 							showToast('Teğet', 'Bu çember için teğet çizilemedi.')
 						}
 					} else {
-						showToast('Teğet', 'İkinci tıkta teğet çizilecek çemberi seçiniz.')
+						showToast('Teğet', 'Teğet çizilecek çemberi seçiniz.')
 					}
 				}
 				hitObject = { hit: null, hitType: null }
 			}
 			if (activeObject === 'point') {
-				//let mousePos = getMousePos(evt)
 				let ownObject = hitObject.hit
 				let point
 				if (!hitObject.hit) {
@@ -5057,9 +4863,6 @@ $(document).ready(function () {
 		}
 
 		if (activeObject == 'choice' && hitObject.hit) {
-
-			//console.log(hitObject.hit)
-
 			grabbing = true
 			canvas.style.cursor = 'grabbing'
 			firstMousePos = getMousePos(evt)

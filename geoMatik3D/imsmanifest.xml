@@ -8,10 +8,10 @@
     <lom>
       <general>
         <title>
-          <string language="tr">GeoMatik 3D</string>
+          <string language="tr">GeoMatik3D</string>
         </title>
         <description>
-          <string language="tr">GeoMatik 3D</string>
+          <string language="tr">GeoMatik3D</string>
         </description>
         <language>tr</language>
       </general>
@@ -20,9 +20,9 @@
 
   <organizations default="GEOMATIK">
     <organization identifier="GEOMATIK">
-      <title>GeoMatik 3D</title>
+      <title>GeoMatik3D</title>
       <item identifier="item_geomatik" identifierref="resource_geomatik">
-        <title>GeoMatik 3D</title>
+        <title>GeoMatik3D</title>
       </item>
     </organization>
   </organizations>

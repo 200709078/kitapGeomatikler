@@ -5,11 +5,10 @@
 	<title>GeoMatik 2D</title>
 	<meta charset="UTF-8">
 	<meta http-equiv="Content-Type" content="text/html" charset="UTF-8">
-	<meta name="keywords" content="Graph, functions, axis, javascript, canvas, GeoMatik 2D">
+	<meta name="keywords" content="Graph, functions, axis, javascript, canvas, GeoMatik2D">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta name="description" content="made by mADEMatik">
 	<meta name="author" content="made by mADEMatik">
-	<script type="text/javascript" src="js/jquery.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/mathjs@15.2.0/lib/browser/math.js"></script>
 
 	<script>
@@ -27,7 +26,6 @@
 <body>
 	<div id="centerWrapper">
 		<canvas id="canvas"></canvas>
-		<script type="text/javascript" src="js/func.js"></script>
 		<div class="toolWrapper" id="toolWrapper">
 			<button class="toogleMenuButton" id="toogleMenuButton" type="button" title="Araç çubuğunu döndür/gizle">
 				<img src="img/tooglemenu.svg">
@@ -187,22 +185,6 @@
 				<div id="objectsContainer"></div>
 			</div>
 		</div>
-		<!-- 		<div class="set-popup" id="set-popup">
-			<div class="setTitle">
-				<span>Ayarlar</span>
-				<button type="button" class="btn-close" onclick="closeSetClick()">&times;</button>
-			</div>
-			<div class="setContainer">
-				<label for="setname">Ad: </label>
-				<input type="text" id="setname" autocomplete="off" title="Ad" onkeydown="digerKeyDown(event,id)">
-				<label for="setdef">Tanım: </label>
-				<input type="text" id="setdef" autocomplete="off" title="Tanım" onkeydown="digerKeyDown(event,id)">
-				<label for="setcolor">Renk: </label>
-				<input type="color" id="setcolor" value="#0000ff" title="Renk" oninput="setcolorClick()">
-				<label for="setsize" id="setsizelabel">Boyut: 1</label>
-				<input type="range" min="1" max="6" id="setsize" title="Boyut" onchange="setsizeChanged()">
-			</div>
-		</div> -->
 	</div>
 	<div id="snackbar">
 		<h4 id="snackTitle">Nokta</h4>
@@ -212,7 +194,7 @@
 	<div class="help-popup" id="help-popup">
 		<div class="help-content">
 			<div id="help-header">
-				<h2>📘 GeoMatik Yardım</h2>
+				<h2>GeoMatik2D Yardım</h2>
 				<button class="help-close"
 					onclick="document.getElementById('help-popup').style.display='none'">&times;</button>
 			</div>
@@ -233,8 +215,8 @@
 Dik Doğru: x = c
 <code class="example">x=2</code>
 Doğru(Nokta, Nokta)
-<code class="example">Doğru((-1,0),(1,1))</code></pre>
-				<code class="example">Kesiştir(f,g)</code></pre>
+<code class="example">Doğru((-1,0),(1,1))</code>
+<code class="example">Kesiştir(f,g)</code></pre>
 
 				<h4>Doğru Parçası</h4>
 				<pre>DoğruParçası(Nokta, Nokta)
