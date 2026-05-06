@@ -118,8 +118,7 @@ canvas {
 	overflow: visible;
 }
 
-.toolWrapper.tools-hidden > .button,
-.toolWrapper.tools-hidden .fourButtons {
+.toolWrapper.tools-hidden > .button {
 	display: none;
 }
 
@@ -147,7 +146,7 @@ canvas {
 	border-top-right-radius: 5px;
 }
 
-.toolWrapper #btnChoice {
+.toolWrapper #btnSelect {
 	border-left: 1px solid blue;
 	border-top-left-radius: 5px;
 	border-bottom-left-radius: 5px;
@@ -166,7 +165,7 @@ canvas {
 	border-bottom-right-radius: 5px;
 }
 
-.toolWrapper.vertical #btnChoice {
+.toolWrapper.vertical #btnSelect {
 	border-top: 1px solid blue;
 	border-top-left-radius: 5px;
 	border-top-right-radius: 5px;
@@ -388,90 +387,62 @@ canvas {
 	align-items: center;
 }
 
-.fourButtons {
-	position: absolute;
-	display: grid;
-	grid-template-columns: repeat(3, 1fr);
-	grid-template-rows: repeat(3, 1fr);
-	z-index: 1111;
-	border: 1px solid blue;
-	border-radius: 5px;
-	background: #eeeeee;
-	width: 44px;
-	height: 44px;
-	box-sizing: border-box;
+.historyControls {
+	position: fixed;
+	left: 50%;
+	bottom: 8px;
+	transform: translateX(-50%);
+	z-index: 4;
+	display: flex;
+	gap: 6px;
+	background: transparent;
+	pointer-events: none;
 }
 
-.toolWrapper .fourButtons {
-	position: static;
-	z-index: auto;
-	flex: 0 0 auto;
-	margin-left: 8px;
+.clearControl {
+	position: fixed;
+	left: 8px;
+	bottom: 8px;
+	z-index: 4;
+	background: transparent;
+	pointer-events: none;
+}
+
+.historyControls button,
+.clearControl button {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 44px;
+	height: 44px;
+	margin: 0;
+	padding: 0;
+	outline: none;
+	border: none;
+	border-radius: 5px;
+	cursor: pointer;
+	background: transparent;
 	pointer-events: auto;
 }
 
-.toolWrapper #slideButtons {
-	margin-left: 8px;
-}
-
-.toolWrapper.vertical .fourButtons {
-	margin-top: 8px;
-	margin-left: 0;
-}
-
-.toolWrapper.vertical #slideButtons {
-	margin-left: 0;
-	margin-top: 8px;
-}
-
-.fourButtons button {
-	display: block;
-	margin: 0 auto;
-	outline: none;
-	border: none;
-	cursor: pointer;
+.historyControls button:hover:not(:disabled),
+.clearControl button:hover:not(:disabled) {
 	background: transparent;
-	width: 14px;
-	height: 14px;
-	font-size: 14px;
-	line-height: 14px;
-	padding: 0;
 }
 
-.fourButtons button img {
+.historyControls button:disabled,
+.clearControl button:disabled {
+	cursor: default;
+	opacity: 0.35;
+	filter: grayscale(1);
+}
+
+.historyControls button img,
+.clearControl button img {
 	display: block;
 	margin: 0 auto;
-	width: 14px;
-	max-height: 14px;
-}
-
-#up img {
-	transform: rotate(-90deg);
-}
-
-#left img {
-	transform: rotate(180deg);
-}
-
-#down img {
-	transform: rotate(90deg);
-}
-
-#slideButtons {
-	left: 10px;
-	bottom: 10px;
-}
-
-#zoomButtons {
-	left: 10px;
-	bottom: 75px;
-}
-
-#ucrButtons {
-	left: 10px;
-	bottom: 150px;
-	grid-template-rows: 1fr;
-	align-items: center;
+	width: 26px;
+	max-height: 26px;
 }
 
 .set-popup {
@@ -555,7 +526,7 @@ canvas {
 	position: fixed;
 	z-index: 1;
 	left: 50%;
-	bottom: 10px;
+	bottom: 62px;
 	font-size: 12px;
 }
 
@@ -572,7 +543,7 @@ canvas {
 	}
 
 	to {
-		bottom: 10px;
+		bottom: 62px;
 		opacity: 1;
 	}
 }
@@ -584,14 +555,14 @@ canvas {
 	}
 
 	to {
-		bottom: 10px;
+		bottom: 62px;
 		opacity: 1;
 	}
 }
 
 @-webkit-keyframes fadeout {
 	from {
-		bottom: 10px;
+		bottom: 62px;
 		opacity: 1;
 	}
 
@@ -603,7 +574,7 @@ canvas {
 
 @keyframes fadeout {
 	from {
-		bottom: 10px;
+		bottom: 62px;
 		opacity: 1;
 	}
 

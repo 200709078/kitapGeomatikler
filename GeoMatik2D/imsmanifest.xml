@@ -56,6 +56,11 @@
       <file href="renderer/img/yansitnokta.svg" />
 
       <file href="renderer/js/app.js" />
+      <file href="renderer/js/draw.js" />
+      <file href="renderer/js/geometry.js" />
+      <file href="renderer/js/objects.js" />
+      <file href="renderer/js/parsers.js" />
+      <file href="renderer/js/ui.js" />
 
       <file href="renderer/sound/clear.mp3" />
     </resource>
