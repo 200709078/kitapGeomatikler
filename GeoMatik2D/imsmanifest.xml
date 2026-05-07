@@ -34,34 +34,25 @@
       <file href="renderer/css/styles.css" />
 
       <file href="renderer/img/angle.svg" />
+      <file href="renderer/img/arcmeasure.svg" />
       <file href="renderer/img/arrow.svg" />
       <file href="renderer/img/circle2.svg" />
       <file href="renderer/img/circle3.svg" />
       <file href="renderer/img/circletng.svg" />
       <file href="renderer/img/clear.svg" />
       <file href="renderer/img/default.svg" />
-      <file href="renderer/img/distancesegment.svg" />
-      <file href="renderer/img/edit.svg" />
+      <file href="renderer/img/distance.svg" />
       <file href="renderer/img/favicon.svg" />
       <file href="renderer/img/help.svg" />
       <file href="renderer/img/intersect.svg" />
       <file href="renderer/img/line.svg" />
       <file href="renderer/img/linesegment.svg" />
-      <file href="renderer/img/minus.svg" />
-      <file href="renderer/img/plus.svg" />
       <file href="renderer/img/point.svg" />
-      <file href="renderer/img/redo.svg" />
       <file href="renderer/img/reflect.svg" />
       <file href="renderer/img/select.svg" />
-      <file href="renderer/img/tooglemenu.svg" />
-      <file href="renderer/img/undo.svg" />
+      <file href="renderer/img/toogle.svg" />
 
       <file href="renderer/js/app.js" />
-      <file href="renderer/js/draw.js" />
-      <file href="renderer/js/geometry.js" />
-      <file href="renderer/js/objects.js" />
-      <file href="renderer/js/parsers.js" />
-      <file href="renderer/js/ui.js" />
 
       <file href="renderer/sound/clear.mp3" />
     </resource>

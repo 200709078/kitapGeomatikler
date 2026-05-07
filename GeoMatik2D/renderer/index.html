@@ -28,10 +28,11 @@
 		<canvas id="canvas"></canvas>
 		<div class="toolWrapper" id="toolWrapper">
 			<button class="toogleMenuButton" id="toogleMenuButton" type="button" title="Araç çubuğunu döndür/gizle">
-				<img src="img/tooglemenu.svg">
+				<img src="img/toogle.svg">
 			</button>
 			<button class="button active" id="btnSelect" data-action="select" data-cursor="pointer"
-				data-toast="Taşı|Düzlemi veya nesneyi tutarak kaydırınız." title="Taşı|Düzlemi veya nesneyi tutarak kaydırınız.">
+				data-toast="Taşı|Düzlemi veya nesneyi tutarak kaydırınız."
+				title="Taşı|Düzlemi veya nesneyi tutarak kaydırınız.">
 				<img src="img/select.svg">
 				<span>Taşı</span>
 			</button>
@@ -87,6 +88,12 @@
 				<img src="img/angle.svg">
 				<span>Açı</span>
 			</button>
+			<button class="button" data-action="arcmeasure"
+				data-toast="Yay Ölçüsü|Aynı çember üzerinde iki nokta seçiniz."
+				title="Yay Ölçüsü|Aynı çember üzerinde iki nokta seçiniz.">
+				<img src="img/arcmeasure.svg">
+				<span>Yay Ölçüsü</span>
+			</button>
 			<button class="button" id="btnHelp" data-action="help" title="Yardım">
 				<img id="btnimgHelp" src="img/help.svg">
 				<span>Yardım</span>
@@ -94,10 +101,10 @@
 		</div>
 		<div class="historyControls" id="ucrButtons">
 			<button type="button" id="undo" title="Geri Al">
-				<img src="img/undo.svg">
+				<img src="img/toogle.svg" style="transform:rotateX(180deg) rotate(30deg)">
 			</button>
 			<button type="button" id="redo" title="Yinele">
-				<img src="img/redo.svg">
+				<img src="img/toogle.svg" style="transform:rotate(210deg)">
 			</button>
 		</div>
 		<div class="clearControl">
@@ -170,6 +177,10 @@ Doğru(Nokta, Nokta)
 				<pre>Açı(Nokta, Nokta, Nokta)
 <code class="example">Açı((-1,2),(0,1),(-1,0))</code></pre>
 
+				<h4>Yay Ölçüsü</h4>
+				<pre>YayÖlçüsü(Nokta, Nokta)
+<code class="example">YayÖlçüsü(A,B)</code></pre>
+
 				<h4>Trigonometrik İfadeler</h4>
 				<pre>sin(...), cos(...), tan(...), cot(...)
 <code class="example">sin(-x+4)</code><code class="example">cos(3x-1)</code><code class="example">tan(1/x)</code><code class="example">cot(x+1)</code></pre>
@@ -219,11 +230,6 @@ Doğru(Nokta, Nokta)
 		</div>
 	</div>
 	<!-- Yardım Penceresi Son -->
-	<script type="text/javascript" src="js/objects.js"></script>
-	<script type="text/javascript" src="js/geometry.js"></script>
-	<script type="text/javascript" src="js/draw.js"></script>
-	<script type="text/javascript" src="js/parsers.js"></script>
-	<script type="text/javascript" src="js/ui.js"></script>
 	<script type="text/javascript" src="js/app.js"></script>
 </body>
 

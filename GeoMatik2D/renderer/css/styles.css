@@ -118,11 +118,11 @@ canvas {
 	overflow: visible;
 }
 
-.toolWrapper.tools-hidden > .button {
+.toolWrapper.tools-hidden>.button {
 	display: none;
 }
 
-.toolWrapper > .button {
+.toolWrapper>.button {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -141,7 +141,7 @@ canvas {
 	pointer-events: auto;
 }
 
-.toolWrapper > .button:last-of-type {
+.toolWrapper>.button:last-of-type {
 	border-bottom-right-radius: 5px;
 	border-top-right-radius: 5px;
 }
@@ -152,14 +152,14 @@ canvas {
 	border-bottom-left-radius: 5px;
 }
 
-.toolWrapper.vertical > .button {
+.toolWrapper.vertical>.button {
 	border-top: 0;
 	border-right: 1px solid blue;
 	border-bottom: 1px solid blue;
 	border-left: 1px solid blue;
 }
 
-.toolWrapper.vertical > .button:last-of-type {
+.toolWrapper.vertical>.button:last-of-type {
 	border-top-right-radius: 0;
 	border-bottom-left-radius: 5px;
 	border-bottom-right-radius: 5px;
@@ -172,7 +172,7 @@ canvas {
 	border-bottom-left-radius: 0;
 }
 
-.toolWrapper > .button img {
+.toolWrapper>.button img {
 	display: block;
 	margin: 0 auto;
 	width: 26px;
@@ -187,11 +187,11 @@ canvas {
 	transform: rotate(180deg);
 }
 
-.toolWrapper > .button span {
+.toolWrapper>.button span {
 	display: none;
 }
 
-.toolWrapper > .button:hover {
+.toolWrapper>.button:hover {
 	background: #dddddd;
 }
 
@@ -213,9 +213,6 @@ canvas {
 	border-radius: 5px 0 0 5px;
 	cursor: pointer;
 	background: #eeeeee;
-	width: 44px;
-	min-width: 44px;
-	height: 44px;
 	pointer-events: auto;
 	transition: right 1s;
 }
