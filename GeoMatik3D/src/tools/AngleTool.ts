@@ -11,6 +11,8 @@ export class AngleTool extends BaseTool {
   cursorPreview: THREE.Mesh
   previewLineAB: THREE.Line | null = null
   previewLineBC: THREE.Line | null = null
+  previewArc: THREE.Mesh | null = null
+  previewLabel: THREE.Sprite | null = null
 
   constructor(
     scene: THREE.Scene,
@@ -51,7 +53,21 @@ export class AngleTool extends BaseTool {
         "AB"
       )
       this.updatePreviewLine(this.points[1].position.clone(), pos, "BC")
+      this.updatePreviewArc(
+        this.points[0].position.clone(),
+        this.points[1].position.clone(),
+        pos
+      )
+      this.updatePreviewLabel(
+        this.points[0].position.clone(),
+        this.points[1].position.clone(),
+        pos
+      )
+      return
     }
+
+    this.clearPreviewLabel()
+    this.clearPreviewArc()
   }
   onMouseMove(_event: MouseEvent) { }
 
@@ -165,6 +181,170 @@ export class AngleTool extends BaseTool {
       this.previewLineBC.geometry.dispose()
       this.previewLineBC = null
     }
+
+    this.clearPreviewLabel()
+    this.clearPreviewArc()
+  }
+
+  private updatePreviewArc(
+    a: THREE.Vector3,
+    b: THREE.Vector3,
+    c: THREE.Vector3
+  ) {
+    const v1Raw = new THREE.Vector3().subVectors(a, b)
+    const v2Raw = new THREE.Vector3().subVectors(c, b)
+
+    if (v1Raw.length() < 0.0001 || v2Raw.length() < 0.0001) {
+      this.clearPreviewArc()
+      return
+    }
+
+    const v1 = v1Raw.clone().normalize()
+    const v2 = v2Raw.clone().normalize()
+    const angle = v1.angleTo(v2)
+    const normal = new THREE.Vector3().crossVectors(v1, v2)
+
+    if (normal.length() < 0.0001) {
+      this.clearPreviewArc()
+      return
+    }
+
+    normal.normalize()
+
+    const radius = Math.min(v1Raw.length(), v2Raw.length(), 1)
+    const points: THREE.Vector3[] = []
+    const segments = 32
+
+    for (let i = 0; i <= segments; i++) {
+      const direction = v1
+        .clone()
+        .applyAxisAngle(normal, angle * (i / segments))
+
+      points.push(
+        b.clone().add(direction.multiplyScalar(radius))
+      )
+    }
+
+    const curve = new THREE.CatmullRomCurve3(points)
+    const geometry = new THREE.TubeGeometry(curve, 32, 0.04, 8, false)
+
+    if (!this.previewArc) {
+      this.previewArc = new THREE.Mesh(
+        geometry,
+        new THREE.MeshBasicMaterial({
+          color: 0xff0000,
+          depthTest: false,
+        })
+      )
+      this.scene.add(this.previewArc)
+      return
+    }
+
+    this.previewArc.geometry.dispose()
+    this.previewArc.geometry = geometry
+  }
+
+  private clearPreviewArc() {
+    if (!this.previewArc) return
+
+    this.previewArc.geometry.dispose()
+    this.scene.remove(this.previewArc)
+    this.previewArc = null
+  }
+
+  private updatePreviewLabel(
+    a: THREE.Vector3,
+    b: THREE.Vector3,
+    c: THREE.Vector3
+  ) {
+    const v1 = new THREE.Vector3().subVectors(a, b)
+    const v2 = new THREE.Vector3().subVectors(c, b)
+
+    if (v1.length() < 0.0001 || v2.length() < 0.0001) {
+      this.clearPreviewLabel()
+      return
+    }
+
+    const angle = v1.angleTo(v2)
+    const degree = THREE.MathUtils.radToDeg(angle)
+    const text = `${degree.toFixed(0)}°`
+
+    if (!this.previewLabel) {
+      this.previewLabel = this.createPreviewLabel(text)
+      this.scene.add(this.previewLabel)
+    } else {
+      this.updatePreviewLabelText(text)
+    }
+
+    const middleDir = v1
+      .clone()
+      .normalize()
+      .lerp(v2.clone().normalize(), 0.5)
+
+    if (middleDir.length() < 0.0001) {
+      middleDir.copy(v1).normalize()
+    } else {
+      middleDir.normalize()
+    }
+
+    const radius = Math.min(v1.length(), v2.length(), 1.2)
+
+    this.previewLabel.position
+      .copy(b)
+      .add(middleDir.multiplyScalar(radius + 0.65))
+  }
+
+  private createPreviewLabel(text: string) {
+    const material = this.createPreviewLabelMaterial(text)
+    const sprite = new THREE.Sprite(material)
+
+    sprite.scale.set(1.4, 0.7, 1)
+
+    return sprite
+  }
+
+  private updatePreviewLabelText(text: string) {
+    if (!this.previewLabel) return
+
+    const oldMaterial = this.previewLabel.material as THREE.SpriteMaterial
+
+    oldMaterial.map?.dispose()
+    oldMaterial.dispose()
+    this.previewLabel.material = this.createPreviewLabelMaterial(text)
+  }
+
+  private createPreviewLabelMaterial(text: string) {
+    const canvas = document.createElement("canvas")
+    canvas.width = 256
+    canvas.height = 128
+
+    const context = canvas.getContext("2d")!
+
+    context.clearRect(0, 0, canvas.width, canvas.height)
+    context.font = "bold 88px Arial"
+    context.fillStyle = "#ff0000"
+    context.textAlign = "center"
+    context.textBaseline = "middle"
+    context.fillText(text, canvas.width / 2, canvas.height / 2)
+
+    const texture = new THREE.CanvasTexture(canvas)
+
+    return new THREE.SpriteMaterial({
+      map: texture,
+      transparent: true,
+      depthTest: false,
+    })
+  }
+
+  private clearPreviewLabel() {
+    if (!this.previewLabel) return
+
+    const material = this.previewLabel.material as THREE.SpriteMaterial
+
+    material.map?.dispose()
+    material.dispose()
+    this.scene.remove(this.previewLabel)
+    this.previewLabel = null
   }
 
   private removeCreatedPoint(point: THREE.Mesh) {

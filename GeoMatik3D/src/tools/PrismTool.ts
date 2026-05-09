@@ -36,9 +36,9 @@ export class PrismTool extends BaseTool {
       new THREE.MeshBasicMaterial({ color: 0xff0000 })
     )
 
-    this.sliderContainer = document.getElementById("prismSideControl")
-    this.sideSlider = document.getElementById("prismSideSlider") as HTMLInputElement
-    this.sideValue = document.getElementById("prismSideValue") as HTMLSpanElement
+    this.sliderContainer = document.getElementById("sideControl")
+    this.sideSlider = document.getElementById("sideSlider") as HTMLInputElement
+    this.sideValue = document.getElementById("sideValue") as HTMLSpanElement
 
     this.sideSlider?.addEventListener("input", () => {
       const value = parseInt(this.sideSlider!.value)

@@ -80,7 +80,7 @@ body {
   line-height: 1;
 }
 
-#prismSideControl {
+#sideControl {
   position: fixed;
   top: 12px;
   right: 140px;
@@ -98,75 +98,370 @@ body {
   top: 14px;
   left: 50%;
   z-index: 10000;
-  width: 114px;
-  height: 114px;
+  width: 228px;
+  height: 228px;
   pointer-events: none;
   user-select: none;
+  overflow: visible;
   transform: translateX(-50%);
 }
 
-#rotateMenuSphere {
+.rotateMenuCenterItem {
   position: absolute;
-  top: 36px;
-  left: 36px;
+  top: 84px;
+  left: 84px;
   z-index: 50;
-  width: 41px;
-  height: 41px;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.85) 0 8%, rgba(147, 197, 253, 0.48) 20%, rgba(37, 99, 235, 0.34) 62%, rgba(30, 58, 138, 0.46) 100%);
-  border: 1px solid rgba(30, 64, 175, 0.45);
-  opacity: 0.72;
+  width: 58px;
+  height: 58px;
+  border-radius: 0px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 0px solid rgba(15, 23, 42, 0.08);
+  opacity: 1;
   cursor: grab;
   pointer-events: auto;
   touch-action: none;
-  box-shadow:
-    inset -7px -8px 12px rgba(15, 23, 42, 0.14),
-    inset 5px 5px 10px rgba(255, 255, 255, 0.32),
-    0 3px 8px rgba(15, 23, 42, 0.14);
+  box-shadow: 0 0px 0px rgba(15, 23, 42, 0.05);
+  overflow: visible;
 }
 
-#rotateMenuSphere:active {
+.rotateMenuCenterItem:active {
   cursor: grabbing;
 }
 
-#rotateMenuCenterPyramid {
+.rotateMenuToolIcon {
   position: absolute;
   left: 50%;
-  top: 51%;
-  width: 22px;
-  height: 20px;
-  pointer-events: none;
+  top: 50%;
+  pointer-events: auto;
+  overflow: visible;
   transform: translate(-50%, -50%);
-  clip-path: polygon(50% 0, 100% 100%, 0 100%);
-  background:
-    linear-gradient(115deg, rgba(255, 255, 255, 0.72) 0 18%, transparent 19%),
-    linear-gradient(90deg, rgba(251, 191, 36, 0.82) 0 48%, rgba(217, 119, 6, 0.78) 49% 100%);
-  border-bottom: 1px solid rgba(120, 53, 15, 0.5);
-  filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.28));
 }
 
-.rotateMenuOrbitSphere {
+.rotateMenuToolIcon-center {
+  width: 48px;
+  height: 48px;
+}
+
+.rotateMenuToolIcon-mesh {
+  width: 92px;
+  height: 64px;
+  background: none;
+  border-radius: 0;
+  box-shadow: none;
+  transform: translate(-50%, -50%);
+}
+
+.rotateMenuToolIcon-mesh::before,
+.rotateMenuToolIcon-mesh::after {
+  display: none;
+}
+
+.rotateMenuToolIcon-mesh canvas {
+  pointer-events: none;
+}
+
+.rotateMenuToolIcon-select {
+  width: 46px;
+  height: 46px;
+  color: #111827;
+  font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Arial, sans-serif;
+  font-size: 38px;
+  line-height: 46px;
+  text-align: center;
+  filter: drop-shadow(0 2px 3px rgba(15, 23, 42, 0.28));
+}
+
+.rotateMenuToolIcon-point {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #0066ff;
+  box-shadow:
+    inset 2px 2px 4px rgba(255, 255, 255, 0.36),
+    inset -2px -3px 4px rgba(0, 47, 150, 0.34),
+    0 0 8px rgba(0, 102, 255, 0.42);
+}
+
+.rotateMenuToolIcon-lineSegment,
+.rotateMenuToolIcon-ray {
+  width: 38px;
+  height: 10px;
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0 18%, rgba(147, 197, 253, 0.72) 32%, rgba(37, 99, 235, 0.62) 72%, rgba(30, 64, 175, 0.68) 100%);
+  box-shadow:
+    inset 0 3px 4px rgba(255, 255, 255, 0.34),
+    inset 0 -4px 5px rgba(15, 23, 42, 0.22),
+    0 3px 5px rgba(15, 23, 42, 0.26);
+  transform: translate(-50%, -50%) rotate(-18deg);
+}
+
+.rotateMenuToolIcon-lineSegment {
+  width: 42px;
+  height: 7px;
+  background: #000000;
+  box-shadow:
+    inset 0 1px 2px rgba(255, 255, 255, 0.42),
+    inset 0 -1px 2px rgba(255, 255, 255, 0.16),
+    0 0 6px rgba(0, 0, 0, 0.34);
+}
+
+.rotateMenuToolIcon-ray {
+  width: 42px;
+  height: 7px;
+  background: #000000;
+  box-shadow:
+    inset 0 1px 2px rgba(255, 255, 255, 0.42),
+    inset 0 -1px 2px rgba(255, 255, 255, 0.16),
+    0 0 6px rgba(0, 0, 0, 0.34);
+}
+
+.rotateMenuToolIcon-line {
+  width: 44px;
+  height: 10px;
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0 18%, rgba(147, 197, 253, 0.72) 32%, rgba(37, 99, 235, 0.62) 72%, rgba(30, 64, 175, 0.68) 100%);
+  box-shadow:
+    inset 0 3px 4px rgba(255, 255, 255, 0.34),
+    inset 0 -4px 5px rgba(15, 23, 42, 0.22),
+    0 3px 5px rgba(15, 23, 42, 0.26);
+  transform: translate(-50%, -50%) rotate(-18deg);
+}
+
+.rotateMenuToolIcon-line::before,
+.rotateMenuToolIcon-line::after,
+.rotateMenuToolIcon-lineSegment::before,
+.rotateMenuToolIcon-lineSegment::after,
+.rotateMenuToolIcon-ray::before {
+  content: "";
   position: absolute;
-  top: 47px;
-  left: 47px;
-  width: 19px;
-  height: 19px;
+  top: 0;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background:
-    radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.84) 0 10%, hsl(var(--orbit-hue) 82% 78% / 0.5) 26%, hsl(var(--orbit-hue) 72% 54% / 0.38) 68%, hsl(var(--orbit-hue) 72% 34% / 0.48) 100%);
-  border: 1px solid hsl(var(--orbit-hue) 58% 42% / 0.38);
-  opacity: 0.7;
+    radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.88), rgba(96, 165, 250, 0.64) 46%, rgba(30, 64, 175, 0.74) 100%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.22);
+}
+
+.rotateMenuToolIcon-line::before {
+  left: -4px;
+}
+
+.rotateMenuToolIcon-line::after,
+.rotateMenuToolIcon-lineSegment::after {
+  right: -4px;
+}
+
+.rotateMenuToolIcon-lineSegment::before,
+.rotateMenuToolIcon-ray::before {
+  left: -4px;
+}
+
+.rotateMenuToolIcon-lineSegment::before,
+.rotateMenuToolIcon-lineSegment::after {
+  top: -4px;
+  width: 15px;
+  height: 15px;
+  background: #0066ff;
+  box-shadow:
+    inset 2px 2px 4px rgba(255, 255, 255, 0.36),
+    inset -2px -3px 4px rgba(0, 47, 150, 0.34),
+    0 0 8px rgba(0, 102, 255, 0.42);
+}
+
+.rotateMenuToolIcon-lineSegment::before {
+  left: -8px;
+}
+
+.rotateMenuToolIcon-lineSegment::after {
+  right: -8px;
+}
+
+.rotateMenuToolIcon-ray::after {
+  content: "";
+  position: absolute;
+  top: -5px;
+  right: -14px;
+  width: 18px;
+  height: 17px;
+  background:
+    linear-gradient(90deg, #003fba 0 3px, #0066ff 4px 52%, #004cc7 100%);
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  filter:
+    drop-shadow(0 0 8px rgba(0, 102, 255, 0.38))
+    drop-shadow(-1px -1px 1px rgba(255, 255, 255, 0.28))
+    drop-shadow(1px 1px 1px rgba(0, 47, 150, 0.28));
+}
+
+.rotateMenuToolIcon-ray::before {
+  top: -4px;
+  left: -8px;
+  width: 15px;
+  height: 15px;
+  background: #0066ff;
+  box-shadow:
+    inset 2px 2px 4px rgba(255, 255, 255, 0.36),
+    inset -2px -3px 4px rgba(0, 47, 150, 0.34),
+    0 0 8px rgba(0, 102, 255, 0.42);
+}
+
+.rotateMenuToolIcon-lineSegment.rotateMenuToolIcon-mesh,
+.rotateMenuToolIcon-line.rotateMenuToolIcon-mesh,
+.rotateMenuToolIcon-sphere.rotateMenuToolIcon-mesh,
+.rotateMenuToolIcon-prism.rotateMenuToolIcon-mesh,
+.rotateMenuToolIcon-pyramid.rotateMenuToolIcon-mesh,
+.rotateMenuToolIcon-cylinder.rotateMenuToolIcon-mesh,
+.rotateMenuToolIcon-cone.rotateMenuToolIcon-mesh,
+.rotateMenuToolIcon-ray.rotateMenuToolIcon-mesh {
+  width: 92px;
+  height: 64px;
+  background: none;
+  border-radius: 0;
+  box-shadow: none;
+  transform: translate(-50%, -50%);
+}
+
+.rotateMenuToolIcon-lineSegment.rotateMenuToolIcon-mesh::before,
+.rotateMenuToolIcon-lineSegment.rotateMenuToolIcon-mesh::after,
+.rotateMenuToolIcon-line.rotateMenuToolIcon-mesh::before,
+.rotateMenuToolIcon-line.rotateMenuToolIcon-mesh::after,
+.rotateMenuToolIcon-sphere.rotateMenuToolIcon-mesh::before,
+.rotateMenuToolIcon-sphere.rotateMenuToolIcon-mesh::after,
+.rotateMenuToolIcon-prism.rotateMenuToolIcon-mesh::before,
+.rotateMenuToolIcon-prism.rotateMenuToolIcon-mesh::after,
+.rotateMenuToolIcon-pyramid.rotateMenuToolIcon-mesh::before,
+.rotateMenuToolIcon-pyramid.rotateMenuToolIcon-mesh::after,
+.rotateMenuToolIcon-cylinder.rotateMenuToolIcon-mesh::before,
+.rotateMenuToolIcon-cylinder.rotateMenuToolIcon-mesh::after,
+.rotateMenuToolIcon-cone.rotateMenuToolIcon-mesh::before,
+.rotateMenuToolIcon-cone.rotateMenuToolIcon-mesh::after,
+.rotateMenuToolIcon-ray.rotateMenuToolIcon-mesh::before,
+.rotateMenuToolIcon-ray.rotateMenuToolIcon-mesh::after {
+  display: none;
+}
+
+.rotateMenuToolIcon-angle {
+  width: 52px;
+  height: 40px;
+  transform: translate(-50%, -50%) rotate(-8deg);
+}
+
+.rotateMenuAngleSvg {
+  width: 52px;
+  height: 40px;
+  overflow: visible;
+  display: block;
+}
+
+.rotateMenuAngleArm {
+  stroke: #050505;
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.24));
+}
+
+.rotateMenuAngleArrowHead {
+  fill: #0066ff;
+  filter: drop-shadow(0 0 4px rgba(0, 102, 255, 0.3));
+}
+
+.rotateMenuAngleArc {
+  fill: none;
+  stroke: #f59e0b;
+  stroke-width: 3.4;
+  stroke-linecap: round;
+  filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.22));
+}
+
+.rotateMenuAnglePoint {
+  fill: #0066ff;
+  filter:
+    drop-shadow(0 0 5px rgba(0, 102, 255, 0.42))
+    drop-shadow(1px 1px 1px rgba(0, 47, 150, 0.26));
+}
+
+.rotateMenuToolIcon-plane {
+  width: 44px;
+  height: 30px;
+  border: 1px solid rgba(96, 165, 250, 0.5);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.5), transparent 26%),
+    linear-gradient(90deg, rgba(96, 165, 250, 0.34), rgba(59, 130, 246, 0.18));
+  box-shadow:
+    inset -8px -5px 12px rgba(30, 64, 175, 0.12),
+    inset 6px 5px 10px rgba(255, 255, 255, 0.16),
+    0 4px 8px rgba(15, 23, 42, 0.18);
+  transform: translate(-50%, -50%) perspective(70px) rotateX(58deg) rotateZ(-18deg);
+}
+
+.rotateMenuToolIcon-plane::before {
+  content: "";
+  position: absolute;
+  left: 10px;
+  top: 18px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #0066ff;
+  box-shadow:
+    17px -9px 0 #0066ff,
+    24px 1px 0 #0066ff,
+    inset 1px 1px 2px rgba(255, 255, 255, 0.36),
+    inset -1px -2px 2px rgba(0, 47, 150, 0.34),
+    0 0 5px rgba(0, 102, 255, 0.36);
+}
+
+.rotateMenuToolIcon-unfold {
+  width: 36px;
+  height: 36px;
+  color: #111827;
+  font-family: Arial, sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 36px;
+  text-align: center;
+  filter: drop-shadow(0 2px 3px rgba(15, 23, 42, 0.24));
+}
+
+.rotateMenuOrbitItem {
+  position: absolute;
+  top: 88px;
+  left: 78px;
+  width: 72px;
+  height: 52px;
+  border-radius: 0px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 0px solid rgba(15, 23, 42, 0.07);
+  opacity: 1;
   cursor: grab;
   pointer-events: auto;
   touch-action: none;
-  box-shadow:
-    inset -4px -5px 8px rgba(17, 24, 39, 0.12),
-    inset 3px 3px 6px rgba(255, 255, 255, 0.26),
-    0 2px 5px rgba(17, 24, 39, 0.08);
+  box-shadow: 0 0px 0px rgba(15, 23, 42, 0.045);
+  overflow: visible;
   transform: translate(var(--orbit-x), var(--orbit-y));
 }
 
-.rotateMenuOrbitSphere:active {
+.rotateMenuOrbitItem:active {
   cursor: grabbing;
+}
+
+.rotateMenuTooltip {
+  position: fixed;
+  z-index: 10001;
+  display: none;
+  padding: 4px 7px;
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #111827;
+  font: 12px Arial, sans-serif;
+  pointer-events: none;
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.12);
+  white-space: nowrap;
+}
+
+.rotateMenuTooltip.visible {
+  display: block;
 }

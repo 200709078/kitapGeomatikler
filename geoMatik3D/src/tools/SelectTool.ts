@@ -48,9 +48,9 @@ export class SelectTool extends BaseTool {
     ) {
         super(scene, camera)
         this.controls = controls
-        this.sideSliderContainer = document.getElementById("prismSideControl")
-        this.sideSlider = document.getElementById("prismSideSlider") as HTMLInputElement
-        this.sideValue = document.getElementById("prismSideValue") as HTMLSpanElement
+        this.sideSliderContainer = document.getElementById("sideControl")
+        this.sideSlider = document.getElementById("sideSlider") as HTMLInputElement
+        this.sideValue = document.getElementById("sideValue") as HTMLSpanElement
 
         this.sideSlider?.addEventListener("input", () => {
             const value = parseInt(this.sideSlider!.value)

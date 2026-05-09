@@ -1,4 +1,5 @@
-// piramit yüksekliği kesikli çizgi ile birleşsin.
+//rotatemenuyü Sürüklerken hintler gözükmesin.
+//Cisimlerin tabanları açık olmasın. yanları gibi olsun.
 // Prizma, piramit, silindri seçilrise çalışacak açınım aracı yapılacak. Açınım cismin taban düzlemi üzerine olacak.
 // undo redo
 
@@ -14,6 +15,7 @@ import { createLighting } from './engine/Lighting'
 import { createPlane } from './engine/Plane'
 import { ToolManager } from './tools/ToolManager'
 import { createToolbar } from './ui/Toolbar'
+import { createRotateMenu } from './ui/RotateMenu'
 import { PointTool } from './tools/PointTool'
 import { LineSegmentTool } from './tools/LineSegmentTool'
 import { LineTool } from './tools/LineTool'
@@ -40,6 +42,7 @@ createGrid(scene)
 const controls = createControls(camera, renderer)
 setupResize(camera, renderer)
 createLoop(renderer, scene, camera, controls)
+createRotateMenu()
 
 const toolManager = new ToolManager()
 

@@ -14,6 +14,7 @@ export class Pyramid {
 
     mesh: THREE.Mesh
     baseLine: THREE.LineLoop
+    heightLine: THREE.Line
     sideLines: THREE.LineSegments
 
     selectableObjects: THREE.Object3D[]
@@ -81,9 +82,19 @@ export class Pyramid {
             new THREE.LineBasicMaterial({ color: 0x000000 })
         )
 
+        this.heightLine = new THREE.Line(
+            new THREE.BufferGeometry(),
+            new THREE.LineDashedMaterial({
+                color: 0x800080,
+                dashSize: 0.15,
+                gapSize: 0.1,
+            })
+        )
+
         scene.add(this.mesh)
         scene.add(this.baseLine)
         scene.add(this.sideLines)
+        scene.add(this.heightLine)
 
         this.pointA.userData.dependents ??= []
         this.pointB.userData.dependents ??= []
@@ -129,6 +140,7 @@ export class Pyramid {
 
         this.updateBaseLine(baseVertices)
         this.updateSideLines(baseVertices, apex)
+        this.updateHeightLine(center, apex)
         this.updateCornerPoints(baseVertices)
         this.updateMesh(baseVertices, apex)
     }
@@ -298,6 +310,15 @@ export class Pyramid {
 
         this.sideLines.geometry.dispose()
         this.sideLines.geometry = new THREE.BufferGeometry().setFromPoints(points)
+    }
+
+    private updateHeightLine(center: THREE.Vector3, apex: THREE.Vector3) {
+        this.heightLine.geometry.dispose()
+        this.heightLine.geometry = new THREE.BufferGeometry().setFromPoints([
+            center,
+            apex,
+        ])
+        this.heightLine.computeLineDistances()
     }
 
     private updateCornerPoints(baseVertices: THREE.Vector3[]) {
