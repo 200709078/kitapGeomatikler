@@ -1,4 +1,5 @@
-// ===== objects.js =====
+//ESC ile yarım kalan işlemler kontrol edilecek.
+
 class mPoint {
 	constructor(a, b, temp = false) {
 		this.type = 'point'
@@ -336,7 +337,6 @@ class mSectionalFunctions {
 	}
 }
 
-// ===== geometry.js =====
 function distanceAB(A, B) {
 	return Math.sqrt(Math.pow(B.b - A.b, 2) + Math.pow(B.a - A.a, 2))
 }
@@ -670,9 +670,11 @@ function getCircleTangentLines(point, circle) {
 	if (d < eps) return { status: false, reason: 'inside', lines: [] }
 
 	if (Math.abs(d - r) <= eps) {
+		let touchPoint = new mPoint(px, py, true)
 		let tangentPoint = new mPoint(px - dy, py + dx, true)
 		return {
 			status: true,
+			tangentPoints: [touchPoint],
 			lines: [new mLineWithPoints(point, tangentPoint, true)],
 		}
 	}
@@ -691,11 +693,41 @@ function getCircleTangentLines(point, circle) {
 
 	return {
 		status: true,
+		tangentPoints: [T1, T2],
 		lines: [
 			new mLineWithPoints(point, T1, true),
 			new mLineWithPoints(point, T2, true),
 		],
 	}
+}
+
+function getCircleTangentTouchPoint(tangent, pointIndex = 0) {
+	if (!tangent || tangent.type != 'circleTangent') return null
+	let tangentData = getCircleTangentLines(tangent.A, tangent.circle)
+	if (!tangentData.status || !tangentData.tangentPoints) return null
+	return tangentData.tangentPoints[pointIndex] || null
+}
+
+function createCircleTangentTouchPoints(tangent) {
+	let tangentData = getCircleTangentLines(tangent.A, tangent.circle)
+	if (!tangentData.status || !tangentData.tangentPoints) return []
+
+	return tangentData.tangentPoints.map((touchPoint, index) => {
+		let point = new mPoint(touchPoint.a, touchPoint.b)
+		point.onOther.push({
+			type: 'circleTangentTouchPoint',
+			tangentId: tangent.id,
+			pointIndex: index,
+		})
+		return point
+	})
+}
+
+function addCircleTangentWithTouchPoints(point, circle) {
+	let tangent = new mCircleTangent(point, circle)
+	arrObjects.push(tangent)
+	createCircleTangentTouchPoints(tangent).forEach(touchPoint => arrObjects.push(touchPoint))
+	return tangent
 }
 
 function getCircleDescriptor(circle) {
@@ -953,6 +985,11 @@ function getIntersectionPointConstraint(point) {
 	return point.onOther.find(item => item.type == 'intersectLines') || null
 }
 
+function getCircleTangentTouchPointConstraint(point) {
+	if (!point || point.type != 'point') return null
+	return point.onOther.find(item => item.type == 'circleTangentTouchPoint') || null
+}
+
 function getIntersectionOutput(point) {
 	let relatedPoints = arrObjects.filter(item => {
 		if (item.id == point.id) return true
@@ -988,6 +1025,25 @@ function getPointDisplayCoordinate(value) {
 
 function formatPointPair(point) {
 	return '(' + getPointDisplayCoordinate(point.a) + ',' + getPointDisplayCoordinate(point.b) + ')'
+}
+
+function formatPointNames(...points) {
+	return points.map(point => point ? point.name : '?').join(',')
+}
+
+function formatCircleInput(circle) {
+	if (circle.type == 'circle2') {
+		return circle.name + ': Çember(' + formatPointNames(circle.A, circle.B) + ')'
+	}
+
+	if (circle.type == 'circle3') {
+		return circle.name + ': Çember(' + formatPointNames(circle.A, circle.B, circle.C) + ')'
+	}
+	if (circle.type == 'circleR') {
+		return circle.name + ': Çember(' + formatPointNames(circle.A) + ',' + circle.r + ')'
+	}
+
+	return ''
 }
 
 function calculateAngle(ag) {
@@ -1187,7 +1243,6 @@ function updateIntersectionPointRows() {
 	})
 }
 
-// ===== draw.js =====
 function text2canvas(x, y, style, align, font, text) {
 	ctx.fillStyle = style
 	ctx.textAlign = align
@@ -1888,7 +1943,6 @@ function drawSectionalFunctions(sf) {
 	})
 }
 
-// ===== parsers.js =====
 function bileskeProcess(funcs) {
 	return funcs.reduceRight((acc, f) => {
 		return f.replace(/x/g, `(${acc})`)
@@ -3030,7 +3084,6 @@ function isAngle(input) {
 	}
 }
 
-// ===== ui.js =====
 function isObjectUsedByOther(target) {
 	if (target.onOther && target.onOther.length > 0) return true
 
@@ -3044,6 +3097,7 @@ function isObjectUsedByOther(target) {
 		return obj.onOther?.some(dep =>
 			dep.circleId === target.id ||
 			dep.lineId === target.id ||
+			dep.tangentId === target.id ||
 			dep.angleId === target.id ||
 			dep.sourceId === target.id ||
 			dep.centerId === target.id ||
@@ -3118,6 +3172,7 @@ function labelsCreator() {
 		if (item.type == 'point') {
 			let reflectConstraint = getReflectPointConstraint(item)
 			let intersectionConstraint = getIntersectionPointConstraint(item)
+			let circleTangentTouchPointConstraint = getCircleTangentTouchPointConstraint(item)
 			if (reflectConstraint) {
 				let source = arrObjects.find(obj => obj.id == reflectConstraint.sourceId)
 				let center = arrObjects.find(obj => obj.id == reflectConstraint.centerId)
@@ -3136,6 +3191,14 @@ function labelsCreator() {
 				sliderB.hidden = true
 				input.value = item.name + '=Kesiştir(' + (line1 ? line1.name : '?') + ',' + (line2 ? line2.name : '?') + ')'
 				output.innerHTML = getIntersectionOutput(item)
+			} else if (circleTangentTouchPointConstraint) {
+				let tangent = arrObjects.find(obj => obj.id == circleTangentTouchPointConstraint.tangentId)
+				labelA.hidden = true
+				sliderA.hidden = true
+				labelB.hidden = true
+				sliderB.hidden = true
+				input.value = item.name + '=Te\u011fetNokta(' + (tangent ? tangent.name : '?') + ',' + ((circleTangentTouchPointConstraint.pointIndex || 0) + 1) + ')'
+				output.value = item.name + '=(' + getPointDisplayCoordinate(item.a) + ',' + getPointDisplayCoordinate(item.b) + ')'
 			} else {
 				input.value = item.name + "=(" + Number(item.a).toFixed(2) + "," + Number(item.b).toFixed(2) + ")"
 			}
@@ -3146,19 +3209,19 @@ function labelsCreator() {
 		} else if (item.type == 'circleR') {
 			labelB.hidden = true
 			sliderB.hidden = true
-			input.value = item.name + ': Çember((' + item.A.a + ',' + item.A.b + '),' + item.r + ')'
+			input.value = formatCircleInput(item)
 		} else if (item.type == 'circle2') {
 			labelA.hidden = true
 			sliderA.hidden = true
 			labelB.hidden = true
 			sliderB.hidden = true
-			input.value = item.name + ': Çember((' + item.A.a + ',' + item.A.b + '),(' + item.B.a + ',' + item.B.b + '))'
+			input.value = formatCircleInput(item)
 		} else if (item.type == 'circle3') {
 			labelA.hidden = true
 			sliderA.hidden = true
 			labelB.hidden = true
 			sliderB.hidden = true
-			input.value = item.name + ': Çember((' + item.A.a + ',' + item.A.b + '),(' + item.B.a + ',' + item.B.b + '),(' + item.C.a + ',' + item.C.b + '))'
+			input.value = formatCircleInput(item)
 		} else if (item.type == 'angle') {
 			labelA.hidden = true
 			sliderA.hidden = true
@@ -3369,11 +3432,18 @@ function toggleCalcIcon(imgEl) {
 
 function updateCalcButtonPosition() {
 	let calcButton = document.getElementById('btnCalc')
+	let helpMenuButton = document.getElementById('helpMenuButton')
 	let rightWrapper = document.getElementById('rightWrapper')
-	if (!calcButton || !rightWrapper) return
+	if (!rightWrapper) return
 
-	calcButton.style.right = rightWrapper.classList.contains('hide') ? '0px' : rightWrapper.getBoundingClientRect().width + 'px'
+	let rightValue = rightWrapper.classList.contains('hide') ? '0px' : rightWrapper.getBoundingClientRect().width + 'px'
+
+	if (calcButton) calcButton.style.right = rightValue
+	if (helpMenuButton) helpMenuButton.style.right = rightValue
 }
+
+
+
 
 function observeRightWrapperSize() {
 	let rightWrapper = document.getElementById('rightWrapper')
@@ -3385,26 +3455,34 @@ function observeRightWrapperSize() {
 }
 
 function updateToolWrapperRight() {
-	let toolWrapper = document.getElementById('toolWrapper')
 	let rightWrapper = document.getElementById('rightWrapper')
-	if (!toolWrapper || !rightWrapper) return
-
+	if (!rightWrapper) return
 	updateCalcButtonPosition()
-
-	if (toolWrapper.classList.contains('vertical')) {
-		toolWrapper.style.right = ''
-		return
-	}
-
-	toolWrapper.style.right = rightWrapper.classList.contains('hide') ? '0px' : rightWrapper.offsetWidth + 'px'
 }
 
 function closeHelp() {
 	activeObject = 'select'
-	document.querySelectorAll('.toolWrapper .button').forEach(b => b.classList.remove('active'))
-	document.getElementById('btnSelect').classList.add('active')
 	document.getElementById('help-popup').style.display = 'none';
 }
+
+const helpMenuButton = document.getElementById('helpMenuButton')
+
+if (helpMenuButton) {
+	helpMenuButton.addEventListener('click', () => {
+		document.getElementById('help-popup').style.display = 'flex'
+
+		const giris = document.getElementById('giris')
+		if (giris) giris.value = ''
+	})
+}
+
+
+
+
+
+
+
+
 
 function changeActiveElement(id) {
 	let clickedid = Number(id.substring(0, id.indexOf("-")))
@@ -3433,7 +3511,7 @@ function changeActiveElement(id) {
 		document.getElementById(activeElementID + '-labelB').hidden = true
 		document.getElementById(activeElementID + '-sliderB').hidden = true
 	}
-	if (getReflectPointConstraint(activeitem) || getIntersectionPointConstraint(activeitem) || activeitem.type == 'sequence' || activeitem.type == 'lineSegment' || activeitem.type == 'distanceSegment' || activeitem.type == 'circleTangent' || activeitem.type == 'lineWithPoints' || activeitem.type == 'sectionalFunctions' || activeitem.type == 'function' || activeitem.type == 'circle2' || activeitem.type == 'circle3' || activeitem.type == 'angle' || activeitem.type == 'arcMeasure' || activeitem.type == 'functioncomposition' || activeitem.type == 'derivative') {
+	if (getReflectPointConstraint(activeitem) || getIntersectionPointConstraint(activeitem) || getCircleTangentTouchPointConstraint(activeitem) || activeitem.type == 'sequence' || activeitem.type == 'lineSegment' || activeitem.type == 'distanceSegment' || activeitem.type == 'circleTangent' || activeitem.type == 'lineWithPoints' || activeitem.type == 'sectionalFunctions' || activeitem.type == 'function' || activeitem.type == 'circle2' || activeitem.type == 'circle3' || activeitem.type == 'angle' || activeitem.type == 'arcMeasure' || activeitem.type == 'functioncomposition' || activeitem.type == 'derivative') {
 		document.getElementById(activeElementID + '-labelA').hidden = true
 		document.getElementById(activeElementID + '-sliderA').hidden = true
 		document.getElementById(activeElementID + '-labelB').hidden = true
@@ -3509,8 +3587,6 @@ function delBtnClick(e) {
 
 	activeElementID = null
 	activeObject = 'select'
-	document.querySelectorAll('.toolWrapper .button').forEach(b => b.classList.remove('active'))
-	document.getElementById('btnSelect').classList.add('active')
 
 	drawAll()
 	labelsCreator()
@@ -3604,11 +3680,11 @@ function crossSlider() {
 				} else if (owner.type === 'distanceSegment') {
 					inputOwner.value = owner.name + ': Uzaklık((' + owner.A.a + ',' + owner.A.b + '),(' + owner.B.a + ',' + owner.B.b + '))'
 				} else if (owner.type === 'circleR') {
-					inputOwner.value = owner.name + ': Çember((' + owner.A.a + ',' + owner.A.b + '),' + owner.r + ')'
+					inputOwner.value = formatCircleInput(owner)
 				} else if (owner.type === 'circle2') {
-					inputOwner.value = owner.name + ': Çember((' + owner.A.a + ',' + owner.A.b + '),(' + owner.B.a + ',' + owner.B.b + '))'
+					inputOwner.value = formatCircleInput(owner)
 				} else if (owner.type === 'circle3') {
-					inputOwner.value = owner.name + ': Çember((' + owner.A.a + ',' + owner.A.b + '),(' + owner.B.a + ',' + owner.B.b + '),(' + owner.C.a + ',' + owner.C.b + '))'
+					inputOwner.value = formatCircleInput(owner)
 				} else if (owner.type === 'angle') {
 					inputOwner.value = owner.name + ': Açı(' + owner.A.name + ',' + owner.B.name + ',' + owner.C.name + ')'
 					document.getElementById(owner.id + '-output').value = owner.name + '=' + formatAngleValue(getAngleMeasure(owner)) + '°'
@@ -3675,7 +3751,7 @@ function crossSlider() {
 		} else if (item.type == 'circleR') {
 			item.r = Number(sliderA.value)
 			labelA.innerHTML = 'r = ' + item.r
-			input.value = item.name + ': Çember((' + item.A.a + ',' + item.A.b + '),' + item.r + ')'
+			formatCircleInput(item)
 		} else if (item.type == 'limit') {
 			item.approachValRight = Number(sliderA.value)
 			labelA.innerHTML = sliderA.min + '⁺ = ' + sliderA.value
@@ -3706,14 +3782,6 @@ function crossSlider() {
 	drawAll()
 }
 
-function showToast(title, msg) {
-	let x = document.getElementById("snackbar")
-	document.getElementById('snackTitle').innerHTML = title
-	document.getElementById('snackContent').innerHTML = msg
-	x.className = "show"
-	setTimeout(function () { x.className = x.className.replace("show", "") }, 3000)
-}
-
 function changeName(newName) {
 	let hasNameid
 	let found = arrObjects.find(item => item.name === newName)
@@ -3739,7 +3807,6 @@ function changeName(newName) {
 	arrObjects[activeElementID].name = newName
 }
 
-// ===== app.js =====
 let canvas = document.getElementById('canvas')
 ctx = canvas.getContext('2d')
 canvas.width = innerWidth
@@ -3845,8 +3912,6 @@ function restoreHistoryState(state) {
 	activeElementID = null
 	activeObject = 'select'
 	resetTransientDrawingState()
-	document.querySelectorAll('.toolWrapper .button').forEach(b => b.classList.remove('active'))
-	document.getElementById('btnSelect').classList.add('active')
 	drawAll()
 	labelsCreator()
 	updateHistoryControlsState()
@@ -3993,6 +4058,16 @@ function reprojectAllOnOther() {
 								.filter(item => getIntersectionPointConstraint(item)?.ownerId == obj.id || item.id == obj.id)
 								.map(item => item.id)
 						}
+					} else if (o.type == 'circleTangentTouchPoint') {
+						let tangent = arrObjects.find(item => item.id == o.tangentId)
+						let touchPoint = getCircleTangentTouchPoint(tangent, o.pointIndex || 0)
+						if (touchPoint) {
+							obj.a = touchPoint.a
+							obj.b = touchPoint.b
+						} else {
+							obj.a = NaN
+							obj.b = NaN
+						}
 					}
 				})
 			}
@@ -4060,93 +4135,177 @@ function createName(type) {
 	return nm
 }
 
-document.querySelector('.toolWrapper').addEventListener('click', e => {
-	const btn = e.target.closest('button')
-	if (!btn || !btn.dataset.action) return
-	document.querySelectorAll('.toolWrapper .button').forEach(b => b.classList.remove('active'))
-	btn.classList.add('active')
-	switch (btn.dataset.action) {
+function activateToolFromAction(action) {
+	if (!action) return
+
+	switch (action) {
 		case 'select':
 			activeObject = 'select'
 			break
+
 		case 'point':
 			activeObject = 'point'
 			break
+
 		case 'line':
 			activeObject = 'line'
 			break
+
 		case 'linesegment':
 			activeObject = 'linesegment'
 			break
+
 		case 'distancesegment':
 			activeObject = 'distancesegment'
 			break
+
 		case 'reflectpoint':
 			activeObject = 'reflectpoint'
 			reflectPointDrawing = false
 			reflectPointA = reflectPointB = null
 			reflectPointCreatedA = false
 			break
+
 		case 'intersect':
 			activeObject = 'intersect'
 			intersectDrawing = false
 			intersectLineA = intersectLineB = null
 			break
+
 		case 'circle2':
 			activeObject = 'circle2'
 			break
+
 		case 'circle3':
 			activeObject = 'circle3'
 			break
+
 		case 'angle':
 			activeObject = 'angle'
 			break
+
 		case 'arcmeasure':
 			activeObject = 'arcmeasure'
 			arcMeasureDrawing = false
 			arcMeasureA = arcMeasureB = arcMeasureCircle = null
 			arcMeasureCreatedA = false
 			break
+
 		case 'circletangent':
 			activeObject = 'circletangent'
 			circleTangentCircle = null
 			break
+
 		case 'help':
-			document.getElementById('help-popup').style.display = 'flex';
-			const giris = document.getElementById('giris').value = ''
+			document.getElementById('help-popup').style.display = 'flex'
+			document.getElementById('giris').value = ''
 			break
+
+		default:
+			console.warn('Bilinmeyen araç:', action)
+			return
 	}
-	if (btn.dataset.toast) {
-		const [title, msg] = btn.dataset.toast.split('|')
-		showToast(title, msg)
-	}
+
 	drawAll()
-})
+}
 
-let toogleMenuClickTimer = null
-document.getElementById('toogleMenuButton').addEventListener('click', function () {
-	clearTimeout(toogleMenuClickTimer)
-	toogleMenuClickTimer = setTimeout(function () {
-		document.getElementById('toolWrapper').classList.toggle('vertical')
-		updateToolWrapperRight()
-	}, 200)
-})
 
-document.getElementById('toogleMenuButton').addEventListener('dblclick', function () {
-	clearTimeout(toogleMenuClickTimer)
-	document.getElementById('toolWrapper').classList.toggle('tools-hidden')
-	updateToolWrapperRight()
-})
+
+function shouldReturnSelectAfterTool(action) {
+	return action !== 'select' && action !== 'point'
+}
+
+function finishToolAndReturnSelect() {
+	if (!shouldReturnSelectAfterTool(activeObject)) return
+
+	if (window.GeoMatikRadialToolbar?.selectToolByAction) {
+		window.GeoMatikRadialToolbar.selectToolByAction('select', {
+			showToast: false
+		})
+		return
+	}
+
+	activateToolFromAction('select')
+}
+
+let toastTimer = null
+function showToast(titleOrToast, msg = '') {
+	if (!titleOrToast && !msg) return
+
+	let title = titleOrToast || ''
+	let message = msg || ''
+
+	if (!message && typeof titleOrToast === 'string' && titleOrToast.includes('|')) {
+		const parts = titleOrToast.split('|')
+		title = parts[0] || ''
+		message = parts.slice(1).join('|') || ''
+	}
+
+	const x = document.getElementById('snackbar')
+	const snackTitle = document.getElementById('snackTitle')
+	const snackContent = document.getElementById('snackContent')
+
+	if (!x || !snackTitle || !snackContent) return
+
+	snackTitle.textContent = title
+	snackContent.textContent = message
+
+	x.classList.remove('show')
+	void x.offsetWidth
+	x.classList.add('show')
+
+	clearTimeout(toastTimer)
+
+	toastTimer = setTimeout(function () {
+		x.classList.remove('show')
+	}, 3000)
+}
+
+
+
+
+function connectRadialToolbar() {
+	const radialToolbar = document.getElementById('radialToolbar')
+
+	if (!radialToolbar) {
+		console.warn('radialToolbar bulunamadı.')
+		return
+	}
+
+	radialToolbar.addEventListener('radial-tool-change', event => {
+		const { action, toast, title, showToast: shouldShowToast = true } = event.detail
+
+		activateToolFromAction(action)
+
+		if (!shouldShowToast) return
+
+		if (toast) {
+			showToast(toast)
+		} else if (title) {
+			showToast(title)
+		}
+	})
+
+	const initialTool = window.GeoMatikRadialToolbar?.getActiveTool?.()
+
+	if (initialTool?.action) {
+		activateToolFromAction(initialTool.action)
+	}
+}
+
 
 document.getElementById('btnCalc').addEventListener('click', function () {
 	activeObject = 'select'
-	document.querySelectorAll('.toolWrapper .button').forEach(b => b.classList.remove('active'))
-	document.getElementById('btnSelect').classList.add('active')
+
 	toggleCalcIcon(document.getElementById('btnimgCalc'))
+
 	document.getElementById('rightWrapper').classList.toggle('hide')
+
 	updateToolWrapperRight()
 	drawAll()
 })
+
+
 
 function handleCircleTangentMouseDown(evt) {
 	if (!circleTangentCircle) {
@@ -4173,11 +4332,13 @@ function handleCircleTangentMouseDown(evt) {
 
 		let tangentData = getCircleTangentLines(circleTangentPoint, circleTangentCircle)
 		if (tangentData.status) {
-			let tangent = new mCircleTangent(circleTangentPoint, circleTangentCircle)
-			arrObjects.push(tangent)
+			let tangent = addCircleTangentWithTouchPoints(circleTangentPoint, circleTangentCircle)
 			activeElementID = tangent.id
 			commitHistoryState()
 			circleTangentCircle = null
+
+			finishToolAndReturnSelect()
+
 			labelsCreator()
 			drawAll()
 		} else if (tangentData.reason == 'inside') {
@@ -4229,6 +4390,9 @@ function handleArcMeasureMouseDown(evt) {
 	arcMeasureDrawing = false
 	arcMeasureA = arcMeasureB = arcMeasureCircle = null
 	arcMeasureCreatedA = false
+
+	finishToolAndReturnSelect()
+
 	labelsCreator()
 	drawAll()
 }
@@ -4398,8 +4562,7 @@ function girisKeyDown(event) {
 
 				let tangentData = getCircleTangentLines(pointResult.point, circle)
 				if (tangentData.status) {
-					let tangent = new mCircleTangent(pointResult.point, circle)
-					arrObjects.push(tangent)
+					let tangent = addCircleTangentWithTouchPoints(pointResult.point, circle)
 					activeElementID = tangent.id
 					commitHistoryState()
 				} else if (tangentData.reason == 'inside') {
@@ -4724,8 +4887,6 @@ document.addEventListener('DOMContentLoaded', function () {
 			arcMeasureA = arcMeasureB = arcMeasureCircle = null
 			arcMeasureCreatedA = false
 			circleTangentCircle = null
-			document.querySelectorAll('.toolWrapper .button').forEach(b => b.classList.remove('active'))
-			document.getElementById('btnSelect').classList.add('active')
 			drawAll()
 			objectsContainer.innerHTML = ''
 		}
@@ -4896,6 +5057,10 @@ document.addEventListener('DOMContentLoaded', function () {
 						commitHistoryState()
 						intersectDrawing = false
 						intersectLineA = intersectLineB = null
+
+						finishToolAndReturnSelect()
+
+
 					} else {
 						showToast('Kesiştir', 'Farklı bir nesne seçiniz.')
 					}
@@ -4923,8 +5088,7 @@ document.addEventListener('DOMContentLoaded', function () {
 					if (hitObject.hitType == 'circleR' || hitObject.hitType == 'circle2' || hitObject.hitType == 'circle3') {
 						let tangentData = getCircleTangentLines(circleTangentPoint, hitObject.hit)
 						if (tangentData.status) {
-							let tangent = new mCircleTangent(circleTangentPoint, hitObject.hit)
-							arrObjects.push(tangent)
+							let tangent = addCircleTangentWithTouchPoints(circleTangentPoint, hitObject.hit)
 							activeElementID = tangent.id
 							commitHistoryState()
 							circleTangentPoint = null
@@ -5019,6 +5183,8 @@ document.addEventListener('DOMContentLoaded', function () {
 					commitHistoryState()
 					lineDrawing = false
 					lineA = lineB = null
+
+					finishToolAndReturnSelect()
 				}
 			}
 
@@ -5039,6 +5205,8 @@ document.addEventListener('DOMContentLoaded', function () {
 					commitHistoryState()
 					lineSegmentDrawing = false
 					lineSegmentA = lineSegmentB = null
+
+					finishToolAndReturnSelect()
 				}
 			}
 
@@ -5058,6 +5226,9 @@ document.addEventListener('DOMContentLoaded', function () {
 					commitHistoryState()
 					distanceSegmentDrawing = false
 					distanceSegmentA = distanceSegmentB = null
+
+					finishToolAndReturnSelect()
+
 				}
 			}
 
@@ -5086,6 +5257,9 @@ document.addEventListener('DOMContentLoaded', function () {
 					commitHistoryState()
 					reflectPointDrawing = false
 					reflectPointA = reflectPointB = null
+
+					finishToolAndReturnSelect()
+
 					reflectPointCreatedA = false
 				}
 			}
@@ -5106,6 +5280,8 @@ document.addEventListener('DOMContentLoaded', function () {
 					commitHistoryState()
 					circleDrawing = false
 					circleA = circleB = null
+
+					finishToolAndReturnSelect()
 				}
 			}
 			if (activeObject === 'circle3') {
@@ -5130,6 +5306,8 @@ document.addEventListener('DOMContentLoaded', function () {
 					commitHistoryState()
 					circleDrawing = false
 					circleA = circleB = circleC = null
+
+					finishToolAndReturnSelect()
 				}
 			}
 			if (activeObject === 'angle') {
@@ -5155,6 +5333,8 @@ document.addEventListener('DOMContentLoaded', function () {
 					commitHistoryState()
 					angleDrawing = false
 					angleA = angleB = angleC = null
+
+					finishToolAndReturnSelect()
 				}
 			}
 			if (hitObject.hit) {
@@ -5268,8 +5448,6 @@ document.addEventListener('DOMContentLoaded', function () {
 			activeElementID = null
 
 			activeObject = 'select'
-			document.querySelectorAll('.toolWrapper .button').forEach(b => b.classList.remove('active'))
-			document.getElementById('btnSelect').classList.add('active')
 
 			drawAll()
 			labelsCreator()
@@ -5313,3 +5491,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
 	initResizerFunction(reSizer, rightWrapper)
 })
+
+
+connectRadialToolbar()

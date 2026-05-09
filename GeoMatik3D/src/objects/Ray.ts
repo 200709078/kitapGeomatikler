@@ -1,4 +1,5 @@
 import * as THREE from "three"
+import { getRandomColor } from "../utils/color"
 
 export class RayObject {
     startPoint: THREE.Mesh
@@ -6,17 +7,26 @@ export class RayObject {
     mesh: THREE.Mesh
     length: number
 
-    constructor(startPoint: THREE.Mesh, directionPoint: THREE.Mesh, length = 50) {
+    constructor(
+        startPoint: THREE.Mesh,
+        directionPoint: THREE.Mesh,
+        length = 50,
+        selectableObjects?: THREE.Object3D[]
+    ) {
         this.startPoint = startPoint
         this.directionPoint = directionPoint
         this.length = length
 
         const geometry = new THREE.CylinderGeometry(0.1, 0.1, 1, 16)
-        const material = new THREE.MeshStandardMaterial({ color: 0x0066ff })
+        const material = new THREE.MeshStandardMaterial({ color: getRandomColor() })
 
         this.mesh = new THREE.Mesh(geometry, material)
         this.mesh.castShadow = true
         this.mesh.receiveShadow = true
+        this.mesh.userData.selectableType = "solid"
+        this.mesh.userData.owner = this
+
+        selectableObjects?.push(this.mesh)
 
         this.startPoint.userData.dependents ??= []
         this.directionPoint.userData.dependents ??= []

@@ -103,7 +103,7 @@ export class LineTool extends BaseTool {
       return
     }
 
-    const line = new LineObject(this.pointA, point, 100)
+    const line = new LineObject(this.pointA, point, 100, this.selectableObjects)
     this.scene.add(line.mesh)
 
     this.reset()

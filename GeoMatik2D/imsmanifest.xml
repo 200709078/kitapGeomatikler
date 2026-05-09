@@ -32,6 +32,7 @@
       <file href="renderer/index.html" />
 
       <file href="renderer/css/styles.css" />
+      <file href="renderer/css/toolbar.css" />
 
       <file href="renderer/img/angle.svg" />
       <file href="renderer/img/arcmeasure.svg" />
@@ -53,6 +54,7 @@
       <file href="renderer/img/toogle.svg" />
 
       <file href="renderer/js/app.js" />
+      <file href="renderer/js/toolbar.js" />
 
       <file href="renderer/sound/clear.mp3" />
     </resource>

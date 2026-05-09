@@ -85,6 +85,7 @@ export function getNearestSelectablePoint(
 
   for (const object of selectableObjects) {
     if (!(object instanceof THREE.Mesh) || !object.visible) continue
+    if (!object.userData.pointRole) continue
 
     object.getWorldPosition(projected)
     projected.project(camera)

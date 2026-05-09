@@ -1,4 +1,5 @@
 import * as THREE from "three"
+import { getRandomColor } from "../utils/color"
 
 export class AngleObject {
   pointA: THREE.Mesh
@@ -13,14 +14,22 @@ export class AngleObject {
 
   arcRadius = 1
   armRadius = 0.05
+  color: string
+  originalPartColors = new Map<THREE.Mesh, THREE.Color>()
 
-  constructor(pointA: THREE.Mesh, vertexB: THREE.Mesh, pointC: THREE.Mesh) {
+  constructor(
+    pointA: THREE.Mesh,
+    vertexB: THREE.Mesh,
+    pointC: THREE.Mesh,
+    selectableObjects?: THREE.Object3D[]
+  ) {
     this.pointA = pointA
     this.vertexB = vertexB
     this.pointC = pointC
+    this.color = getRandomColor()
 
     const arcGeometry = new THREE.BufferGeometry()
-    const arcMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 })
+    const arcMaterial = new THREE.MeshBasicMaterial({ color: this.color })
 
     this.arc = new THREE.Mesh(arcGeometry, arcMaterial)
 
@@ -31,6 +40,10 @@ export class AngleObject {
 
     this.lineAB = this.createCylinderArm(armMaterial)
     this.lineBC = this.createCylinderArm(armMaterial.clone())
+
+    this.markSelectable(this.arc, selectableObjects)
+    this.markSelectable(this.lineAB, selectableObjects)
+    this.markSelectable(this.lineBC, selectableObjects)
 
     this.pointA.userData.dependents ??= []
     this.vertexB.userData.dependents ??= []
@@ -52,7 +65,7 @@ export class AngleObject {
     context.clearRect(0, 0, canvas.width, canvas.height)
 
     context.font = "bold 200px Arial"
-    context.fillStyle = "#ff0000"
+    context.fillStyle = this.color
     context.textAlign = "center"
     context.textBaseline = "middle"
     context.fillText(text, canvas.width / 2, canvas.height / 2)
@@ -163,6 +176,53 @@ export class AngleObject {
     const mesh = new THREE.Mesh(geometry, material)
 
     return mesh
+  }
+
+  private markSelectable(
+    mesh: THREE.Mesh,
+    selectableObjects?: THREE.Object3D[]
+  ) {
+    mesh.userData.selectableType = "solid"
+    mesh.userData.owner = this
+    selectableObjects?.push(mesh)
+  }
+
+  onSelect() {
+    this.setSelectedColor(this.arc)
+    this.setSelectedColor(this.lineAB)
+    this.setSelectedColor(this.lineBC)
+  }
+
+  onDeselect() {
+    this.restorePartColor(this.arc)
+    this.restorePartColor(this.lineAB)
+    this.restorePartColor(this.lineBC)
+    this.originalPartColors.clear()
+  }
+
+  private setSelectedColor(mesh: THREE.Mesh) {
+    const material = mesh.material
+
+    if (Array.isArray(material) || !("color" in material)) return
+
+    const colorMaterial = material as THREE.Material & { color: THREE.Color }
+
+    if (!this.originalPartColors.has(mesh)) {
+      this.originalPartColors.set(mesh, colorMaterial.color.clone())
+    }
+
+    colorMaterial.color.set(0xffaa00)
+  }
+
+  private restorePartColor(mesh: THREE.Mesh) {
+    const originalColor = this.originalPartColors.get(mesh)
+    const material = mesh.material
+
+    if (!originalColor || Array.isArray(material) || !("color" in material)) return
+
+    const colorMaterial = material as THREE.Material & { color: THREE.Color }
+
+    colorMaterial.color.copy(originalColor)
   }
 
   private updateArms(

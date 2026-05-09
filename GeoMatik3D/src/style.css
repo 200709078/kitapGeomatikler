@@ -24,7 +24,9 @@ body {
   border-radius: 8px;
 }
 
-#toolbar button {
+#toolbar button,
+#planeToggleControl button,
+#deleteSelectionControl button {
   width: 38px;
   height: 38px;
 
@@ -35,7 +37,9 @@ body {
   font-size: 18px;
 }
 
-#toolbar button:hover {
+#toolbar button:hover,
+#planeToggleControl button:hover,
+#deleteSelectionControl button:hover {
   background: #eeeeee;
 }
 
@@ -45,14 +49,124 @@ body {
   border-color: #1d4ed8;
 }
 
+#planeToggleControl {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #cccccc;
+  border-radius: 8px;
+}
+
+#deleteSelectionControl {
+  position: fixed;
+  top: 12px;
+  right: 76px;
+  z-index: 10;
+
+  display: none;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #cccccc;
+  border-radius: 8px;
+}
+
+#deleteSelectionControl button {
+  color: #b91c1c;
+  font-size: 24px;
+  line-height: 1;
+}
+
 #prismSideControl {
-  position: absolute;
-  top: 20px;
-  left: 100px;
+  position: fixed;
+  top: 12px;
+  right: 140px;
   background: rgba(255, 255, 255, 0.9);
   padding: 10px;
+  border: 1px solid #cccccc;
   border-radius: 8px;
   font-family: Arial;
   display: none;
   z-index: 10;
+}
+
+#rotateMenu {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  z-index: 10000;
+  width: 114px;
+  height: 114px;
+  pointer-events: none;
+  user-select: none;
+  transform: translateX(-50%);
+}
+
+#rotateMenuSphere {
+  position: absolute;
+  top: 36px;
+  left: 36px;
+  z-index: 50;
+  width: 41px;
+  height: 41px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.85) 0 8%, rgba(147, 197, 253, 0.48) 20%, rgba(37, 99, 235, 0.34) 62%, rgba(30, 58, 138, 0.46) 100%);
+  border: 1px solid rgba(30, 64, 175, 0.45);
+  opacity: 0.72;
+  cursor: grab;
+  pointer-events: auto;
+  touch-action: none;
+  box-shadow:
+    inset -7px -8px 12px rgba(15, 23, 42, 0.14),
+    inset 5px 5px 10px rgba(255, 255, 255, 0.32),
+    0 3px 8px rgba(15, 23, 42, 0.14);
+}
+
+#rotateMenuSphere:active {
+  cursor: grabbing;
+}
+
+#rotateMenuCenterPyramid {
+  position: absolute;
+  left: 50%;
+  top: 51%;
+  width: 22px;
+  height: 20px;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  background:
+    linear-gradient(115deg, rgba(255, 255, 255, 0.72) 0 18%, transparent 19%),
+    linear-gradient(90deg, rgba(251, 191, 36, 0.82) 0 48%, rgba(217, 119, 6, 0.78) 49% 100%);
+  border-bottom: 1px solid rgba(120, 53, 15, 0.5);
+  filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.28));
+}
+
+.rotateMenuOrbitSphere {
+  position: absolute;
+  top: 47px;
+  left: 47px;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.84) 0 10%, hsl(var(--orbit-hue) 82% 78% / 0.5) 26%, hsl(var(--orbit-hue) 72% 54% / 0.38) 68%, hsl(var(--orbit-hue) 72% 34% / 0.48) 100%);
+  border: 1px solid hsl(var(--orbit-hue) 58% 42% / 0.38);
+  opacity: 0.7;
+  cursor: grab;
+  pointer-events: auto;
+  touch-action: none;
+  box-shadow:
+    inset -4px -5px 8px rgba(17, 24, 39, 0.12),
+    inset 3px 3px 6px rgba(255, 255, 255, 0.26),
+    0 2px 5px rgba(17, 24, 39, 0.08);
+  transform: translate(var(--orbit-x), var(--orbit-y));
+}
+
+.rotateMenuOrbitSphere:active {
+  cursor: grabbing;
 }

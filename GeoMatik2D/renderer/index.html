@@ -2,10 +2,10 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="tr" lang="tr">
 
 <head>
-	<title>GeoMatik 2D</title>
+	<title>GeoMatik2D</title>
 	<meta charset="UTF-8">
 	<meta http-equiv="Content-Type" content="text/html" charset="UTF-8">
-	<meta name="keywords" content="Graph, functions, axis, javascript, canvas, GeoMatik2D">
+	<meta name="keywords" content="Graph, functions, axis, javascript, canvas, GeoMatik2D, GeoMatik3D">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta name="description" content="made by mADEMatik">
 	<meta name="author" content="made by mADEMatik">
@@ -20,101 +20,43 @@
 		}, { override: true });
 	</script>
 	<link rel="shortcut icon" href="img/favicon.svg" />
-	<link rel="stylesheet" href="css/styles.css" type="text/css" />
+	<link rel="stylesheet" href="./css/toolbar.css" type="text/css" />
+	<link rel="stylesheet" href="./css/styles.css" type="text/css" />
 </head>
 
 <body>
 	<div id="centerWrapper">
 		<canvas id="canvas"></canvas>
-		<div class="toolWrapper" id="toolWrapper">
-			<button class="toogleMenuButton" id="toogleMenuButton" type="button" title="Araç çubuğunu döndür/gizle">
-				<img src="img/toogle.svg">
-			</button>
-			<button class="button active" id="btnSelect" data-action="select" data-cursor="pointer"
-				data-toast="Taşı|Düzlemi veya nesneyi tutarak kaydırınız."
-				title="Taşı|Düzlemi veya nesneyi tutarak kaydırınız.">
-				<img src="img/select.svg">
-				<span>Taşı</span>
-			</button>
-			<button class="button" id="btnPoint" data-action="point" data-toast="Nokta|Konum seçiniz."
-				title="Nokta|Konum seçiniz.">
-				<img src="img/point.svg">
-				<span>Nokta</span>
-			</button>
-			<button class="button" id="btnLine" data-action="line" data-toast="Doğru|Farklı iki nokta seçiniz."
-				title="Doğru|Farklı iki nokta seçiniz.">
-				<img src="img/line.svg">
-				<span>Doğru</span>
-			</button>
-			<button class="button" id="btnLineSegment" data-action="linesegment"
-				data-toast="Doğru Parçası|Farklı iki nokta seçiniz." title="Doğru Parçası|Farklı iki nokta seçiniz.">
-				<img src="img/linesegment.svg">
-				<span>Doğru Parçası</span>
-			</button>
-			<button class="button" id="btnDistanceSegment" data-action="distancesegment"
-				data-toast="Uzaklık|Farklı iki nokta seçiniz." title="Uzaklık|Farklı iki nokta seçiniz.">
-				<img src="img/distancesegment.svg">
-				<span>Uzaklık</span>
-			</button>
-			<button class="button" id="btnReflectPoint" data-action="reflectpoint"
-				data-toast="Yansıt Nokta|Yansıtılacak noktayı ve ardından yansıtma merkezini seçiniz."
-				title="Yansıt Nokta|Yansıtılacak noktayı ve ardından yansıtma merkezini seçiniz.">
-				<img src="img/reflect.svg">
-				<span>Yansıt Nokta</span>
-			</button>
-			<button class="button" id="btnIntersect" data-action="intersect" data-toast="Kesiştir|İki nesne seçiniz."
-				title="Kesiştir|İki nesne seçiniz.">
-				<img src="img/intersect.svg">
-				<span>Kesiştir</span>
-			</button>
-			<button class="button" data-action="circle2"
-				data-toast="Çember|Merkez nokta ve ardından çember üzerinde bir nokta seçiniz."
-				title="Çember|Merkez nokta ve ardından çember üzerinde bir nokta seçiniz.">
-				<img src="img/circle2.svg">
-				<span>Çember 2</span>
-			</button>
-			<button class="button" data-action="circle3" data-toast="Çember|Çember üzerinde üç nokta seçiniz."
-				title="Çember|Çember üzerinde üç nokta seçiniz.">
-				<img src="img/circle3.svg">
-				<span>Çember 3</span>
-			</button>
-			<button class="button" data-action="circletangent"
-				data-toast="Teğet|Önce teğet çizilecek çemberi, sonra noktayı seçiniz."
-				title="Teğet|Önce teğet çizilecek çemberi, sonra noktayı seçiniz.">
-				<img src="img/circletng.svg">
-				<span>Teğet</span>
-			</button>
-			<button class="button" data-action="angle" data-toast="Açı|Üç nokta seçiniz." title="Açı|Üç nokta seçiniz.">
-				<img src="img/angle.svg">
-				<span>Açı</span>
-			</button>
-			<button class="button" data-action="arcmeasure"
-				data-toast="Yay Ölçüsü|Aynı çember üzerinde iki nokta seçiniz."
-				title="Yay Ölçüsü|Aynı çember üzerinde iki nokta seçiniz.">
-				<img src="img/arcmeasure.svg">
-				<span>Yay Ölçüsü</span>
-			</button>
-			<button class="button" id="btnHelp" data-action="help" title="Yardım">
-				<img id="btnimgHelp" src="img/help.svg">
-				<span>Yardım</span>
-			</button>
+
+
+
+
+
+		<div id="toolbarStage" class="toolbar-stage">
+			<div id="radialToolbar" class="radial-toolbar" aria-label="GeoMatik2D araç menüsü"></div>
 		</div>
+
 		<div class="historyControls" id="ucrButtons">
 			<button type="button" id="undo" title="Geri Al">
-				<img src="img/toogle.svg" style="transform:rotateX(180deg) rotate(30deg)">
+				<img src="./img/toogle.svg" style="transform:rotateX(180deg) rotate(30deg)">
 			</button>
 			<button type="button" id="redo" title="Yinele">
-				<img src="img/toogle.svg" style="transform:rotate(210deg)">
+				<img src="./img/toogle.svg" style="transform:rotate(210deg)">
 			</button>
 		</div>
 		<div class="clearControl">
 			<button type="button" id="clear" title="Temizle">
-				<img src="img/clear.svg">
+				<img src="./img/clear.svg">
 			</button>
 		</div>
 		<button class="calcMenuButton" id="btnCalc" type="button" title="Cebir">
-			<img id="btnimgCalc" src="img/arrow.svg">
+			<img id="btnimgCalc" src="./img/arrow.svg">
 		</button>
+
+		<button class="helpMenuButton" id="helpMenuButton" type="button" title="Yardım">
+			<img id="btnimgHelpMenu" src="./img/help.svg">
+		</button>
+
 		<div class="rightWrapper" id="rightWrapper">
 			<div class="reSizer"></div>
 			<div id="scrollWrapper">
@@ -127,6 +69,7 @@
 			</div>
 		</div>
 	</div>
+	<!-- Toast Message -->
 	<div id="snackbar">
 		<h4 id="snackTitle">Nokta</h4>
 		<div id="snackContent">Konum seçin</div>
@@ -230,7 +173,8 @@ Doğru(Nokta, Nokta)
 		</div>
 	</div>
 	<!-- Yardım Penceresi Son -->
-	<script type="text/javascript" src="js/app.js"></script>
+	<script type="text/javascript" src="./js/toolbar.js"></script>
+	<script type="text/javascript" src="./js/app.js"></script>
 </body>
 
 </html>

@@ -34,7 +34,11 @@ export class LineSegmentTool extends BaseTool {
             return
         }
 
-        const lineSegment = new LineSegment(this.startPointMesh, pointMesh)
+        const lineSegment = new LineSegment(
+            this.startPointMesh,
+            pointMesh,
+            this.selectableObjects
+        )
         this.scene.add(lineSegment.mesh)
 
         if (this.previewLine) {

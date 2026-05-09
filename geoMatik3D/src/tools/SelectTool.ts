@@ -1,9 +1,13 @@
 import * as THREE from "three"
 import { BaseTool } from "./BaseTool"
-import { getNearestSelectablePoint, getPointerIntersection, SELECTED_POINT_DRAG_RADIUS_PX, updatePointCursor } from "../interaction/Pointer"
+import { getNearestSelectablePoint, getPointerIntersection, SELECTED_POINT_DRAG_RADIUS_PX } from "../interaction/Pointer"
 
-type PointRole = "free" | "locked" | "height"
+type SelectionRole = "free" | "locked" | "height" | "solid"
 const HELPERS_ENABLED = true
+type SideCountController = {
+    sideCount: number
+    setSideCount: (n: number) => void
+}
 
 export class SelectTool extends BaseTool {
     raycaster = new THREE.Raycaster()
@@ -13,6 +17,15 @@ export class SelectTool extends BaseTool {
 
     selectedObject: THREE.Mesh | null = null
     originalMaterial: THREE.Material | THREE.Material[] | null = null
+    selectionOutline: THREE.LineSegments | null = null
+    selectedOwner: any = null
+    selectedSideCountController: SideCountController | null = null
+    sideSliderContainer: HTMLElement | null = null
+    sideSlider: HTMLInputElement | null = null
+    sideValue: HTMLSpanElement | null = null
+    deleteControl: HTMLElement | null = null
+    deleteButton: HTMLButtonElement | null = null
+    deleteButtonListenerAttached = false
 
     isDragging = false
     verticalMove = false
@@ -35,6 +48,19 @@ export class SelectTool extends BaseTool {
     ) {
         super(scene, camera)
         this.controls = controls
+        this.sideSliderContainer = document.getElementById("prismSideControl")
+        this.sideSlider = document.getElementById("prismSideSlider") as HTMLInputElement
+        this.sideValue = document.getElementById("prismSideValue") as HTMLSpanElement
+
+        this.sideSlider?.addEventListener("input", () => {
+            const value = parseInt(this.sideSlider!.value)
+
+            this.sideValue!.textContent = value.toString()
+            this.selectedSideCountController?.setSideCount(value)
+            this.refreshSelectionOutline()
+        })
+
+        this.ensureDeleteControl()
     }
 
     setSelectableObjects(objects: THREE.Object3D[]) {
@@ -71,7 +97,13 @@ export class SelectTool extends BaseTool {
         this.selectObject(target)
         this.updateHelperArrows()
 
-        const role = this.getPointRole(target)
+        const role = this.getSelectionRole(target)
+
+        if (role === "solid") {
+            this.isDragging = false
+            this.controls.enabled = true
+            return
+        }
 
         if (role === "locked") {
             this.isDragging = false
@@ -90,7 +122,7 @@ export class SelectTool extends BaseTool {
     }
 
     onPointerMove(event: PointerEvent) {
-        updatePointCursor(event, this.camera, this.selectableObjects)
+        this.updateCursor(event)
 
         if (this.pointerDownPosition.distanceTo(new THREE.Vector2(event.clientX, event.clientY)) > 4) {
             this.hasMoved = true
@@ -101,9 +133,9 @@ export class SelectTool extends BaseTool {
             return
         }
 
-        const role = this.getPointRole(this.selectedObject)
+        const role = this.getSelectionRole(this.selectedObject)
 
-        if (role === "locked") return
+        if (role === "locked" || role === "solid") return
 
         if (role === "height") {
             const dy = event.clientY - this.lastMouseY
@@ -144,7 +176,7 @@ export class SelectTool extends BaseTool {
     onPointerUp(event: PointerEvent) {
         const hit = this.pickObject(event)
 
-        if (!this.hasMoved && hit && hit === this.selectedObject && this.getPointRole(hit) === "free") {
+        if (!this.hasMoved && hit && hit === this.selectedObject && this.getSelectionRole(hit) === "free") {
             const now = performance.now()
 
             if (this.lastTapObject === hit && now - this.lastTapTime < 350) {
@@ -186,16 +218,26 @@ export class SelectTool extends BaseTool {
         }
 
         this.clearHelperArrows()
+        this.clearOwnerSelectionEffects()
         this.restoreOriginalMaterial()
+        this.clearSelectionOutline()
 
         this.selectedObject = object
+        this.selectedOwner = this.getSelectionOwner(object)
 
-        if (this.selectedObject instanceof THREE.Mesh) {
+        if (this.getSelectionRole(this.selectedObject) === "solid") {
+            this.selectedOwner?.onSelect?.(this.selectedObject)
+            this.addSelectionOutline(this.selectedObject)
+            this.updateSideCountControl(this.selectedOwner)
+            this.updateDeleteControl()
+        } else if (this.selectedObject instanceof THREE.Mesh) {
             this.originalMaterial = this.selectedObject.material
 
             this.selectedObject.material = new THREE.MeshStandardMaterial({
                 color: 0xffaa00,
             })
+            this.updateSideCountControl(null)
+            this.updateDeleteControl()
         }
 
         if (showHelpers) {
@@ -205,8 +247,13 @@ export class SelectTool extends BaseTool {
 
     clearSelection() {
         this.clearHelperArrows()
+        this.clearOwnerSelectionEffects()
         this.restoreOriginalMaterial()
+        this.clearSelectionOutline()
         this.selectedObject = null
+        this.selectedOwner = null
+        this.updateSideCountControl(null)
+        this.updateDeleteControl()
         this.verticalMove = false
         this.controls.enabled = true
     }
@@ -218,7 +265,11 @@ export class SelectTool extends BaseTool {
         }
     }
 
-    private getPointRole(object: THREE.Object3D): PointRole {
+    private getSelectionRole(object: THREE.Object3D): SelectionRole {
+        if (object.userData.selectableType === "solid") {
+            return "solid"
+        }
+
         return (
             object.userData.pointRole ??
             (
@@ -231,8 +282,273 @@ export class SelectTool extends BaseTool {
         )
     }
 
+    private getSelectionOwner(object: THREE.Object3D) {
+        return object.userData.owner ?? null
+    }
+
+    private clearOwnerSelectionEffects() {
+        this.selectedOwner?.onDeselect?.()
+        this.selectedOwner = null
+    }
+
+    private updateSideCountControl(owner: any) {
+        const controller = this.getSideCountController(owner)
+
+        this.selectedSideCountController = controller
+
+        if (!this.sideSliderContainer || !this.sideSlider || !this.sideValue) return
+
+        if (!controller) {
+            this.sideSliderContainer.style.display = "none"
+            return
+        }
+
+        const value = controller.sideCount.toString()
+
+        this.sideSlider.value = value
+        this.sideValue.textContent = value
+        this.sideSliderContainer.style.display = "block"
+    }
+
+    private updateDeleteControl() {
+        this.ensureDeleteControl()
+
+        if (!this.deleteControl) return
+
+        this.deleteControl.style.display = this.canDeleteSelected()
+            ? "block"
+            : "none"
+    }
+
+    private ensureDeleteControl() {
+        this.deleteControl ??= document.getElementById("deleteSelectionControl")
+        this.deleteButton ??= this.deleteControl?.querySelector("button") ?? null
+
+        if (!this.deleteButton || this.deleteButtonListenerAttached) return
+
+        this.deleteButton.addEventListener("click", () => {
+            this.deleteSelected()
+        })
+        this.deleteButtonListenerAttached = true
+    }
+
+    private canDeleteSelected() {
+        if (!this.selectedObject) return false
+
+        if (this.getSelectionRole(this.selectedObject) === "solid") {
+            return true
+        }
+
+        if (!this.selectedObject.userData.pointRole) {
+            return false
+        }
+
+        return (this.selectedObject.userData.dependents?.length ?? 0) === 0
+    }
+
+    private deleteSelected() {
+        if (!this.selectedObject || !this.canDeleteSelected()) return
+
+        const selected = this.selectedObject
+        const owner = this.selectedOwner
+
+        this.clearSelection()
+
+        if (selected.userData.selectableType === "solid" && owner) {
+            this.deleteOwner(owner)
+            return
+        }
+
+        if (selected.userData.pointRole) {
+            this.removeSelectableObject(selected)
+            this.scene.remove(selected)
+            this.disposeObject(selected)
+        }
+    }
+
+    private deleteOwner(owner: any) {
+        this.removeOwnerFromDependents(owner)
+
+        const removedObjects = new Set<THREE.Object3D>()
+        const candidatePoints = new Set<THREE.Object3D>()
+
+        Object.values(owner).forEach((value) => {
+            this.collectOwnedObjects(value, removedObjects, candidatePoints)
+        })
+
+        removedObjects.forEach((object) => {
+            this.removeSelectableObject(object)
+            this.scene.remove(object)
+            if (object.parent) {
+                object.parent.remove(object)
+            }
+            this.disposeObject(object)
+        })
+
+        candidatePoints.forEach((point) => {
+            if ((point.userData.dependents?.length ?? 0) > 0) return
+
+            this.removeSelectableObject(point)
+            this.scene.remove(point)
+            if (point.parent) {
+                point.parent.remove(point)
+            }
+            this.disposeObject(point)
+        })
+    }
+
+    private collectOwnedObjects(
+        value: unknown,
+        removedObjects: Set<THREE.Object3D>,
+        candidatePoints: Set<THREE.Object3D>
+    ) {
+        if (value instanceof THREE.Object3D) {
+            if (value.userData.pointRole) {
+                candidatePoints.add(value)
+            } else {
+                removedObjects.add(value)
+            }
+            return
+        }
+
+        if (Array.isArray(value)) {
+            value.forEach((item) => this.collectOwnedObjects(
+                item,
+                removedObjects,
+                candidatePoints
+            ))
+        }
+    }
+
+    private removeOwnerFromDependents(owner: any) {
+        this.selectableObjects.forEach((object) => {
+            const dependents = object.userData.dependents
+
+            if (!Array.isArray(dependents)) return
+
+            object.userData.dependents = dependents.filter(
+                (dependent: any) => dependent !== owner
+            )
+        })
+    }
+
+    private removeSelectableObject(object: THREE.Object3D) {
+        for (let i = this.selectableObjects.length - 1; i >= 0; i--) {
+            if (this.selectableObjects[i] === object) {
+                this.selectableObjects.splice(i, 1)
+            }
+        }
+    }
+
+    private disposeObject(object: THREE.Object3D) {
+        object.traverse((child) => {
+            if (!(child instanceof THREE.Mesh || child instanceof THREE.Line || child instanceof THREE.LineSegments)) {
+                return
+            }
+
+            child.geometry.dispose()
+
+            if (Array.isArray(child.material)) {
+                child.material.forEach((material) => material.dispose())
+            } else {
+                child.material.dispose()
+            }
+        })
+    }
+
+    private getSideCountController(owner: any): SideCountController | null {
+        if (
+            owner &&
+            typeof owner.sideCount === "number" &&
+            typeof owner.setSideCount === "function"
+        ) {
+            return owner as SideCountController
+        }
+
+        return null
+    }
+
     private pickObject(event: PointerEvent | MouseEvent): THREE.Mesh | null {
-        return getNearestSelectablePoint(event, this.camera, this.selectableObjects)
+        return (
+            getNearestSelectablePoint(event, this.camera, this.selectableObjects) ??
+            this.pickSolid(event)
+        )
+    }
+
+    private pickSolid(event: PointerEvent | MouseEvent): THREE.Mesh | null {
+        const solidMeshes = this.selectableObjects.filter((object): object is THREE.Mesh =>
+            object instanceof THREE.Mesh &&
+            object.visible &&
+            object.userData.selectableType === "solid"
+        )
+
+        if (solidMeshes.length === 0) return null
+
+        this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1
+        this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
+
+        this.raycaster.setFromCamera(this.mouse, this.camera)
+
+        return this.raycaster.intersectObjects(solidMeshes, false)[0]?.object as THREE.Mesh ?? null
+    }
+
+    private updateCursor(event: PointerEvent | MouseEvent) {
+        document.body.style.cursor = this.pickObject(event) ? "pointer" : "default"
+    }
+
+    private addSelectionOutline(object: THREE.Mesh) {
+        this.clearSelectionOutline()
+
+        if (object.userData.selectionOutline === "none") {
+            return
+        }
+
+        if (object.userData.selectionOutline === "box") {
+            this.selectionOutline = new THREE.BoxHelper(object, 0xffaa00)
+            this.selectionOutline.renderOrder = 999
+            this.scene.add(this.selectionOutline)
+            return
+        }
+
+        const geometry = new THREE.EdgesGeometry(object.geometry, 15)
+        const material = new THREE.LineBasicMaterial({
+            color: 0xffaa00,
+            depthTest: false,
+        })
+
+        this.selectionOutline = new THREE.LineSegments(geometry, material)
+        this.selectionOutline.renderOrder = 999
+        object.add(this.selectionOutline)
+    }
+
+    private clearSelectionOutline() {
+        if (!this.selectionOutline) return
+
+        if (this.selectionOutline.parent) {
+            this.selectionOutline.parent.remove(this.selectionOutline)
+        }
+
+        this.selectionOutline.geometry.dispose()
+
+        if (Array.isArray(this.selectionOutline.material)) {
+            this.selectionOutline.material.forEach((material) => material.dispose())
+        } else {
+            this.selectionOutline.material.dispose()
+        }
+
+        this.selectionOutline = null
+    }
+
+    private refreshSelectionOutline() {
+        if (
+            !this.selectedObject ||
+            this.getSelectionRole(this.selectedObject) !== "solid"
+        ) {
+            return
+        }
+
+        this.clearSelectionOutline()
+        this.addSelectionOutline(this.selectedObject)
     }
 
     private getPointerPositionOnPlane(event: PointerEvent | MouseEvent) {
@@ -268,9 +584,9 @@ export class SelectTool extends BaseTool {
             return
         }
 
-        const role = this.getPointRole(this.selectedObject)
+        const role = this.getSelectionRole(this.selectedObject)
 
-        if (role === "locked") {
+        if (role === "locked" || role === "solid") {
             return
         }
 

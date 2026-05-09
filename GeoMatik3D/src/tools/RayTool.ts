@@ -104,7 +104,12 @@ export class RayTool extends BaseTool {
       return
     }
 
-    const ray = new RayObject(this.startPointMesh, point, 50)
+    const ray = new RayObject(
+      this.startPointMesh,
+      point,
+      50,
+      this.selectableObjects
+    )
     this.scene.add(ray.mesh)
 
     this.reset()

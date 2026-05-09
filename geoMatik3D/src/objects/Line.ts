@@ -1,4 +1,5 @@
 import * as THREE from "three"
+import { getRandomColor } from "../utils/color"
 
 export class LineObject {
   pointA: THREE.Mesh
@@ -6,17 +7,26 @@ export class LineObject {
   mesh: THREE.Mesh
   length: number
 
-  constructor(pointA: THREE.Mesh, pointB: THREE.Mesh, length = 100) {
+  constructor(
+    pointA: THREE.Mesh,
+    pointB: THREE.Mesh,
+    length = 100,
+    selectableObjects?: THREE.Object3D[]
+  ) {
     this.pointA = pointA
     this.pointB = pointB
     this.length = length
 
     const geometry = new THREE.CylinderGeometry(0.1, 0.1, 1, 16)
-    const material = new THREE.MeshStandardMaterial({ color: 0x0066ff })
+    const material = new THREE.MeshStandardMaterial({ color: getRandomColor() })
 
     this.mesh = new THREE.Mesh(geometry, material)
     this.mesh.castShadow = true
     this.mesh.receiveShadow = true
+    this.mesh.userData.selectableType = "solid"
+    this.mesh.userData.owner = this
+
+    selectableObjects?.push(this.mesh)
 
     this.pointA.userData.dependents ??= []
     this.pointB.userData.dependents ??= []

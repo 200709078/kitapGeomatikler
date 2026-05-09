@@ -145,7 +145,12 @@ export class SphereTool extends BaseTool {
     const radiusSegment = new LineSegment(this.centerPoint, surfacePoint)
     this.scene.add(radiusSegment.mesh)
 
-    const sphere = new SphereObject(this.centerPoint, surfacePoint)
+    const sphere = new SphereObject(
+      this.centerPoint,
+      surfacePoint,
+      this.selectableObjects,
+      radiusSegment.mesh
+    )
     this.scene.add(sphere.mesh)
 
     this.reset()

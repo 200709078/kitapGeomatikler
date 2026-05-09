@@ -1,3 +1,7 @@
+// piramit yüksekliği kesikli çizgi ile birleşsin.
+// Prizma, piramit, silindri seçilrise çalışacak açınım aracı yapılacak. Açınım cismin taban düzlemi üzerine olacak.
+// undo redo
+
 import './style.css'
 import * as THREE from 'three'
 import { createScene } from './core/Scene'
@@ -20,6 +24,9 @@ import { SelectTool } from './tools/SelectTool'
 import { SphereTool } from './tools/SphereTool'
 import { PrismTool } from './tools/PrismTool'
 import { PyramidTool } from './tools/PyramidTool'
+import { CylinderTool } from './tools/CylinderTool'
+import { ConeTool } from './tools/ConeTool'
+import { UnfoldTool } from './tools/UnfoldTool'
 import { createGrid } from './engine/Grid'
 import type { ToolCompleteOptions } from './tools/BaseTool'
 
@@ -51,6 +58,9 @@ const angleTool = new AngleTool(scene, camera, selectableObjects)
 const sphereTool = new SphereTool(scene, camera, selectableObjects)
 const prismTool = new PrismTool(scene, camera, selectableObjects)
 const pyramidTool = new PyramidTool(scene, camera, selectableObjects)
+const cylinderTool = new CylinderTool(scene, camera, selectableObjects)
+const coneTool = new ConeTool(scene, camera, selectableObjects)
+const unfoldTool = new UnfoldTool(scene, camera)
 
 const returnToSelectTool = (options?: ToolCompleteOptions) => {
   if (options?.clearSelection !== false) {
@@ -78,6 +88,9 @@ const returnToSelectTool = (options?: ToolCompleteOptions) => {
   sphereTool,
   prismTool,
   pyramidTool,
+  cylinderTool,
+  coneTool,
+  unfoldTool,
 ].forEach((tool) => {
   tool.setCompleteHandler(returnToSelectTool)
   tool.setPointSelectHandler((point) => selectTool.selectPointWithoutHelpers(point))
@@ -122,6 +135,15 @@ createToolbar((toolName) => {
   }
   if (toolName === "pyramid") {
     toolManager.setTool(pyramidTool)
+  }
+  if (toolName === "cylinder") {
+    toolManager.setTool(cylinderTool)
+  }
+  if (toolName === "cone") {
+    toolManager.setTool(coneTool)
+  }
+  if (toolName === "unfold") {
+    toolManager.setTool(unfoldTool)
   }
 })
 

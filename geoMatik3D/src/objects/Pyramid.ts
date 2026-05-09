@@ -1,6 +1,7 @@
 import * as THREE from "three"
 import { createPoint } from "./Point"
 import { HEIGHT_POINT_SIZE, LOCKED_POINT_SIZE } from "../interaction/Pointer"
+import { getRandomColor } from "../utils/color"
 
 export class Pyramid {
     pointA: THREE.Mesh
@@ -60,12 +61,15 @@ export class Pyramid {
         this.mesh = new THREE.Mesh(
             new THREE.BufferGeometry(),
             new THREE.MeshStandardMaterial({
-                color: 0xd2a679,
+                color: getRandomColor(),
                 transparent: true,
                 opacity: 0.55,
                 side: THREE.DoubleSide,
             })
         )
+        this.mesh.userData.selectableType = "solid"
+        this.mesh.userData.owner = this
+        selectableObjects.push(this.mesh)
 
         this.baseLine = new THREE.LineLoop(
             new THREE.BufferGeometry(),

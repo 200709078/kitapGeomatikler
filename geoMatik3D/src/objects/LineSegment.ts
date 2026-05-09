@@ -1,20 +1,29 @@
 import * as THREE from "three"
+import { getRandomColor } from "../utils/color"
 
 export class LineSegment {
   startPoint: THREE.Mesh
   endPoint: THREE.Mesh
   mesh: THREE.Mesh
 
-  constructor(startPoint: THREE.Mesh, endPoint: THREE.Mesh) {
+  constructor(
+    startPoint: THREE.Mesh,
+    endPoint: THREE.Mesh,
+    selectableObjects?: THREE.Object3D[]
+  ) {
     this.startPoint = startPoint
     this.endPoint = endPoint
 
     const geometry = new THREE.CylinderGeometry(0.1, 0.1, 1, 16)
-    const material = new THREE.MeshStandardMaterial({ color: 0x0066ff })
+    const material = new THREE.MeshStandardMaterial({ color: getRandomColor() })
 
     this.mesh = new THREE.Mesh(geometry, material)
     this.mesh.castShadow = true
     this.mesh.receiveShadow = true
+    this.mesh.userData.selectableType = "solid"
+    this.mesh.userData.owner = this
+
+    selectableObjects?.push(this.mesh)
 
     // dependents bağla
     this.startPoint.userData.dependents ??= []

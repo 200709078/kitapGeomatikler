@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<svg viewBox="250 665 800 800" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="300 665 800 800" xmlns="http://www.w3.org/2000/svg">
   <circle
     cx="567"
     cy="1054"
     r="220"
     fill="none"
     stroke="black"
-    stroke-width="50" />
+    stroke-width="30" />
   <line
     x1="1030"
     y1="1054"
     x2="500"
     y2="768"
     stroke="black"
-    stroke-width="45"
+    stroke-width="25"
     stroke-linecap="round" />
   <line
     x1="1030"
@@ -21,7 +21,7 @@
     x2="500"
     y2="1340"
     stroke="black"
-    stroke-width="45"
+    stroke-width="25"
     stroke-linecap="round" />
   <circle
     cx="567"

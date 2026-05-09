@@ -1,4 +1,5 @@
 import * as THREE from "three"
+import { getRandomColor } from "../utils/color"
 
 export class Plane {
     pointA: THREE.Mesh
@@ -8,20 +9,29 @@ export class Plane {
 
     size = 30
 
-    constructor(pointA: THREE.Mesh, pointB: THREE.Mesh, pointC: THREE.Mesh) {
+    constructor(
+        pointA: THREE.Mesh,
+        pointB: THREE.Mesh,
+        pointC: THREE.Mesh,
+        selectableObjects?: THREE.Object3D[]
+    ) {
         this.pointA = pointA
         this.pointB = pointB
         this.pointC = pointC
 
         const geometry = new THREE.PlaneGeometry(this.size, this.size)
         const material = new THREE.MeshStandardMaterial({
-            color: 0x66aaff,
+            color: getRandomColor(),
             transparent: true,
             opacity: 0.28,
             side: THREE.DoubleSide,
         })
 
         this.mesh = new THREE.Mesh(geometry, material)
+        this.mesh.userData.selectableType = "solid"
+        this.mesh.userData.owner = this
+
+        selectableObjects?.push(this.mesh)
 
         this.pointA.userData.dependents ??= []
         this.pointB.userData.dependents ??= []

@@ -180,7 +180,8 @@ export class PlaneTool extends BaseTool {
       const plane = new Plane(
         this.points[0],
         this.points[1],
-        this.points[2]
+        this.points[2],
+        this.selectableObjects
       )
 
       this.scene.add(plane.mesh)
