@@ -2,6 +2,7 @@ import * as THREE from "three"
 import { createPoint } from "./Point"
 import { HEIGHT_POINT_SIZE, LOCKED_POINT_SIZE } from "../interaction/Pointer"
 import { getRandomColor } from "../utils/color"
+import { PrismUnfolder } from "../unfold/PrismUnfolder"
 
 export class Prism {
   pointA: THREE.Mesh
@@ -21,6 +22,9 @@ export class Prism {
 
   sideCount: number
   height: number
+  unFoldAngle = 0
+  unFoldGroup: THREE.Group | null = null
+  private unFolder: PrismUnfolder | null = null
 
   constructor(
     scene: THREE.Scene,
@@ -90,11 +94,16 @@ export class Prism {
       new THREE.LineBasicMaterial({ color: 0x000000 })
     )
 
+    this.unFoldGroup = new THREE.Group()
+    this.unFoldGroup.name = "PrismUnFoldGroup"
+    this.unFolder = new PrismUnfolder(this.unFoldGroup)
+
     scene.add(this.mesh)
     scene.add(this.baseLine)
     scene.add(this.topLine)
     scene.add(this.heightLine)
     scene.add(this.sideLines)
+    scene.add(this.unFoldGroup)
 
     this.pointA.userData.dependents ??= []
     this.pointB.userData.dependents ??= []
@@ -111,6 +120,11 @@ export class Prism {
   setSideCount(n: number) {
     this.sideCount = n
     this.update()
+  }
+
+  setUnFoldAngle(angle: number) {
+    this.unFoldAngle = THREE.MathUtils.clamp(angle, 0, 90)
+    this.updateUnFold()
   }
 
   moveAlongNormal(delta: number) {
@@ -145,6 +159,45 @@ export class Prism {
     this.updateCornerPoints(baseVertices, topVertices)
     this.updateMesh(baseVertices, topVertices)
     this.updateHeightLine()
+    this.updateUnFold(baseVertices, topVertices)
+  }
+
+  updateUnFold(
+    baseVertices = this.createPolygonVertices(),
+    topVertices?: THREE.Vector3[]
+  ) {
+    if (baseVertices.length < 3) {
+      this.unFolder?.update({
+        baseVertices: [],
+        topVertices: [],
+        angle: 0,
+      })
+      return
+    }
+
+    if (!topVertices) {
+      const normal = this.getBaseNormal()
+
+      if (!normal) {
+        this.unFolder?.update({
+          baseVertices: [],
+          topVertices: [],
+          angle: 0,
+        })
+        return
+      }
+
+      normal.multiplyScalar(-1)
+      topVertices = baseVertices.map((p) =>
+        p.clone().add(normal.clone().multiplyScalar(this.height))
+      )
+    }
+
+    this.unFolder?.update({
+      baseVertices,
+      topVertices,
+      angle: this.unFoldAngle,
+    })
   }
 
   private updateSideLines(

@@ -1,18 +1,24 @@
 import * as THREE from "three"
-import { HEIGHT_POINT_SIZE } from "../interaction/Pointer"
+import { HEIGHT_POINT_SIZE, LOCKED_POINT_SIZE } from "../interaction/Pointer"
 import { getRandomColor } from "../utils/color"
+import { CylinderUnfolder } from "../unfold/CylinderUnfolder"
 
 export class Cylinder {
   baseCenterPoint: THREE.Mesh
   radiusPoint: THREE.Mesh
   topCenterPoint: THREE.Mesh
+  topRadiusPoint: THREE.Mesh
 
   mesh: THREE.Mesh
   baseLine: THREE.LineLoop
   topLine: THREE.LineLoop
   heightLine: THREE.Line
+  slantLine: THREE.Line
 
   height: number
+  unFoldAngle = 0
+  unFoldGroup: THREE.Group | null = null
+  private unFolder: CylinderUnfolder | null = null
 
   constructor(
     scene: THREE.Scene,
@@ -24,13 +30,17 @@ export class Cylinder {
     this.radiusPoint = radiusPoint
     this.height = baseCenterPoint.position.distanceTo(radiusPoint.position) * 2
     this.topCenterPoint = this.createPurplePoint(baseCenterPoint.position.clone())
+    this.topRadiusPoint = this.createGrayPoint(radiusPoint.position.clone())
 
     this.baseCenterPoint.userData.pointRole ??= "free"
     this.radiusPoint.userData.pointRole ??= "free"
     this.topCenterPoint.userData.pointRole = "height"
+    this.topRadiusPoint.userData.pointRole = "locked"
 
     scene.add(this.topCenterPoint)
+    scene.add(this.topRadiusPoint)
     selectableObjects.push(this.topCenterPoint)
+    selectableObjects.push(this.topRadiusPoint)
 
     this.mesh = new THREE.Mesh(
       new THREE.CylinderGeometry(1, 1, 1, 64, 1, false),
@@ -64,14 +74,30 @@ export class Cylinder {
       })
     )
 
+    this.slantLine = new THREE.Line(
+      new THREE.BufferGeometry(),
+      new THREE.LineDashedMaterial({
+        color: 0x000000,
+        dashSize: 0.15,
+        gapSize: 0.1,
+      })
+    )
+
+    this.unFoldGroup = new THREE.Group()
+    this.unFoldGroup.name = "CylinderUnFoldGroup"
+    this.unFolder = new CylinderUnfolder(this.unFoldGroup)
+
     scene.add(this.mesh)
     scene.add(this.baseLine)
     scene.add(this.topLine)
     scene.add(this.heightLine)
+    scene.add(this.slantLine)
+    scene.add(this.unFoldGroup)
 
     this.baseCenterPoint.userData.dependents ??= []
     this.radiusPoint.userData.dependents ??= []
     this.topCenterPoint.userData.dependents ??= []
+    this.topRadiusPoint.userData.dependents ??= []
 
     this.baseCenterPoint.userData.dependents.push(this)
     this.radiusPoint.userData.dependents.push(this)
@@ -82,6 +108,11 @@ export class Cylinder {
   moveAlongNormal(delta: number) {
     this.height = Math.max(0.05, this.height + delta)
     this.update()
+  }
+
+  setUnFoldAngle(angle: number) {
+    this.unFoldAngle = THREE.MathUtils.clamp(angle, 0, 90)
+    this.updateUnFold()
   }
 
   update() {
@@ -109,6 +140,8 @@ export class Cylinder {
 
     this.updateCircleLines(baseCenter, topCenter, radius, heightDirection)
     this.updateHeightLine(baseCenter, topCenter)
+    this.updateSlantLine(heightDirection)
+    this.updateUnFold(radius, heightDirection, topCenter)
   }
 
   getHeightDirection() {
@@ -162,6 +195,54 @@ export class Cylinder {
     this.heightLine.computeLineDistances()
   }
 
+  private updateSlantLine(heightDirection: THREE.Vector3) {
+    const topRadiusPoint = this.radiusPoint.position
+      .clone()
+      .add(heightDirection.clone().multiplyScalar(this.height))
+
+    this.topRadiusPoint.position.copy(topRadiusPoint)
+    this.updateDependentsOf(this.topRadiusPoint)
+
+    this.slantLine.geometry.dispose()
+    this.slantLine.geometry = new THREE.BufferGeometry().setFromPoints([
+      this.radiusPoint.position.clone(),
+      this.topRadiusPoint.position.clone(),
+    ])
+    this.slantLine.computeLineDistances()
+  }
+
+  updateUnFold(
+    radius = this.getRadius(),
+    heightDirection = this.getHeightDirection(),
+    topCenter = this.topCenterPoint.position.clone()
+  ) {
+    const radiusDirection = new THREE.Vector3()
+      .subVectors(this.radiusPoint.position, this.baseCenterPoint.position)
+
+    if (radiusDirection.length() < 0.0001) {
+      this.unFolder?.update({
+        radius,
+        topCenter,
+        basePoint: this.radiusPoint.position.clone(),
+        topPoint: this.topRadiusPoint.position.clone(),
+        heightDirection,
+        radiusDirection: new THREE.Vector3(1, 0, 0),
+        angle: 0,
+      })
+      return
+    }
+
+    this.unFolder?.update({
+      radius,
+      topCenter,
+      basePoint: this.radiusPoint.position.clone(),
+      topPoint: this.topRadiusPoint.position.clone(),
+      heightDirection,
+      radiusDirection: radiusDirection.normalize(),
+      angle: this.unFoldAngle,
+    })
+  }
+
   private createCirclePoints(
     center: THREE.Vector3,
     radius: number,
@@ -202,6 +283,23 @@ export class Cylinder {
     mesh.userData.pointRole = "height"
     mesh.userData.lockMouseDrag = true
     mesh.userData.normalWheelController = this
+    mesh.userData.dependents ??= []
+
+    return mesh
+  }
+
+  private createGrayPoint(position: THREE.Vector3) {
+    const geometry = new THREE.SphereGeometry(LOCKED_POINT_SIZE, 24, 24)
+    const material = new THREE.MeshStandardMaterial({
+      color: 0x808080,
+    })
+
+    const mesh = new THREE.Mesh(geometry, material)
+    mesh.position.copy(position)
+
+    mesh.userData.pointRole = "locked"
+    mesh.userData.lockMouseDrag = true
+    mesh.userData.lockWheel = true
     mesh.userData.dependents ??= []
 
     return mesh

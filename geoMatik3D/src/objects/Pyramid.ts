@@ -2,6 +2,7 @@ import * as THREE from "three"
 import { createPoint } from "./Point"
 import { HEIGHT_POINT_SIZE, LOCKED_POINT_SIZE } from "../interaction/Pointer"
 import { getRandomColor } from "../utils/color"
+import { PyramidUnfolder } from "../unfold/PyramidUnfolder"
 
 export class Pyramid {
     pointA: THREE.Mesh
@@ -21,6 +22,9 @@ export class Pyramid {
 
     sideCount: number
     height: number
+    unFoldAngle = 0
+    unFoldGroup: THREE.Group | null = null
+    private unFolder: PyramidUnfolder | null = null
 
     constructor(
         scene: THREE.Scene,
@@ -91,10 +95,15 @@ export class Pyramid {
             })
         )
 
+        this.unFoldGroup = new THREE.Group()
+        this.unFoldGroup.name = "PyramidUnFoldGroup"
+        this.unFolder = new PyramidUnfolder(this.unFoldGroup)
+
         scene.add(this.mesh)
         scene.add(this.baseLine)
         scene.add(this.sideLines)
         scene.add(this.heightLine)
+        scene.add(this.unFoldGroup)
 
         this.pointA.userData.dependents ??= []
         this.pointB.userData.dependents ??= []
@@ -111,6 +120,44 @@ export class Pyramid {
     setSideCount(n: number) {
         this.sideCount = n
         this.update()
+    }
+
+    setUnFoldAngle(angle: number) {
+        this.unFoldAngle = THREE.MathUtils.clamp(angle, 0, this.getMaxUnFoldAngle())
+        this.updateUnFold()
+    }
+
+    getMaxUnFoldAngle() {
+        const baseVertices = this.createPolygonVertices()
+
+        if (baseVertices.length < 3) return 0
+
+        const normal = this.getBaseNormal()
+
+        if (!normal) return 0
+
+        normal.multiplyScalar(-1)
+
+        const center = this.getPolygonCenter(baseVertices)
+        const apex = center.clone().add(
+            normal.clone().multiplyScalar(this.height)
+        )
+        const edgeStart = baseVertices[0]
+        const edgeEnd = baseVertices[1]
+        const edgeAxis = new THREE.Vector3()
+            .subVectors(edgeEnd, edgeStart)
+            .normalize()
+        const sideNormal = new THREE.Vector3()
+            .crossVectors(edgeAxis, new THREE.Vector3().subVectors(apex, edgeStart))
+
+        if (sideNormal.length() < 0.0001) return 0
+
+        sideNormal.normalize()
+
+        const normalAngle = THREE.MathUtils.radToDeg(sideNormal.angleTo(normal))
+        const acutePlaneAngle = Math.min(normalAngle, 180 - normalAngle)
+
+        return THREE.MathUtils.clamp(180 - acutePlaneAngle, 0, 180)
     }
 
     moveAlongNormal(delta: number) {
@@ -143,6 +190,45 @@ export class Pyramid {
         this.updateHeightLine(center, apex)
         this.updateCornerPoints(baseVertices)
         this.updateMesh(baseVertices, apex)
+        this.unFoldAngle = THREE.MathUtils.clamp(this.unFoldAngle, 0, this.getMaxUnFoldAngle())
+        this.updateUnFold(baseVertices, apex)
+    }
+
+    updateUnFold(
+        baseVertices = this.createPolygonVertices(),
+        apex?: THREE.Vector3
+    ) {
+        if (baseVertices.length < 3) {
+            this.unFolder?.update({
+                baseVertices: [],
+                apex: new THREE.Vector3(),
+                angle: 0,
+            })
+            return
+        }
+
+        if (!apex) {
+            const normal = this.getBaseNormal()
+
+            if (!normal) {
+                this.unFolder?.update({
+                    baseVertices: [],
+                    apex: new THREE.Vector3(),
+                    angle: 0,
+                })
+                return
+            }
+
+            normal.multiplyScalar(-1)
+            apex = this.getPolygonCenter(baseVertices)
+                .add(normal.multiplyScalar(this.height))
+        }
+
+        this.unFolder?.update({
+            baseVertices,
+            apex,
+            angle: this.unFoldAngle,
+        })
     }
 
     private createPurplePoint(position: THREE.Vector3) {

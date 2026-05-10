@@ -1,6 +1,7 @@
 import * as THREE from "three"
 import { HEIGHT_POINT_SIZE } from "../interaction/Pointer"
 import { getRandomColor } from "../utils/color"
+import { ConeUnfolder } from "../unfold/ConeUnfolder"
 
 export class Cone {
   baseCenterPoint: THREE.Mesh
@@ -10,8 +11,12 @@ export class Cone {
   mesh: THREE.Mesh
   baseLine: THREE.LineLoop
   heightLine: THREE.Line
+  slantLine: THREE.Line
 
   height: number
+  unFoldAngle = 0
+  unFoldGroup: THREE.Group | null = null
+  private unFolder: ConeUnfolder | null = null
 
   constructor(
     scene: THREE.Scene,
@@ -58,9 +63,24 @@ export class Cone {
       })
     )
 
+    this.slantLine = new THREE.Line(
+      new THREE.BufferGeometry(),
+      new THREE.LineDashedMaterial({
+        color: 0x000000,
+        dashSize: 0.15,
+        gapSize: 0.1,
+      })
+    )
+
+    this.unFoldGroup = new THREE.Group()
+    this.unFoldGroup.name = "ConeUnFoldGroup"
+    this.unFolder = new ConeUnfolder(this.unFoldGroup)
+
     scene.add(this.mesh)
     scene.add(this.baseLine)
     scene.add(this.heightLine)
+    scene.add(this.slantLine)
+    scene.add(this.unFoldGroup)
 
     this.baseCenterPoint.userData.dependents ??= []
     this.radiusPoint.userData.dependents ??= []
@@ -75,6 +95,24 @@ export class Cone {
   moveAlongNormal(delta: number) {
     this.height = Math.max(0.05, this.height + delta)
     this.update()
+  }
+
+  setUnFoldAngle(angle: number) {
+    this.unFoldAngle = THREE.MathUtils.clamp(angle, 0, this.getMaxUnFoldAngle())
+    this.updateUnFold()
+  }
+
+  getMaxUnFoldAngle() {
+    const radius = this.getRadius()
+
+    if (radius < 0.0001 || this.height < 0.0001) return 0
+
+    const slantHeight = Math.hypot(radius, this.height)
+    const acuteLinePlaneAngle = THREE.MathUtils.radToDeg(
+      Math.asin(THREE.MathUtils.clamp(this.height / slantHeight, -1, 1))
+    )
+
+    return THREE.MathUtils.clamp(180 - acuteLinePlaneAngle, 0, 180)
   }
 
   update() {
@@ -102,6 +140,38 @@ export class Cone {
 
     this.updateBaseLine(baseCenter, radius, heightDirection)
     this.updateHeightLine(baseCenter, apex)
+    this.updateSlantLine(apex)
+    this.updateUnFold(baseCenter, radius, heightDirection, apex)
+  }
+
+  updateUnFold(
+    baseCenter = this.baseCenterPoint.position.clone(),
+    radius = this.getRadius(),
+    heightDirection = this.getHeightDirection(),
+    apex = baseCenter.clone().add(heightDirection.clone().multiplyScalar(this.height))
+  ) {
+    if (radius < 0.0001) {
+      this.unFolder?.update({
+        baseCenter,
+        baseVertices: [],
+        radiusPoint: this.radiusPoint.position.clone(),
+        apex,
+        heightDirection,
+        angle: 0,
+        maxAngle: 0,
+      })
+      return
+    }
+
+    this.unFolder?.update({
+      baseCenter,
+      baseVertices: this.createCirclePoints(baseCenter, radius, heightDirection),
+      radiusPoint: this.radiusPoint.position.clone(),
+      apex,
+      heightDirection,
+      angle: this.unFoldAngle,
+      maxAngle: this.getMaxUnFoldAngle(),
+    })
   }
 
   getHeightDirection() {
@@ -148,6 +218,15 @@ export class Cone {
       apex,
     ])
     this.heightLine.computeLineDistances()
+  }
+
+  private updateSlantLine(apex: THREE.Vector3) {
+    this.slantLine.geometry.dispose()
+    this.slantLine.geometry = new THREE.BufferGeometry().setFromPoints([
+      this.radiusPoint.position.clone(),
+      apex,
+    ])
+    this.slantLine.computeLineDistances()
   }
 
   private createCirclePoints(

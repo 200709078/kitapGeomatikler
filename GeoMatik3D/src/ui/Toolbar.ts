@@ -31,7 +31,7 @@ export function createToolbar(onToolSelect: (toolName: ToolName) => void) {
   <img src="${lineIcon}" alt="Doğru" class="toolbar-icon" />
   </button>
 
-  <button data-tool="line" title="Doğru Parçası">
+  <button data-tool="lineSegment" title="Doğru Parçası">
   <img src="${lineSegmentIcon}" alt="Doğru" class="toolbar-icon" />
   </button>
 
@@ -105,7 +105,9 @@ export function createToolbar(onToolSelect: (toolName: ToolName) => void) {
   const planeToggleControl = document.createElement("div")
   planeToggleControl.id = "planeToggleControl"
   planeToggleControl.innerHTML = `
-    <button data-tool="togglePlane" title="Düzlemi Göster/Gizle">⬜</button>
+    <button data-tool="togglePlane" title="Düzlemi Göster/Gizle">
+      <img id="planeToggleIcon" src="${planeIcon}" alt="Düzlemi Göster/Gizle" class="toolbar-icon" />
+    </button>
   `
 
   const planeToggleButton = planeToggleControl.querySelector<HTMLButtonElement>(

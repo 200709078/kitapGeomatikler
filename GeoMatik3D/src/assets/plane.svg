@@ -55,7 +55,7 @@
       fx="184.6" fy="1189.38" r=".66" xlink:href="#Adsız_degrade_6" />
   </defs>
 
-  <g transform="translate(1162 700) scale(1.75) translate(-1162 -700)">
+  <g transform="translate(1162 700) scale(1.55) translate(-1162 -700)">
     <polygon class="st2" points="868.5 789.75 1111.5 506.25 1455.75 607.5 1212.75 891 868.5 789.75"
       stroke="#5f6b7a" stroke-width="6" stroke-linejoin="round" />
     <ellipse class="st4" cx="1060.81" cy="515.68" rx="24.3" ry="6.89"

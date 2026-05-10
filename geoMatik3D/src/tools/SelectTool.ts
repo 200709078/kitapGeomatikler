@@ -2,8 +2,8 @@ import * as THREE from "three"
 import { BaseTool } from "./BaseTool"
 import { Prism } from "../objects/Prism"
 import { Pyramid } from "../objects/Pyramid"
-import { Cylinder } from "../objects/Cylinder"
 import { Cone } from "../objects/Cone"
+import { Cylinder } from "../objects/Cylinder"
 import { getNearestSelectablePoint, getPointerIntersection, SELECTED_POINT_DRAG_RADIUS_PX } from "../interaction/Pointer"
 
 
@@ -12,6 +12,12 @@ const HELPERS_ENABLED = true
 type SideCountController = {
     sideCount: number
     setSideCount: (n: number) => void
+}
+
+type UnFoldController = {
+    unFoldAngle: number
+    setUnFoldAngle: (angle: number) => void
+    maxUnFoldAngle: number
 }
 
 export class SelectTool extends BaseTool {
@@ -25,6 +31,7 @@ export class SelectTool extends BaseTool {
     selectionOutline: THREE.LineSegments | null = null
     selectedOwner: any = null
     selectedSideCountController: SideCountController | null = null
+    selectedUnFoldController: UnFoldController | null = null
     sideSliderContainer: HTMLElement | null = null
     sideSlider: HTMLInputElement | null = null
     sideValue: HTMLSpanElement | null = null
@@ -71,7 +78,18 @@ export class SelectTool extends BaseTool {
 
             this.sideValue!.textContent = value.toString()
             this.selectedSideCountController?.setSideCount(value)
+            this.updateUnFoldControl(this.selectedOwner)
             this.refreshSelectionOutline()
+        })
+
+        this.unFoldSlider?.addEventListener("input", () => {
+        const value = parseInt(this.unFoldSlider!.value)
+
+            if (this.unFoldValue) {
+                this.unFoldValue.textContent = value.toString()
+            }
+
+            this.selectedUnFoldController?.setUnFoldAngle(value)
         })
 
         this.ensureDeleteControl()
@@ -334,21 +352,25 @@ export class SelectTool extends BaseTool {
         this.sideSliderContainer.classList.add("active")
         this.sideSliderContainer.classList.remove("passive")
     }
-    private canUseUnFoldControl(owner: any) {
-        return owner instanceof Prism ||
-            owner instanceof Pyramid ||
-            owner instanceof Cylinder ||
-            owner instanceof Cone
-    }
-
     private updateUnFoldControl(owner: any) {
         if (!this.unFoldControl || !this.unFoldSlider) return
 
-        const active = this.canUseUnFoldControl(owner)
+        const controller = this.getUnFoldController(owner)
+        const active = controller !== null
+
+        this.selectedUnFoldController = controller
 
         this.unFoldControl.style.display = "block"
         this.unFoldControl.classList.toggle("active", active)
         this.unFoldControl.classList.toggle("passive", !active)
+
+        const value = controller?.unFoldAngle ?? 0
+        this.unFoldSlider.max = (controller?.maxUnFoldAngle ?? 90).toString()
+        this.unFoldSlider.value = value.toString()
+
+        if (this.unFoldValue) {
+            this.unFoldValue.textContent = value.toString()
+        }
 
         this.unFoldSlider.disabled = !active
     }
@@ -513,6 +535,25 @@ export class SelectTool extends BaseTool {
             typeof owner.setSideCount === "function"
         ) {
             return owner as SideCountController
+        }
+
+        return null
+    }
+
+    private getUnFoldController(owner: any): UnFoldController | null {
+        if (
+            (owner instanceof Prism || owner instanceof Pyramid || owner instanceof Cone || owner instanceof Cylinder) &&
+            typeof owner.unFoldAngle === "number" &&
+            typeof owner.setUnFoldAngle === "function"
+        ) {
+            return {
+                unFoldAngle: owner.unFoldAngle,
+                setUnFoldAngle: (angle: number) => owner.setUnFoldAngle(angle),
+                maxUnFoldAngle:
+                    owner instanceof Pyramid || owner instanceof Cone
+                        ? owner.getMaxUnFoldAngle()
+                        : 90,
+            }
         }
 
         return null

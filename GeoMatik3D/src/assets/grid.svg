@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Grid">
+  <defs>
+    <style>
+      .grid-line {
+        fill: none;
+        stroke: #6b7280;
+        stroke-width: 8;
+        stroke-linecap: round;
+        stroke-dasharray: 12 14;
+      }
+
+      .grid-main {
+        stroke: #374151;
+        stroke-width: 10;
+      }
+    </style>
+  </defs>
+  <g transform="translate(256 258) rotate(-18) skewX(-18) scale(1.02 .58) translate(-256 -256)">
+    <path class="grid-line" d="M64 96h384" />
+    <path class="grid-line" d="M48 144h416" />
+    <path class="grid-line" d="M32 192h448" />
+    <path class="grid-line grid-main" d="M24 240h464" />
+    <path class="grid-line" d="M32 288h448" />
+    <path class="grid-line" d="M48 336h416" />
+    <path class="grid-line" d="M64 384h384" />
+
+    <path class="grid-line" d="M96 64v384" />
+    <path class="grid-line" d="M144 48v416" />
+    <path class="grid-line" d="M192 32v448" />
+    <path class="grid-line grid-main" d="M240 24v464" />
+    <path class="grid-line" d="M288 32v448" />
+    <path class="grid-line" d="M336 48v416" />
+    <path class="grid-line" d="M384 64v384" />
+  </g>
+</svg>

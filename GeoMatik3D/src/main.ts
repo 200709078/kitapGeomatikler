@@ -1,4 +1,4 @@
-// Prizma, piramit, silindri seçilrise çalışacak açınım aracı yapılacak. Açınım cismin taban düzlemi üzerine olacak.
+//Geçici kenarlar noktalar cismin meshine eklenecek.
 // undo redo
 
 import './style.css'
@@ -13,7 +13,6 @@ import { createLighting } from './engine/Lighting'
 import { createPlane } from './engine/Plane'
 import { ToolManager } from './tools/ToolManager'
 import { createToolbar } from './ui/Toolbar'
-import { createRotateMenu } from './ui/RotateMenu'
 import { PointTool } from './tools/PointTool'
 import { LineSegmentTool } from './tools/LineSegmentTool'
 import { LineTool } from './tools/LineTool'
@@ -28,6 +27,8 @@ import { CylinderTool } from './tools/CylinderTool'
 import { ConeTool } from './tools/ConeTool'
 import { createGrid } from './engine/Grid'
 import type { ToolCompleteOptions } from './tools/BaseTool'
+import planeIcon from './assets/plane.svg'
+import gridIcon from './assets/grid.svg'
 
 const scene = createScene()
 const camera = createCamera()
@@ -36,14 +37,12 @@ const renderer = createRenderer()
 createLighting(scene)
 
 const plane = createPlane(scene)
-createGrid(scene)
+const grid = createGrid(scene)
 
 const controls = createControls(camera, renderer)
 
 setupResize(camera, renderer)
 createLoop(renderer, scene, camera, controls)
-
-createRotateMenu()
 
 const toolManager = new ToolManager()
 
@@ -75,6 +74,18 @@ const sideSlider = document.getElementById("sideSlider") as HTMLInputElement | n
 const unFoldControl = document.getElementById("unFoldControl")
 const unFoldSlider = document.getElementById("unFoldSlider") as HTMLInputElement | null
 const unFoldValue = document.getElementById("unFoldValue")
+const updatePlaneToggleIcon = () => {
+  const icon = document.getElementById("planeToggleIcon") as HTMLImageElement | null
+  const button = icon?.closest("button")
+
+  if (!icon) return
+
+  const title = plane.visible ? "Grid Görünümü" : "Düzlem Görünümü"
+
+  icon.src = plane.visible ? gridIcon : planeIcon
+  icon.alt = title
+  button?.setAttribute("title", title)
+}
 
 const setSideControlActive = (active: boolean) => {
   sideControl?.classList.toggle("active", active)
@@ -160,6 +171,8 @@ toolManager.setTool(selectTool)
 createToolbar((toolName) => {
   if (toolName === "togglePlane") {
     plane.visible = !plane.visible
+    grid.visible = true
+    updatePlaneToggleIcon()
     return
   }
 
@@ -217,6 +230,8 @@ createToolbar((toolName) => {
 
   setSideControlActive(toolName === "prism" || toolName === "pyramid")
 })
+
+updatePlaneToggleIcon()
 
 renderer.domElement.style.touchAction = "none"
 
