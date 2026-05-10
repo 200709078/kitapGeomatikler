@@ -84,10 +84,6 @@ export class PyramidTool extends BaseTool {
     if (!this.cursorPreview.parent) {
       this.scene.add(this.cursorPreview)
     }
-
-    if (this.sliderContainer) {
-      this.sliderContainer.style.display = "block"
-    }
   }
 
   deactivate() {
@@ -95,10 +91,6 @@ export class PyramidTool extends BaseTool {
 
     if (this.cursorPreview.parent) {
       this.scene.remove(this.cursorPreview)
-    }
-
-    if (this.sliderContainer) {
-      this.sliderContainer.style.display = "none"
     }
   }
 

@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg
+    viewBox="0 0 64 64"
+    width="100%"
+    height="100%"
+    xmlns="http://www.w3.org/2000/svg"
+    role="img"
+    aria-label="Piramit"
+>
+    <defs>
+        <!-- Piramit yüzeyleri -->
+        <linearGradient id="pyramidFaceLeft" x1="10%" y1="10%" x2="90%" y2="90%">
+            <stop offset="0%" stop-color="#7773a6" stop-opacity="0.78" />
+            <stop offset="100%" stop-color="#55527f" stop-opacity="0.78" />
+        </linearGradient>
+
+        <linearGradient id="pyramidFaceRight" x1="20%" y1="10%" x2="90%" y2="90%">
+            <stop offset="0%" stop-color="#696593" stop-opacity="0.8" />
+            <stop offset="100%" stop-color="#48456e" stop-opacity="0.8" />
+        </linearGradient>
+
+        <linearGradient id="pyramidFaceBase" x1="10%" y1="20%" x2="90%" y2="90%">
+            <stop offset="0%" stop-color="#5f5b86" stop-opacity="0.65" />
+            <stop offset="100%" stop-color="#3f3c62" stop-opacity="0.65" />
+        </linearGradient>
+
+        <!-- Nokta gölgesi -->
+        <filter id="pointShadow" x="-40%" y="-40%" width="180%" height="180%">
+            <feDropShadow
+                dx="0.6"
+                dy="0.9"
+                stdDeviation="0.7"
+                flood-color="#000000"
+                flood-opacity="0.35"
+            />
+        </filter>
+    </defs>
+
+    <!-- Koordinatlar:
+       A  = sol ön taban       (8,49)
+       B  = sağ ön taban       (43,54)
+       C  = sağ arka taban     (57,41)
+       M  = taban merkezi      (30,38)
+       H  = yükseklik ayağı    (35,46)
+       T  = tepe noktası       (32,9)
+  -->
+
+    <!-- Sol yüz -->
+    <polygon
+        points="32,9 8,49 30,38"
+        fill="url(#pyramidFaceLeft)"
+        stroke="none"
+    />
+
+    <!-- Sağ yüz -->
+    <polygon
+        points="32,9 43,54 57,41"
+        fill="url(#pyramidFaceRight)"
+        stroke="none"
+    />
+
+    <!-- Ön/taban görünen yüzey -->
+    <polygon
+        points="8,49 43,54 57,41 30,38"
+        fill="url(#pyramidFaceBase)"
+        stroke="none"
+    />
+
+    <!-- Görünen ayrıtlar -->
+    <g
+        fill="none"
+        stroke="#111827"
+        stroke-width="1.15"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+    >
+        <!-- Tepe bağlantıları -->
+        <line x1="32" y1="9" x2="8" y2="49" />
+        <line x1="32" y1="9" x2="43" y2="54" />
+        <line x1="32" y1="9" x2="57" y2="41" />
+
+        <!-- Taban ayrıtları -->
+        <line x1="8" y1="49" x2="30" y2="38" />
+        <line x1="30" y1="38" x2="57" y2="41" />
+        <line x1="57" y1="41" x2="43" y2="54" />
+    </g>
+
+    <!-- Ön taban ayrıtı: koyu kırmızı vurgu -->
+    <line
+        x1="8"
+        y1="49"
+        x2="43"
+        y2="54"
+        stroke="#5b1232"
+        stroke-width="1.8"
+        stroke-linecap="round"
+    />
+
+    <!-- Tepe yüksekliği / gizli yardımcı çizgi -->
+    <g
+        fill="none"
+        stroke="#6b007b"
+        stroke-width="0.9"
+        stroke-linecap="round"
+        stroke-dasharray="2.5 2.2"
+        opacity="0.9"
+    >
+        <line x1="32" y1="9" x2="35" y2="46" />
+    </g>
+
+    <!-- İç yardımcı ayrıt / merkez bağlantısı -->
+    <g
+        fill="none"
+        stroke="#111827"
+        stroke-width="0.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        opacity="0.75"
+    >
+        <line x1="30" y1="38" x2="35" y2="46" />
+    </g>
+
+    <!-- Noktalar -->
+    <g filter="url(#pointShadow)">
+        <!-- Tepe mor nokta -->
+        <circle
+            cx="32"
+            cy="9"
+            r="1.8"
+            fill="#6b007b"
+            stroke="#32003a"
+            stroke-width="0.45"
+        />
+
+        <!-- Ön taban mavi noktalar -->
+        <circle
+            cx="8"
+            cy="49"
+            r="1.8"
+            fill="#005eff"
+            stroke="#00358f"
+            stroke-width="0.45"
+        />
+
+        <circle
+            cx="43"
+            cy="54"
+            r="1.8"
+            fill="#005eff"
+            stroke="#00358f"
+            stroke-width="0.45"
+        />
+
+        <!-- Sağ arka gri nokta -->
+        <circle
+            cx="57"
+            cy="41"
+            r="1.45"
+            fill="#555555"
+            stroke="#2f2f2f"
+            stroke-width="0.4"
+        />
+
+        <!-- Taban merkezi gri nokta -->
+        <circle
+            cx="30"
+            cy="38"
+            r="1.35"
+            fill="#4f5562"
+            stroke="#303640"
+            stroke-width="0.35"
+        />
+
+        <!-- Yükseklik ayağı gri/mor nokta -->
+        <circle
+            cx="35"
+            cy="46"
+            r="1.45"
+            fill="#5c4a6b"
+            stroke="#3e3049"
+            stroke-width="0.35"
+        />
+    </g>
+</svg>

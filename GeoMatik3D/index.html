@@ -14,9 +14,17 @@
 
 <body>
   <div id="app"></div>
-  <div id="sideControl" style="display: none;">
-    <div>Kenar Sayısı: <span id="sideValue">4</span></div>
-    <input id="sideSlider" type="range" min="3" max="20" value="4" step="1" />
+
+  <div id="rightControls" style="display: none;">
+    <div id="unFoldControl" class="passive">
+      <div>Açınım: <span id="unFoldValue">0</span>°</div>
+      <input id="unFoldSlider" type="range" min="0" max="360" value="0" step="1" disabled />
+    </div>
+
+    <div id="sideControl" class="passive">
+      <div>Kenar Sayısı: <span id="sideValue">4</span></div>
+      <input id="sideSlider" type="range" min="3" max="20" value="4" step="1" />
+    </div>
   </div>
 
 

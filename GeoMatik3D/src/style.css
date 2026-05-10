@@ -44,9 +44,9 @@ body {
 }
 
 #toolbar button.active {
-  background: #2563eb;
-  color: white;
-  border-color: #1d4ed8;
+  background: #bbf7d0;
+  color: #14532d;
+  border-color: #22c55e;
 }
 
 #planeToggleControl {
@@ -61,7 +61,7 @@ body {
   border-radius: 8px;
 }
 
-#deleteSelectionControl {
+/* #deleteSelectionControl {
   position: fixed;
   top: 12px;
   right: 76px;
@@ -72,6 +72,62 @@ body {
   background: rgba(255, 255, 255, 0.9);
   border: 1px solid #cccccc;
   border-radius: 8px;
+} */
+#deleteSelectionControl {
+  position: fixed;
+  top: 12px;
+  right: 76px;
+  z-index: 10;
+
+  display: block;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #cccccc;
+  border-radius: 8px;
+}
+
+#deleteSelectionControl button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+}
+
+#deleteSelectionControl .delete-icon {
+  width: 22px;
+  height: 22px;
+  display: block;
+  pointer-events: none;
+}
+
+#deleteSelectionControl button.active {
+  cursor: pointer;
+  background: white;
+  border-color: #bbbbbb;
+}
+
+#deleteSelectionControl button.active .delete-icon {
+  filter: none;
+  opacity: 1;
+}
+
+#deleteSelectionControl button.passive,
+#deleteSelectionControl button:disabled {
+  cursor: not-allowed;
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+#deleteSelectionControl button.passive:hover,
+#deleteSelectionControl button:disabled:hover {
+  background: #f3f4f6;
+}
+
+#deleteSelectionControl button.passive .delete-icon,
+#deleteSelectionControl button:disabled .delete-icon {
+  filter: grayscale(1);
+  opacity: 0.42;
 }
 
 #deleteSelectionControl button {
@@ -81,16 +137,68 @@ body {
 }
 
 #sideControl {
-  position: fixed;
-  top: 12px;
-  right: 140px;
   background: rgba(255, 255, 255, 0.9);
   padding: 10px;
   border: 1px solid #cccccc;
   border-radius: 8px;
   font-family: Arial;
-  display: none;
+  display: block;
+}
+
+#sideControl.active {
+  opacity: 1;
+}
+
+#sideControl.passive {
+  opacity: 0.45;
+}
+
+#sideControl.passive input {
+  cursor: not-allowed;
+}
+
+#sideControl.active input {
+  cursor: pointer;
+}
+
+#unFoldControl {
+  background: rgba(255, 255, 255, 0.9);
+  padding: 10px;
+  border: 1px solid #cccccc;
+  border-radius: 8px;
+  font-family: Arial;
+  display: block;
+}
+
+#unFoldControl input {
+  width: 140px;
+}
+
+#unFoldControl.active {
+  opacity: 1;
+}
+
+#unFoldControl.passive {
+  opacity: 0.45;
+}
+
+#unFoldControl.passive input {
+  cursor: not-allowed;
+}
+
+#unFoldControl.active input {
+  cursor: pointer;
+}
+#rightControls {
+  position: fixed;
+  top: 12px;
+  right: 140px;
   z-index: 10;
+
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 8px;
 }
 
 #rotateMenu {
@@ -290,9 +398,7 @@ body {
     linear-gradient(90deg, #003fba 0 3px, #0066ff 4px 52%, #004cc7 100%);
   clip-path: polygon(0 0, 100% 50%, 0 100%);
   filter:
-    drop-shadow(0 0 8px rgba(0, 102, 255, 0.38))
-    drop-shadow(-1px -1px 1px rgba(255, 255, 255, 0.28))
-    drop-shadow(1px 1px 1px rgba(0, 47, 150, 0.28));
+    drop-shadow(0 0 8px rgba(0, 102, 255, 0.38)) drop-shadow(-1px -1px 1px rgba(255, 255, 255, 0.28)) drop-shadow(1px 1px 1px rgba(0, 47, 150, 0.28));
 }
 
 .rotateMenuToolIcon-ray::before {
@@ -378,8 +484,7 @@ body {
 .rotateMenuAnglePoint {
   fill: #0066ff;
   filter:
-    drop-shadow(0 0 5px rgba(0, 102, 255, 0.42))
-    drop-shadow(1px 1px 1px rgba(0, 47, 150, 0.26));
+    drop-shadow(0 0 5px rgba(0, 102, 255, 0.42)) drop-shadow(1px 1px 1px rgba(0, 47, 150, 0.26));
 }
 
 .rotateMenuToolIcon-plane {
@@ -464,4 +569,12 @@ body {
 
 .rotateMenuTooltip.visible {
   display: block;
+}
+
+#toolbar .toolbar-icon {
+  width: 32px;
+  height: 32px;
+  display: block;
+  margin: auto;
+  pointer-events: none;
 }

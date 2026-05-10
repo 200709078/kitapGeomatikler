@@ -1,23 +1,71 @@
-type ToolName = "select" | "point" | "lineSegment" | "ray" | "plane" | "angle" | "line" | "sphere" | "prism" | "pyramid" | "cylinder" | "cone" | "unfold" | "togglePlane"
+import handIcon from "../assets/hand.svg"
+import pointIcon from "../assets/point.svg"
+import lineIcon from "../assets/line.svg"
+import lineSegmentIcon from "../assets/lineSegment.svg"
+import rayIcon from "../assets/ray.svg"
+import angleIcon from "../assets/angle.svg"
+import planeIcon from "../assets/plane.svg"
+import prismIcon from "../assets/prism.svg"
+import pyramidIcon from "../assets/pyramid.svg"
+import sphereIcon from "../assets/sphere.svg"
+import cylinderIcon from "../assets/cylinder.svg"
+import coneIcon from "../assets/cone.svg"
+import deleteIcon from "../assets/delete.svg"
+
+type ToolName = "select" | "point" | "lineSegment" | "ray" | "plane" | "angle" | "line" | "sphere" | "prism" | "pyramid" | "cylinder" | "cone" | "togglePlane"
 
 export function createToolbar(onToolSelect: (toolName: ToolName) => void) {
   const toolbar = document.createElement("div")
   toolbar.id = "toolbar"
 
   toolbar.innerHTML = `
-    <button data-tool="select" title="Seçme/Taşıma">☝</button>
-    <button data-tool="point" title="Nokta">●</button>
-    <button data-tool="lineSegment" title="Doğru Parçası">━</button>
-    <button data-tool="line" title="Doğru">&harr;</button>
-    <button data-tool="ray" title="Yarı Doğru">→</button>
-    <button data-tool="angle" title="Açı">∠</button>
-    <button data-tool="plane" title="Düzlem">▱</button>
-    <button data-tool="sphere" title="Küre">◯</button>
-    <button data-tool="prism" title="Prizma">⬛</button>
-    <button data-tool="pyramid" title="Piramit">&#9650;</button>
-    <button data-tool="cylinder" title="Silindir">&#9711;</button>
-    <button data-tool="cone" title="Koni">&#9651;</button>
-    <button data-tool="unfold" title="Açınım">&#9635;</button>
+  <button data-tool="select" title="Seçme/Taşıma">
+  <img src="${handIcon}" alt="Seçme/Taşıma" class="toolbar-icon" />
+  </button>
+
+  <button data-tool="point" title="Nokta">
+  <img src="${pointIcon}" alt="Nokta" class="toolbar-icon" />
+  </button>
+
+  <button data-tool="line" title="Doğru">
+  <img src="${lineIcon}" alt="Doğru" class="toolbar-icon" />
+  </button>
+
+  <button data-tool="line" title="Doğru Parçası">
+  <img src="${lineSegmentIcon}" alt="Doğru" class="toolbar-icon" />
+  </button>
+
+  <button data-tool="ray" title="Işın">
+  <img src="${rayIcon}" alt="Işın" class="toolbar-icon" />
+  </button>
+
+  <button data-tool="angle" title="Açı">
+  <img src="${angleIcon}" alt="Açı" class="toolbar-icon" />
+  </button>
+
+  <button data-tool="plane" title="Düzlem">
+  <img src="${planeIcon}" alt="Düzlem" class="toolbar-icon" />
+  </button>
+
+  <button data-tool="sphere" title="Küre">
+  <img src="${sphereIcon}" alt="Küre" class="toolbar-icon" />
+  </button>
+
+  <button data-tool="prism" title="Prizma">
+  <img src="${prismIcon}" alt="Prizma" class="toolbar-icon" />
+  </button>
+
+  <button data-tool="pyramid" title="Piramit">
+  <img src="${pyramidIcon}" alt="Piramit" class="toolbar-icon" />
+  </button>
+
+  <button data-tool="cylinder" title="Silindir">
+  <img src="${cylinderIcon}" alt="Silindir" class="toolbar-icon" />
+  </button>
+
+  <button data-tool="cone" title="Koni">
+  <img src="${coneIcon}" alt="Koni" class="toolbar-icon" />
+  </button>
   `
   toolbar.querySelectorAll<HTMLButtonElement>("button").forEach((button) => {
     button.addEventListener("click", (event) => {
@@ -25,11 +73,6 @@ export function createToolbar(onToolSelect: (toolName: ToolName) => void) {
       event.stopPropagation()
 
       const toolName = button.dataset.tool as ToolName
-
-      if (toolName === "unfold") {
-        onToolSelect(toolName)
-        return
-      }
 
       toolbar
         .querySelectorAll<HTMLButtonElement>("button")
@@ -92,8 +135,10 @@ export function createToolbar(onToolSelect: (toolName: ToolName) => void) {
   const deleteSelectionControl = document.createElement("div")
   deleteSelectionControl.id = "deleteSelectionControl"
   deleteSelectionControl.innerHTML = `
-    <button title="Sil">×</button>
-  `
+  <button id="deleteSelectionButton" type="button" title="Sil" disabled>
+    <img src="${deleteIcon}" alt="Sil" class="delete-icon" />
+  </button>
+`
 
   deleteSelectionControl.addEventListener("pointerdown", (event) => {
     event.stopPropagation()

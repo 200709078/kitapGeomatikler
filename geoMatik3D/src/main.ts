@@ -1,5 +1,3 @@
-//rotatemenuyü Sürüklerken hintler gözükmesin.
-//Cisimlerin tabanları açık olmasın. yanları gibi olsun.
 // Prizma, piramit, silindri seçilrise çalışacak açınım aracı yapılacak. Açınım cismin taban düzlemi üzerine olacak.
 // undo redo
 
@@ -28,27 +26,32 @@ import { PrismTool } from './tools/PrismTool'
 import { PyramidTool } from './tools/PyramidTool'
 import { CylinderTool } from './tools/CylinderTool'
 import { ConeTool } from './tools/ConeTool'
-import { UnfoldTool } from './tools/UnfoldTool'
 import { createGrid } from './engine/Grid'
 import type { ToolCompleteOptions } from './tools/BaseTool'
 
 const scene = createScene()
 const camera = createCamera()
 const renderer = createRenderer()
+
 createLighting(scene)
+
 const plane = createPlane(scene)
 createGrid(scene)
 
 const controls = createControls(camera, renderer)
+
 setupResize(camera, renderer)
 createLoop(renderer, scene, camera, controls)
+
 createRotateMenu()
 
 const toolManager = new ToolManager()
 
 const selectableObjects: THREE.Object3D[] = []
+
 const selectTool = new SelectTool(scene, camera, controls)
 selectTool.setSelectableObjects(selectableObjects)
+
 toolManager.setSelectTool(selectTool)
 toolManager.setControls(controls)
 
@@ -63,9 +66,48 @@ const prismTool = new PrismTool(scene, camera, selectableObjects)
 const pyramidTool = new PyramidTool(scene, camera, selectableObjects)
 const cylinderTool = new CylinderTool(scene, camera, selectableObjects)
 const coneTool = new ConeTool(scene, camera, selectableObjects)
-const unfoldTool = new UnfoldTool(scene, camera)
+
+const rightControls = document.getElementById("rightControls")
+
+const sideControl = document.getElementById("sideControl")
+const sideSlider = document.getElementById("sideSlider") as HTMLInputElement | null
+
+const unFoldControl = document.getElementById("unFoldControl")
+const unFoldSlider = document.getElementById("unFoldSlider") as HTMLInputElement | null
+const unFoldValue = document.getElementById("unFoldValue")
+
+const setSideControlActive = (active: boolean) => {
+  sideControl?.classList.toggle("active", active)
+  sideControl?.classList.toggle("passive", !active)
+
+  if (sideSlider) {
+    sideSlider.disabled = !active
+  }
+}
+
+const setUnFoldControlActive = (active: boolean) => {
+  unFoldControl?.classList.toggle("active", active)
+  unFoldControl?.classList.toggle("passive", !active)
+
+  if (unFoldSlider) {
+    unFoldSlider.disabled = !active
+  }
+}
+
+setSideControlActive(false)
+setUnFoldControlActive(false)
+rightControls?.style.removeProperty("display")
+
+unFoldSlider?.addEventListener("input", () => {
+  if (unFoldValue && unFoldSlider) {
+    unFoldValue.textContent = unFoldSlider.value
+  }
+})
 
 const returnToSelectTool = (options?: ToolCompleteOptions) => {
+  setSideControlActive(false)
+  setUnFoldControlActive(false)
+
   if (options?.clearSelection !== false) {
     selectTool.clearSelection()
   }
@@ -81,6 +123,7 @@ const returnToSelectTool = (options?: ToolCompleteOptions) => {
     ?.classList.add("active")
 }
 
+// Bütün araçlarda nokta seçme davranışı ortak kalsın.
 [
   pointTool,
   lineSegmentTool,
@@ -93,10 +136,23 @@ const returnToSelectTool = (options?: ToolCompleteOptions) => {
   pyramidTool,
   cylinderTool,
   coneTool,
-  unfoldTool,
+].forEach((tool) => {
+  tool.setPointSelectHandler((point) => selectTool.selectPointWithoutHelpers(point))
+});
+
+[
+  lineSegmentTool,
+  lineTool,
+  rayTool,
+  planeTool,
+  angleTool,
+  sphereTool,
+  prismTool,
+  pyramidTool,
+  cylinderTool,
+  coneTool,
 ].forEach((tool) => {
   tool.setCompleteHandler(returnToSelectTool)
-  tool.setPointSelectHandler((point) => selectTool.selectPointWithoutHelpers(point))
 })
 
 toolManager.setTool(selectTool)
@@ -104,7 +160,13 @@ toolManager.setTool(selectTool)
 createToolbar((toolName) => {
   if (toolName === "togglePlane") {
     plane.visible = !plane.visible
+    return
   }
+
+  if (toolName !== "select") {
+    setUnFoldControlActive(false)
+  }
+
   if (toolName === "select") {
     toolManager.setTool(selectTool)
   }
@@ -116,6 +178,7 @@ createToolbar((toolName) => {
   if (toolName === "lineSegment") {
     toolManager.setTool(lineSegmentTool)
   }
+
   if (toolName === "line") {
     toolManager.setTool(lineTool)
   }
@@ -123,12 +186,15 @@ createToolbar((toolName) => {
   if (toolName === "ray") {
     toolManager.setTool(rayTool)
   }
+
   if (toolName === "plane") {
     toolManager.setTool(planeTool)
   }
+
   if (toolName === "angle") {
     toolManager.setTool(angleTool)
   }
+
   if (toolName === "sphere") {
     toolManager.setTool(sphereTool)
   }
@@ -136,24 +202,27 @@ createToolbar((toolName) => {
   if (toolName === "prism") {
     toolManager.setTool(prismTool)
   }
+
   if (toolName === "pyramid") {
     toolManager.setTool(pyramidTool)
   }
+
   if (toolName === "cylinder") {
     toolManager.setTool(cylinderTool)
   }
+
   if (toolName === "cone") {
     toolManager.setTool(coneTool)
   }
-  if (toolName === "unfold") {
-    toolManager.setTool(unfoldTool)
-  }
+
+  setSideControlActive(toolName === "prism" || toolName === "pyramid")
 })
 
 renderer.domElement.style.touchAction = "none"
 
 renderer.domElement.addEventListener("pointerdown", (event) => {
   const activeTool = toolManager.activeTool
+
   const shouldToolHandleFirst = activeTool === selectTool
     ? selectTool.shouldHandleBeforeOrbitControls(event)
     : activeTool !== null
@@ -184,7 +253,6 @@ renderer.domElement.addEventListener("pointercancel", (event) => {
 window.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     returnToSelectTool()
-
     return
   }
 

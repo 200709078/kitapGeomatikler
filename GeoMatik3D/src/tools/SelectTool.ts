@@ -1,6 +1,11 @@
 import * as THREE from "three"
 import { BaseTool } from "./BaseTool"
+import { Prism } from "../objects/Prism"
+import { Pyramid } from "../objects/Pyramid"
+import { Cylinder } from "../objects/Cylinder"
+import { Cone } from "../objects/Cone"
 import { getNearestSelectablePoint, getPointerIntersection, SELECTED_POINT_DRAG_RADIUS_PX } from "../interaction/Pointer"
+
 
 type SelectionRole = "free" | "locked" | "height" | "solid"
 const HELPERS_ENABLED = true
@@ -23,6 +28,11 @@ export class SelectTool extends BaseTool {
     sideSliderContainer: HTMLElement | null = null
     sideSlider: HTMLInputElement | null = null
     sideValue: HTMLSpanElement | null = null
+
+    unFoldControl: HTMLElement | null = null
+    unFoldSlider: HTMLInputElement | null = null
+    unFoldValue: HTMLSpanElement | null = null
+
     deleteControl: HTMLElement | null = null
     deleteButton: HTMLButtonElement | null = null
     deleteButtonListenerAttached = false
@@ -52,6 +62,10 @@ export class SelectTool extends BaseTool {
         this.sideSlider = document.getElementById("sideSlider") as HTMLInputElement
         this.sideValue = document.getElementById("sideValue") as HTMLSpanElement
 
+        this.unFoldControl = document.getElementById("unFoldControl")
+        this.unFoldSlider = document.getElementById("unFoldSlider") as HTMLInputElement
+        this.unFoldValue = document.getElementById("unFoldValue") as HTMLSpanElement
+
         this.sideSlider?.addEventListener("input", () => {
             const value = parseInt(this.sideSlider!.value)
 
@@ -61,6 +75,7 @@ export class SelectTool extends BaseTool {
         })
 
         this.ensureDeleteControl()
+        this.updateDeleteControl()
     }
 
     setSelectableObjects(objects: THREE.Object3D[]) {
@@ -229,6 +244,7 @@ export class SelectTool extends BaseTool {
             this.selectedOwner?.onSelect?.(this.selectedObject)
             this.addSelectionOutline(this.selectedObject)
             this.updateSideCountControl(this.selectedOwner)
+            this.updateUnFoldControl(this.selectedOwner)
             this.updateDeleteControl()
         } else if (this.selectedObject instanceof THREE.Mesh) {
             this.originalMaterial = this.selectedObject.material
@@ -237,6 +253,7 @@ export class SelectTool extends BaseTool {
                 color: 0xffaa00,
             })
             this.updateSideCountControl(null)
+            this.updateUnFoldControl(null)
             this.updateDeleteControl()
         }
 
@@ -253,6 +270,7 @@ export class SelectTool extends BaseTool {
         this.selectedObject = null
         this.selectedOwner = null
         this.updateSideCountControl(null)
+        this.updateUnFoldControl(null)
         this.updateDeleteControl()
         this.verticalMove = false
         this.controls.enabled = true
@@ -298,8 +316,12 @@ export class SelectTool extends BaseTool {
 
         if (!this.sideSliderContainer || !this.sideSlider || !this.sideValue) return
 
+        this.sideSliderContainer.style.display = "block"
+
         if (!controller) {
-            this.sideSliderContainer.style.display = "none"
+            this.sideSlider.disabled = true
+            this.sideSliderContainer.classList.remove("active")
+            this.sideSliderContainer.classList.add("passive")
             return
         }
 
@@ -307,19 +329,47 @@ export class SelectTool extends BaseTool {
 
         this.sideSlider.value = value
         this.sideValue.textContent = value
-        this.sideSliderContainer.style.display = "block"
+
+        this.sideSlider.disabled = false
+        this.sideSliderContainer.classList.add("active")
+        this.sideSliderContainer.classList.remove("passive")
+    }
+    private canUseUnFoldControl(owner: any) {
+        return owner instanceof Prism ||
+            owner instanceof Pyramid ||
+            owner instanceof Cylinder ||
+            owner instanceof Cone
+    }
+
+    private updateUnFoldControl(owner: any) {
+        if (!this.unFoldControl || !this.unFoldSlider) return
+
+        const active = this.canUseUnFoldControl(owner)
+
+        this.unFoldControl.style.display = "block"
+        this.unFoldControl.classList.toggle("active", active)
+        this.unFoldControl.classList.toggle("passive", !active)
+
+        this.unFoldSlider.disabled = !active
     }
 
     private updateDeleteControl() {
         this.ensureDeleteControl()
 
-        if (!this.deleteControl) return
+        if (!this.deleteControl || !this.deleteButton) return
 
-        this.deleteControl.style.display = this.canDeleteSelected()
-            ? "block"
-            : "none"
+        const canDelete = this.canDeleteSelected()
+
+        this.deleteControl.style.display = "block"
+        this.deleteButton.disabled = !canDelete
+
+        this.deleteButton.classList.toggle("active", canDelete)
+        this.deleteButton.classList.toggle("passive", !canDelete)
+
+        this.deleteButton.title = canDelete
+            ? "Sil"
+            : "Silinecek nesne seçilmedi"
     }
-
     private ensureDeleteControl() {
         this.deleteControl ??= document.getElementById("deleteSelectionControl")
         this.deleteButton ??= this.deleteControl?.querySelector("button") ?? null
