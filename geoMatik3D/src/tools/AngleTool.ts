@@ -6,6 +6,7 @@ import { getNearestSelectablePoint, getPointerIntersection, getPointerPointSize,
 
 export class AngleTool extends BaseTool {
   points: THREE.Mesh[] = []
+  createdPoints: THREE.Mesh[] = []
   selectableObjects: THREE.Object3D[]
 
   cursorPreview: THREE.Mesh
@@ -90,6 +91,7 @@ export class AngleTool extends BaseTool {
 
       this.scene.add(point)
       this.selectableObjects.push(point)
+      this.createdPoints.push(point)
     }
 
     if (this.hasPoint(point)) {
@@ -110,9 +112,15 @@ export class AngleTool extends BaseTool {
       this.scene.add(angle.lineAB)
       this.scene.add(angle.lineBC)
       this.scene.add(angle.arc)
+      this.recordCreation(
+        "Açı oluştur",
+        [...this.createdPoints, angle.lineAB, angle.lineBC, angle.arc],
+        [angle]
+      )
 
       this.clearPreviewLines()
       this.points = []
+      this.createdPoints = []
       this.complete()
     }
   }
@@ -128,15 +136,21 @@ export class AngleTool extends BaseTool {
   }
 
   deactivate() {
-    this.reset()
+    this.cancel()
 
     if (this.cursorPreview.parent) {
       this.scene.remove(this.cursorPreview)
     }
   }
 
+  cancel() {
+    [...this.createdPoints].forEach((point) => this.removeCreatedPoint(point))
+    this.reset()
+  }
+
   reset() {
     this.points = []
+    this.createdPoints = []
     this.cursorPreview.visible = false
     this.clearPreviewLines()
   }
@@ -351,6 +365,7 @@ export class AngleTool extends BaseTool {
     this.scene.remove(point)
     const index = this.selectableObjects.indexOf(point)
     if (index >= 0) this.selectableObjects.splice(index, 1)
+    this.createdPoints = this.createdPoints.filter((createdPoint) => createdPoint !== point)
     point.geometry.dispose()
   }
 

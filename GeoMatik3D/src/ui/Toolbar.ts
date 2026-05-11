@@ -12,6 +12,8 @@ import cylinderIcon from "../assets/cylinder.svg"
 import coneIcon from "../assets/cone.svg"
 import deleteIcon from "../assets/delete.svg"
 import visibilityIcon from "../assets/visibility.svg"
+import undoIcon from "../assets/undo.svg"
+import redoIcon from "../assets/redo.svg"
 
 type ToolName = "select" | "point" | "lineSegment" | "ray" | "plane" | "angle" | "line" | "sphere" | "prism" | "pyramid" | "cylinder" | "cone" | "togglePlane"
 
@@ -80,6 +82,7 @@ export function createToolbar(onToolSelect: (toolName: ToolName) => void) {
         .forEach((btn) => btn.classList.remove("active"))
 
       button.classList.add("active")
+      button.blur()
 
       onToolSelect(toolName)
     })
@@ -108,6 +111,14 @@ export function createToolbar(onToolSelect: (toolName: ToolName) => void) {
   rightActionToolbar.innerHTML = `
     <button id="toggleButton" data-tool="togglePlane" title="Düzlemi Göster/Gizle">
       <img id="planeToggleIcon" src="${planeIcon}" alt="Düzlemi Göster/Gizle" class="toolbar-icon" />
+    </button>
+
+    <button id="undoButton" type="button" title="Geri Al" disabled>
+      <img src="${undoIcon}" alt="Geri Al" class="toolbar-icon" />
+    </button>
+
+    <button id="redoButton" type="button" title="Yinele" disabled>
+      <img src="${redoIcon}" alt="Yinele" class="toolbar-icon" />
     </button>
 
     <button id="deleteButton" type="button" title="Sil" disabled>

@@ -176,6 +176,23 @@ export class PyramidTool extends BaseTool {
       edge,
       ownedPoints
     )
+    this.recordCreation(
+      "Piramit oluştur",
+      [
+        ...ownedPoints,
+        edge.mesh,
+        this.lastPyramid.pointC,
+        this.lastPyramid.apexPoint,
+        this.lastPyramid.centerPoint,
+        this.lastPyramid.mesh,
+        this.lastPyramid.baseLine,
+        this.lastPyramid.sideLines,
+        this.lastPyramid.heightLine,
+        ...(this.lastPyramid.unFoldGroup ? [this.lastPyramid.unFoldGroup] : []),
+        ...this.lastPyramid.cornerPoints,
+      ],
+      [edge, this.lastPyramid]
+    )
 
     this.reset()
     this.complete()

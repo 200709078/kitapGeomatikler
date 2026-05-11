@@ -48,6 +48,7 @@ export class PointTool extends BaseTool {
         this.scene.add(point)
         this.points.push(point)
         this.selectableObjects.push(point)
+        this.recordCreation("Nokta oluştur", [point])
         this.complete()
     }
 

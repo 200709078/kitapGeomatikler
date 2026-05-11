@@ -10,6 +10,7 @@ export class LineSegmentTool extends BaseTool {
     cursorPreview: THREE.Mesh
     startPointMesh: THREE.Mesh | null = null
     selectableObjects: THREE.Object3D[]
+    createdPoints: THREE.Mesh[] = []
     constructor(scene: THREE.Scene, camera: THREE.PerspectiveCamera, selectableObjects: THREE.Object3D[]) {
         super(scene, camera)
         this.selectableObjects = selectableObjects
@@ -40,6 +41,11 @@ export class LineSegmentTool extends BaseTool {
             this.selectableObjects
         )
         this.scene.add(lineSegment.mesh)
+        this.recordCreation(
+            "Doğru parçası oluştur",
+            [...this.createdPoints, lineSegment.mesh],
+            [lineSegment]
+        )
 
         if (this.previewLine) {
             this.scene.remove(this.previewLine)
@@ -49,6 +55,7 @@ export class LineSegmentTool extends BaseTool {
 
         this.startPoint = null
         this.startPointMesh = null
+        this.createdPoints = []
         this.complete()
     }
     onPointerMove(event: PointerEvent) {
@@ -95,11 +102,16 @@ export class LineSegmentTool extends BaseTool {
     }
 
     deactivate() {
-        this.reset()
+        this.cancel()
 
         if (this.cursorPreview.parent) {
             this.scene.remove(this.cursorPreview)
         }
+    }
+
+    cancel() {
+        [...this.createdPoints].forEach((point) => this.removeCreatedPoint(point))
+        this.reset()
     }
 
     reset() {
@@ -110,6 +122,7 @@ export class LineSegmentTool extends BaseTool {
 
         this.startPoint = null
         this.startPointMesh = null
+        this.createdPoints = []
         this.cursorPreview.visible = false
     }
 
@@ -132,6 +145,7 @@ export class LineSegmentTool extends BaseTool {
 
         this.scene.add(point)
         this.selectableObjects.push(point)
+        this.createdPoints.push(point)
 
         return { point, created: true }
     }
@@ -140,6 +154,7 @@ export class LineSegmentTool extends BaseTool {
         this.scene.remove(point)
         const index = this.selectableObjects.indexOf(point)
         if (index >= 0) this.selectableObjects.splice(index, 1)
+        this.createdPoints = this.createdPoints.filter((createdPoint) => createdPoint !== point)
         point.geometry.dispose()
     }
 

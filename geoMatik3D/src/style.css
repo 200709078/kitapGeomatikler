@@ -114,7 +114,9 @@ body {
 #deleteButton.passive,
 #deleteButton:disabled,
 #showButton:disabled,
-#hideButton:disabled {
+#hideButton:disabled,
+#undoButton:disabled,
+#redoButton:disabled {
   cursor: not-allowed;
   background: #f3f4f6;
   border-color: #d1d5db;
@@ -123,7 +125,9 @@ body {
 #deleteButton.passive:hover,
 #deleteButton:disabled:hover,
 #showButton:disabled:hover,
-#hideButton:disabled:hover {
+#hideButton:disabled:hover,
+#undoButton:disabled:hover,
+#redoButton:disabled:hover {
   background: #f3f4f6;
 }
 
@@ -134,9 +138,18 @@ body {
 }
 
 #showButton:disabled .toolbar-icon,
-#hideButton:disabled .toolbar-icon {
+#hideButton:disabled .toolbar-icon,
+#undoButton:disabled .toolbar-icon,
+#redoButton:disabled .toolbar-icon {
   filter: grayscale(1);
   opacity: 0.42;
+}
+
+#undoButton.active,
+#redoButton.active {
+  cursor: pointer;
+  background: #eef2ff;
+  border-color: #4f46e5;
 }
 
 #deleteButton {

@@ -170,6 +170,23 @@ export class PrismTool extends BaseTool {
       edge,
       ownedPoints
     )
+    this.recordCreation(
+      "Prizma oluştur",
+      [
+        ...ownedPoints,
+        edge.mesh,
+        this.lastPrism.pointC,
+        this.lastPrism.pointAprime,
+        this.lastPrism.mesh,
+        this.lastPrism.baseLine,
+        this.lastPrism.topLine,
+        this.lastPrism.heightLine,
+        this.lastPrism.sideLines,
+        ...(this.lastPrism.unFoldGroup ? [this.lastPrism.unFoldGroup] : []),
+        ...this.lastPrism.cornerPoints,
+      ],
+      [edge, this.lastPrism]
+    )
 
     this.reset()
     this.complete()

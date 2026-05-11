@@ -163,6 +163,11 @@ export class SphereTool extends BaseTool {
       ownedPoints
     )
     this.scene.add(sphere.mesh)
+    this.recordCreation(
+      "Küre oluştur",
+      [...ownedPoints, radiusSegment.mesh, sphere.mesh],
+      [radiusSegment, sphere]
+    )
 
     this.reset()
     this.complete()

@@ -7,6 +7,7 @@ import { getNearestSelectablePoint, getPointerIntersection, getPointerPointSize,
 export class PlaneTool extends BaseTool {
   selectableObjects: THREE.Object3D[]
   points: THREE.Mesh[] = []
+  createdPoints: THREE.Mesh[] = []
 
   cursorPreview: THREE.Mesh
 
@@ -127,15 +128,21 @@ export class PlaneTool extends BaseTool {
   }
 
   deactivate() {
-    this.reset()
+    this.cancel()
 
     if (this.cursorPreview.parent) {
       this.scene.remove(this.cursorPreview)
     }
   }
 
+  cancel() {
+    [...this.createdPoints].forEach((point) => this.removeCreatedPoint(point))
+    this.reset()
+  }
+
   reset() {
     this.points = []
+    this.createdPoints = []
     this.cursorPreview.visible = false
     this.clearPreviewPlane()
   }
@@ -185,8 +192,10 @@ export class PlaneTool extends BaseTool {
       )
 
       this.scene.add(plane.mesh)
+      this.recordCreation("Düzlem oluştur", [...this.createdPoints, plane.mesh], [plane])
       this.clearPreviewPlane()
       this.points = []
+      this.createdPoints = []
       this.complete()
     }
   }
@@ -210,6 +219,7 @@ export class PlaneTool extends BaseTool {
 
     this.scene.add(point)
     this.selectableObjects.push(point)
+    this.createdPoints.push(point)
 
     return { point, created: true }
   }
@@ -225,6 +235,7 @@ export class PlaneTool extends BaseTool {
     this.scene.remove(point)
     const index = this.selectableObjects.indexOf(point)
     if (index >= 0) this.selectableObjects.splice(index, 1)
+    this.createdPoints = this.createdPoints.filter((createdPoint) => createdPoint !== point)
     point.geometry.dispose()
   }
 

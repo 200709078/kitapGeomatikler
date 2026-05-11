@@ -114,13 +114,29 @@ export class CylinderTool extends BaseTool {
       ...(result.created ? [point] : []),
     ]
 
-    new Cylinder(
+    const cylinder = new Cylinder(
       this.scene,
       this.selectableObjects,
       this.centerPoint,
       point,
       radiusSegment,
       ownedPoints
+    )
+    this.recordCreation(
+      "Silindir oluştur",
+      [
+        ...ownedPoints,
+        radiusSegment.mesh,
+        cylinder.topCenterPoint,
+        cylinder.topRadiusPoint,
+        cylinder.mesh,
+        cylinder.baseLine,
+        cylinder.topLine,
+        cylinder.heightLine,
+        cylinder.slantLine,
+        ...(cylinder.unFoldGroup ? [cylinder.unFoldGroup] : []),
+      ],
+      [radiusSegment, cylinder]
     )
 
     this.reset()

@@ -8,6 +8,7 @@ export class LineTool extends BaseTool {
   selectableObjects: THREE.Object3D[]
 
   pointA: THREE.Mesh | null = null
+  createdPoints: THREE.Mesh[] = []
 
   cursorPreview: THREE.Mesh
   previewLine: THREE.Line | null = null
@@ -35,11 +36,16 @@ export class LineTool extends BaseTool {
   }
 
   deactivate() {
-    this.reset()
+    this.cancel()
 
     if (this.cursorPreview.parent) {
       this.scene.remove(this.cursorPreview)
     }
+  }
+
+  cancel() {
+    [...this.createdPoints].forEach((point) => this.removeCreatedPoint(point))
+    this.reset()
   }
 
   reset() {
@@ -50,6 +56,7 @@ export class LineTool extends BaseTool {
     }
 
     this.pointA = null
+    this.createdPoints = []
     this.cursorPreview.visible = false
   }
 
@@ -105,6 +112,7 @@ export class LineTool extends BaseTool {
 
     const line = new LineObject(this.pointA, point, 100, this.selectableObjects)
     this.scene.add(line.mesh)
+    this.recordCreation("Doğru oluştur", [...this.createdPoints, line.mesh], [line])
 
     this.reset()
     this.complete()
@@ -129,6 +137,7 @@ export class LineTool extends BaseTool {
 
     this.scene.add(point)
     this.selectableObjects.push(point)
+    this.createdPoints.push(point)
 
     return { point, created: true }
   }
@@ -137,6 +146,7 @@ export class LineTool extends BaseTool {
     this.scene.remove(point)
     const index = this.selectableObjects.indexOf(point)
     if (index >= 0) this.selectableObjects.splice(index, 1)
+    this.createdPoints = this.createdPoints.filter((createdPoint) => createdPoint !== point)
     point.geometry.dispose()
   }
 }

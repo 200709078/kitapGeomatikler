@@ -111,13 +111,27 @@ export class ConeTool extends BaseTool {
       ...(result.created ? [point] : []),
     ]
 
-    new Cone(
+    const cone = new Cone(
       this.scene,
       this.selectableObjects,
       this.centerPoint,
       point,
       radiusSegment,
       ownedPoints
+    )
+    this.recordCreation(
+      "Koni oluştur",
+      [
+        ...ownedPoints,
+        radiusSegment.mesh,
+        cone.apexPoint,
+        cone.mesh,
+        cone.baseLine,
+        cone.heightLine,
+        cone.slantLine,
+        ...(cone.unFoldGroup ? [cone.unFoldGroup] : []),
+      ],
+      [radiusSegment, cone]
     )
 
     this.reset()

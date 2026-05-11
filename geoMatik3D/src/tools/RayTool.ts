@@ -7,6 +7,7 @@ import { getNearestSelectablePoint, getPointerIntersection, getPointerPointSize,
 export class RayTool extends BaseTool {
   startPoint: THREE.Vector3 | null = null
   startPointMesh: THREE.Mesh | null = null
+  createdPoints: THREE.Mesh[] = []
   selectableObjects: THREE.Object3D[]
 
   cursorPreview: THREE.Mesh
@@ -35,11 +36,16 @@ export class RayTool extends BaseTool {
   }
 
   deactivate() {
-    this.reset()
+    this.cancel()
 
     if (this.cursorPreview.parent) {
       this.scene.remove(this.cursorPreview)
     }
+  }
+
+  cancel() {
+    [...this.createdPoints].forEach((point) => this.removeCreatedPoint(point))
+    this.reset()
   }
 
   reset() {
@@ -51,6 +57,7 @@ export class RayTool extends BaseTool {
 
     this.startPoint = null
     this.startPointMesh = null
+    this.createdPoints = []
     this.cursorPreview.visible = false
   }
 
@@ -111,6 +118,7 @@ export class RayTool extends BaseTool {
       this.selectableObjects
     )
     this.scene.add(ray.mesh)
+    this.recordCreation("Işın oluştur", [...this.createdPoints, ray.mesh], [ray])
 
     this.reset()
     this.complete()
@@ -135,6 +143,7 @@ export class RayTool extends BaseTool {
 
     this.scene.add(point)
     this.selectableObjects.push(point)
+    this.createdPoints.push(point)
 
     return { point, created: true }
   }
@@ -143,6 +152,7 @@ export class RayTool extends BaseTool {
     this.scene.remove(point)
     const index = this.selectableObjects.indexOf(point)
     if (index >= 0) this.selectableObjects.splice(index, 1)
+    this.createdPoints = this.createdPoints.filter((createdPoint) => createdPoint !== point)
     point.geometry.dispose()
   }
 }

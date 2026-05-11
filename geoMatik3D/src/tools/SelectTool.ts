@@ -20,6 +20,11 @@ type UnFoldController = {
     maxUnFoldAngle: number
 }
 
+type NumericChange = {
+    owner: any
+    before: number
+}
+
 export class SelectTool extends BaseTool {
     raycaster = new THREE.Raycaster()
     mouse = new THREE.Vector2()
@@ -54,6 +59,10 @@ export class SelectTool extends BaseTool {
     lastMouseY = 0
     pointerDownPosition = new THREE.Vector2()
     dragOffset = new THREE.Vector3()
+    dragStartPositions: Array<{ object: THREE.Object3D, position: THREE.Vector3 }> = []
+    heightDragStart: { owner: any, height: number } | null = null
+    sideCountChange: NumericChange | null = null
+    unFoldChange: NumericChange | null = null
     hasMoved = false
     activePointerType = "mouse"
     lastTapObject: THREE.Mesh | null = null
@@ -79,6 +88,7 @@ export class SelectTool extends BaseTool {
         this.unFoldValue = document.getElementById("unFoldValue") as HTMLSpanElement
 
         this.sideSlider?.addEventListener("input", () => {
+            this.beginSideCountChange()
             const value = parseInt(this.sideSlider!.value)
 
             this.sideValue!.textContent = value.toString()
@@ -86,15 +96,28 @@ export class SelectTool extends BaseTool {
             this.updateUnFoldControl(this.selectedOwner)
             this.refreshSelectionOutline()
         })
+        this.sideSlider?.addEventListener("change", () => {
+            this.commitSideCountChange()
+        })
+        this.sideSlider?.addEventListener("pointerup", () => {
+            this.commitSideCountChange()
+        })
 
         this.unFoldSlider?.addEventListener("input", () => {
-        const value = parseInt(this.unFoldSlider!.value)
+            this.beginUnFoldChange()
+            const value = parseInt(this.unFoldSlider!.value)
 
             if (this.unFoldValue) {
                 this.unFoldValue.textContent = value.toString()
             }
 
             this.selectedUnFoldController?.setUnFoldAngle(value)
+        })
+        this.unFoldSlider?.addEventListener("change", () => {
+            this.commitUnFoldChange()
+        })
+        this.unFoldSlider?.addEventListener("pointerup", () => {
+            this.commitUnFoldChange()
         })
 
         this.ensureActionControls()
@@ -151,6 +174,16 @@ export class SelectTool extends BaseTool {
         this.isDragging = true
         this.lastMouseY = event.clientY
         this.dragOffset.set(0, 0, 0)
+        this.dragStartPositions = this.getMoveObjects(target).map((object) => ({
+            object,
+            position: object.position.clone(),
+        }))
+        this.heightDragStart = role === "height" && target.userData.normalWheelController
+            ? {
+                owner: target.userData.normalWheelController,
+                height: target.userData.normalWheelController.height,
+            }
+            : null
 
         if (role === "free" && !this.verticalMove) {
             const pointerPosition = this.getPointerPositionOnPlane(event)
@@ -213,6 +246,8 @@ export class SelectTool extends BaseTool {
 
     onPointerUp(event: PointerEvent) {
         const hit = this.pickObject(event)
+        const movedObject = this.selectedObject
+        const movedRole = movedObject ? this.getSelectionRole(movedObject) : null
 
         if (!this.hasMoved && hit && hit === this.selectedObject && this.getSelectionRole(hit) === "free") {
             const now = performance.now()
@@ -231,6 +266,17 @@ export class SelectTool extends BaseTool {
         this.isDragging = false
         this.controls.enabled = true
         this.updateHelperArrowScale()
+
+        if (this.hasMoved && movedObject && movedRole === "free") {
+            this.recordMoveAction()
+        }
+
+        if (this.hasMoved && movedObject && movedRole === "height") {
+            this.recordHeightAction()
+        }
+
+        this.dragStartPositions = []
+        this.heightDragStart = null
     }
 
     onMouseDown(event: MouseEvent) { this.onPointerDown(event as PointerEvent) }
@@ -380,6 +426,80 @@ export class SelectTool extends BaseTool {
         this.unFoldSlider.disabled = !active
     }
 
+    private beginSideCountChange() {
+        if (this.sideCountChange || !this.selectedOwner || !this.selectedSideCountController) return
+
+        this.sideCountChange = {
+            owner: this.selectedOwner,
+            before: this.selectedSideCountController.sideCount,
+        }
+    }
+
+    private commitSideCountChange() {
+        if (!this.sideCountChange || !this.history) {
+            this.sideCountChange = null
+            return
+        }
+
+        const { owner, before } = this.sideCountChange
+        const after = owner.sideCount
+        this.sideCountChange = null
+
+        if (before === after) return
+
+        this.history.execute({
+            name: "Kenar sayısı değiştir",
+            undo: () => this.applySideCount(owner, before),
+            redo: () => this.applySideCount(owner, after),
+        })
+    }
+
+    private applySideCount(owner: any, value: number) {
+        owner.setSideCount?.(value)
+
+        if (this.selectedOwner === owner) {
+            this.updateSideCountControl(owner)
+            this.updateUnFoldControl(owner)
+            this.refreshSelectionOutline()
+        }
+    }
+
+    private beginUnFoldChange() {
+        if (this.unFoldChange || !this.selectedOwner || !this.selectedUnFoldController) return
+
+        this.unFoldChange = {
+            owner: this.selectedOwner,
+            before: this.selectedUnFoldController.unFoldAngle,
+        }
+    }
+
+    private commitUnFoldChange() {
+        if (!this.unFoldChange || !this.history) {
+            this.unFoldChange = null
+            return
+        }
+
+        const { owner, before } = this.unFoldChange
+        const after = owner.unFoldAngle
+        this.unFoldChange = null
+
+        if (before === after) return
+
+        this.history.execute({
+            name: "Açınım değiştir",
+            undo: () => this.applyUnFoldAngle(owner, before),
+            redo: () => this.applyUnFoldAngle(owner, after),
+        })
+    }
+
+    private applyUnFoldAngle(owner: any, value: number) {
+        owner.setUnFoldAngle?.(value)
+
+        if (this.selectedOwner === owner) {
+            this.updateUnFoldControl(owner)
+        }
+    }
+
     private updateActionControls() {
         this.ensureActionControls()
 
@@ -474,24 +594,67 @@ export class SelectTool extends BaseTool {
         const selected = this.selectedObject
         const owner = this.selectedOwner ?? this.getVisibilityOwner(selected)
         const objectsToHide = this.getObjectsForVisibilityAction(selected, owner)
+        const changedObjects = objectsToHide.filter((object) => object.visible)
 
         this.clearSelection()
 
-        objectsToHide.forEach((object) => {
-            object.visible = false
-            this.hiddenObjects.add(object)
-        })
+        if (changedObjects.length === 0) return
 
-        this.updateActionControls()
+        const hide = () => {
+            changedObjects.forEach((object) => {
+                object.visible = false
+                this.hiddenObjects.add(object)
+            })
+            this.updateActionControls()
+        }
+
+        const show = () => {
+            changedObjects.forEach((object) => {
+                object.visible = true
+                this.hiddenObjects.delete(object)
+            })
+            this.updateActionControls()
+        }
+
+        hide()
+        this.history?.execute({
+            name: "Gizle",
+            undo: show,
+            redo: hide,
+        })
     }
 
     private showHiddenObjects() {
-        this.hiddenObjects.forEach((object) => {
-            object.visible = true
-        })
+        const objectsToShow = [...this.hiddenObjects].filter((object) => !object.visible)
 
-        this.hiddenObjects.clear()
-        this.updateActionControls()
+        if (objectsToShow.length === 0) {
+            this.hiddenObjects.clear()
+            this.updateActionControls()
+            return
+        }
+
+        const show = () => {
+            objectsToShow.forEach((object) => {
+                object.visible = true
+                this.hiddenObjects.delete(object)
+            })
+            this.updateActionControls()
+        }
+
+        const hide = () => {
+            objectsToShow.forEach((object) => {
+                object.visible = false
+                this.hiddenObjects.add(object)
+            })
+            this.updateActionControls()
+        }
+
+        show()
+        this.history?.execute({
+            name: "Tümünü göster",
+            undo: hide,
+            redo: show,
+        })
     }
 
     private deleteSelected() {
@@ -499,27 +662,28 @@ export class SelectTool extends BaseTool {
 
         const selected = this.selectedObject
         const owner = this.selectedOwner
+        const deletion = selected.userData.selectableType === "solid" && owner
+            ? this.createOwnerDeletion(owner)
+            : {
+                objects: [selected],
+                owners: [],
+            }
 
         this.clearSelection()
 
-        if (selected.userData.selectableType === "solid" && owner) {
-            this.deleteOwner(owner)
-            return
-        }
+        if (deletion.objects.length === 0) return
 
-        if (selected.userData.pointRole) {
-            this.removeSelectableObject(selected)
-            this.scene.remove(selected)
-            this.disposeObject(selected)
-        }
+        const action = this.history?.createDeleteAction("Sil", deletion.objects, deletion.owners)
+        if (!action) return
+
+        action.redo()
+        this.history?.execute(action)
     }
 
-    private deleteOwner(owner: any) {
-        owner.onBeforeDelete?.()
-        this.removeOwnerFromDependents(owner)
-
+    private createOwnerDeletion(owner: any) {
         const removedObjects = new Set<THREE.Object3D>()
         const candidatePoints = new Set<THREE.Object3D>()
+        const owners = this.getOwnersForDeletion(owner)
 
         const ownedObjects = typeof owner.getOwnedObjectsForDeletion === "function"
             ? owner.getOwnedObjectsForDeletion()
@@ -529,25 +693,38 @@ export class SelectTool extends BaseTool {
             this.collectOwnedObjects(value, removedObjects, candidatePoints)
         })
 
-        removedObjects.forEach((object) => {
-            this.removeSelectableObject(object)
-            this.scene.remove(object)
-            if (object.parent) {
-                object.parent.remove(object)
-            }
-            this.disposeObject(object)
-        })
-
         candidatePoints.forEach((point) => {
-            if ((point.userData.dependents?.length ?? 0) > 0) return
+            const dependents = Array.isArray(point.userData.dependents)
+                ? point.userData.dependents
+                : []
 
-            this.removeSelectableObject(point)
-            this.scene.remove(point)
-            if (point.parent) {
-                point.parent.remove(point)
+            const remainingDependents = dependents.filter(
+                (dependent: unknown) => !owners.includes(dependent)
+            )
+
+            if (remainingDependents.length === 0) {
+                removedObjects.add(point)
             }
-            this.disposeObject(point)
         })
+
+        return {
+            objects: [...removedObjects],
+            owners,
+        }
+    }
+
+    private getOwnersForDeletion(owner: any) {
+        const owners = [owner]
+
+        if (owner?.initialEdge) {
+            owners.push(owner.initialEdge)
+        }
+
+        if (owner?.radiusSegmentObject) {
+            owners.push(owner.radiusSegmentObject)
+        }
+
+        return owners
     }
 
     private getObjectsForVisibilityAction(selected: THREE.Object3D, owner: any) {
@@ -593,42 +770,6 @@ export class SelectTool extends BaseTool {
                 candidatePoints
             ))
         }
-    }
-
-    private removeOwnerFromDependents(owner: any) {
-        this.selectableObjects.forEach((object) => {
-            const dependents = object.userData.dependents
-
-            if (!Array.isArray(dependents)) return
-
-            object.userData.dependents = dependents.filter(
-                (dependent: any) => dependent !== owner
-            )
-        })
-    }
-
-    private removeSelectableObject(object: THREE.Object3D) {
-        for (let i = this.selectableObjects.length - 1; i >= 0; i--) {
-            if (this.selectableObjects[i] === object) {
-                this.selectableObjects.splice(i, 1)
-            }
-        }
-    }
-
-    private disposeObject(object: THREE.Object3D) {
-        object.traverse((child) => {
-            if (!(child instanceof THREE.Mesh || child instanceof THREE.Line || child instanceof THREE.LineSegments)) {
-                return
-            }
-
-            child.geometry.dispose()
-
-            if (Array.isArray(child.material)) {
-                child.material.forEach((material) => material.dispose())
-            } else {
-                child.material.dispose()
-            }
-        })
     }
 
     private getSideCountController(owner: any): SideCountController | null {
@@ -758,6 +899,62 @@ export class SelectTool extends BaseTool {
 
         prismPair.position.y = object.position.y
         this.updateDependents(prismPair)
+    }
+
+    private getMoveObjects(object: THREE.Object3D) {
+        const objects = [object]
+        const prismPair = object.userData.prismPair as THREE.Object3D | undefined
+
+        if (prismPair) {
+            objects.push(prismPair)
+        }
+
+        return [...new Set(objects)]
+    }
+
+    private recordMoveAction() {
+        if (!this.history || this.dragStartPositions.length === 0) return
+
+        const positions = this.dragStartPositions
+            .map(({ object, position }) => ({
+                object,
+                before: position,
+                after: object.position.clone(),
+            }))
+            .filter(({ before, after }) => before.distanceTo(after) > 0.0001)
+
+        if (positions.length === 0) return
+
+        this.history.execute(
+            this.history.createMoveAction("Taşı", positions)
+        )
+    }
+
+    private recordHeightAction() {
+        if (!this.history || !this.heightDragStart) return
+
+        const { owner, height: before } = this.heightDragStart
+        const after = owner.height
+
+        if (typeof before !== "number" || typeof after !== "number") return
+        if (Math.abs(before - after) < 0.0001) return
+
+        this.history.execute({
+            name: "Yükseklik değiştir",
+            undo: () => this.applyHeight(owner, before),
+            redo: () => this.applyHeight(owner, after),
+        })
+    }
+
+    private applyHeight(owner: any, value: number) {
+        owner.height = value
+        owner.update?.()
+
+        if (this.selectedOwner === owner || this.selectedObject?.userData.owner === owner) {
+            this.updateHelperArrows()
+            this.updateUnFoldControl(owner)
+            this.refreshSelectionOutline()
+        }
     }
 
     private updateDependents(object: THREE.Object3D) {

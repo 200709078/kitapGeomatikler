@@ -76,6 +76,10 @@ export class ToolManager {
     this.activeTool.onKeyDown(event)
   }
 
+  cancelActiveTool() {
+    this.activeTool?.cancel()
+  }
+
   onDoubleClick(event: MouseEvent) {
     if (!this.activeTool) return
     this.activeTool.onDoubleClick?.(event)

@@ -1,4 +1,5 @@
 import * as THREE from "three"
+import type { HistoryManager } from "../history/HistoryManager"
 export type ToolCompleteOptions = {
     clearSelection?: boolean
 }
@@ -8,6 +9,7 @@ export class BaseTool {
     camera: THREE.PerspectiveCamera
     onComplete: ((options?: ToolCompleteOptions) => void) | null = null
     onPointSelect: ((point: THREE.Mesh) => void) | null = null
+    history: HistoryManager | null = null
 
     constructor(scene: THREE.Scene, camera: THREE.PerspectiveCamera) {
         this.scene = scene
@@ -18,6 +20,16 @@ export class BaseTool {
     }
     setPointSelectHandler(handler: (point: THREE.Mesh) => void) {
         this.onPointSelect = handler
+    }
+    setHistoryManager(history: HistoryManager) {
+        this.history = history
+    }
+    protected recordCreation(name: string, objects: THREE.Object3D[], owners: unknown[] = []) {
+        if (objects.length === 0) return
+
+        this.history?.execute(
+            this.history.createObjectAction(name, objects, owners)
+        )
     }
     protected complete(options?: ToolCompleteOptions) {
         this.onComplete?.(options)
@@ -39,6 +51,9 @@ export class BaseTool {
     onDoubleClick(_event: MouseEvent) { }
 
     reset() { }
+    cancel() {
+        this.reset()
+    }
     activate() { }
     deactivate() { }
 }

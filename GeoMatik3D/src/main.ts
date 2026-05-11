@@ -1,6 +1,5 @@
-// undo redo
-// ESC kontrol edilecek.
-
+//ESC İPTAL İŞLEMİ plane de yarım kaldı...
+//plane çizildiğinde hareketten sonra titreme var.
 import './style.css'
 import * as THREE from 'three'
 import { createScene } from './core/Scene'
@@ -26,6 +25,7 @@ import { PyramidTool } from './tools/PyramidTool'
 import { CylinderTool } from './tools/CylinderTool'
 import { ConeTool } from './tools/ConeTool'
 import { createGrid } from './engine/Grid'
+import { HistoryManager } from './history/HistoryManager'
 import type { ToolCompleteOptions } from './tools/BaseTool'
 import planeIcon from './assets/plane.svg'
 import gridIcon from './assets/grid.svg'
@@ -47,9 +47,11 @@ createLoop(renderer, scene, camera, controls)
 const toolManager = new ToolManager()
 
 const selectableObjects: THREE.Object3D[] = []
+const history = new HistoryManager(scene, selectableObjects)
 
 const selectTool = new SelectTool(scene, camera, controls)
 selectTool.setSelectableObjects(selectableObjects)
+selectTool.setHistoryManager(history)
 
 toolManager.setSelectTool(selectTool)
 toolManager.setControls(controls)
@@ -149,6 +151,7 @@ const returnToSelectTool = (options?: ToolCompleteOptions) => {
   coneTool,
 ].forEach((tool) => {
   tool.setPointSelectHandler((point) => selectTool.selectPointWithoutHelpers(point))
+  tool.setHistoryManager(history)
 });
 
 [
@@ -233,6 +236,31 @@ createToolbar((toolName) => {
 
 updatePlaneToggleIcon()
 
+const undoButton = document.getElementById("undoButton") as HTMLButtonElement | null
+const redoButton = document.getElementById("redoButton") as HTMLButtonElement | null
+
+history.onChange(() => {
+  if (undoButton) {
+    undoButton.disabled = !history.canUndo
+    undoButton.classList.toggle("active", history.canUndo)
+  }
+
+  if (redoButton) {
+    redoButton.disabled = !history.canRedo
+    redoButton.classList.toggle("active", history.canRedo)
+  }
+})
+
+undoButton?.addEventListener("click", () => {
+  selectTool.clearSelection()
+  history.undo()
+})
+
+redoButton?.addEventListener("click", () => {
+  selectTool.clearSelection()
+  history.redo()
+})
+
 renderer.domElement.style.touchAction = "none"
 
 renderer.domElement.addEventListener("pointerdown", (event) => {
@@ -266,6 +294,27 @@ renderer.domElement.addEventListener("pointercancel", (event) => {
 })
 
 window.addEventListener("keydown", (event) => {
+  const key = event.key.toLowerCase()
+
+  if ((event.ctrlKey || event.metaKey) && key === "z") {
+    event.preventDefault()
+    selectTool.clearSelection()
+
+    if (event.shiftKey) {
+      history.redo()
+    } else {
+      history.undo()
+    }
+    return
+  }
+
+  if ((event.ctrlKey || event.metaKey) && key === "y") {
+    event.preventDefault()
+    selectTool.clearSelection()
+    history.redo()
+    return
+  }
+
   if (event.key === "Escape") {
     returnToSelectTool()
     return
