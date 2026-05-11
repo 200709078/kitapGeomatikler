@@ -1,5 +1,3 @@
-//ESC İPTAL İŞLEMİ plane de yarım kaldı...
-//plane çizildiğinde hareketten sonra titreme var.
 import './style.css'
 import * as THREE from 'three'
 import { createScene } from './core/Scene'
@@ -136,7 +134,6 @@ const returnToSelectTool = (options?: ToolCompleteOptions) => {
     ?.classList.add("active")
 }
 
-// Bütün araçlarda nokta seçme davranışı ortak kalsın.
 [
   pointTool,
   lineSegmentTool,

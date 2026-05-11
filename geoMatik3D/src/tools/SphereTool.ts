@@ -38,10 +38,18 @@ export class SphereTool extends BaseTool {
   }
 
   deactivate() {
-    this.reset()
+    this.cancel()
     if (this.cursorPreview.parent) {
       this.scene.remove(this.cursorPreview)
     }
+  }
+
+  cancel() {
+    if (this.centerPoint && this.centerPointCreated) {
+      this.removeCreatedPoint(this.centerPoint)
+    }
+
+    this.reset()
   }
 
   reset() {
@@ -174,4 +182,11 @@ export class SphereTool extends BaseTool {
   }
 
   onClick(event: MouseEvent) { this.onPointerDown(event as PointerEvent) }
+
+  private removeCreatedPoint(point: THREE.Mesh) {
+    this.scene.remove(point)
+    const index = this.selectableObjects.indexOf(point)
+    if (index >= 0) this.selectableObjects.splice(index, 1)
+    point.geometry.dispose()
+  }
 }

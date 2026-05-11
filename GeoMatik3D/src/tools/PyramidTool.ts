@@ -88,11 +88,19 @@ export class PyramidTool extends BaseTool {
   }
 
   deactivate() {
-    this.reset()
+    this.cancel()
 
     if (this.cursorPreview.parent) {
       this.scene.remove(this.cursorPreview)
     }
+  }
+
+  cancel() {
+    if (this.pointA && this.pointACreated) {
+      this.removeCreatedPoint(this.pointA)
+    }
+
+    this.reset()
   }
 
   reset() {

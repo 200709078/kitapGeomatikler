@@ -41,11 +41,19 @@ export class CylinderTool extends BaseTool {
   }
 
   deactivate() {
-    this.reset()
+    this.cancel()
 
     if (this.cursorPreview.parent) {
       this.scene.remove(this.cursorPreview)
     }
+  }
+
+  cancel() {
+    if (this.centerPoint && this.centerPointCreated) {
+      this.removeCreatedPoint(this.centerPoint)
+    }
+
+    this.reset()
   }
 
   reset() {
