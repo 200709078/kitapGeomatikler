@@ -8,19 +8,14 @@
   aria-label="Koni"
 >
   <defs>
-    <!-- Koni yüzeyi -->
     <linearGradient id="coneFill" x1="20%" y1="10%" x2="80%" y2="100%">
       <stop offset="0%" stop-color="#9a6848" stop-opacity="0.92" />
       <stop offset="100%" stop-color="#7f5238" stop-opacity="0.92" />
     </linearGradient>
-
-    <!-- Taban dolgusu -->
     <linearGradient id="baseFill" x1="20%" y1="20%" x2="90%" y2="90%">
       <stop offset="0%" stop-color="#9b6848" stop-opacity="0.9" />
       <stop offset="100%" stop-color="#7c5037" stop-opacity="0.9" />
     </linearGradient>
-
-    <!-- Mavi nokta -->
     <radialGradient id="bluePointBody" cx="32%" cy="26%" r="68%">
       <stop offset="0%" stop-color="#ffffff" />
       <stop offset="16%" stop-color="#9dccff" />
@@ -28,16 +23,12 @@
       <stop offset="72%" stop-color="#0066ff" />
       <stop offset="100%" stop-color="#003f9e" />
     </radialGradient>
-
-    <!-- Mor nokta -->
     <radialGradient id="purplePointBody" cx="32%" cy="26%" r="68%">
       <stop offset="0%" stop-color="#d59be6" />
       <stop offset="20%" stop-color="#9a1bc0" />
       <stop offset="75%" stop-color="#6b007b" />
       <stop offset="100%" stop-color="#43004d" />
     </radialGradient>
-
-    <!-- Gri nokta -->
     <radialGradient id="grayPointBody" cx="32%" cy="26%" r="68%">
       <stop offset="0%" stop-color="#8e95a3" />
       <stop offset="45%" stop-color="#4b5563" />
@@ -45,110 +36,21 @@
     </radialGradient>
   </defs>
 
-  <!-- Koni yan yüzeyi -->
-  <path
-    d="M 32 6
-       L 9 50
-       A 23 8 0 0 1 55 50
-       Z"
-    fill="url(#coneFill)"
-    stroke="none"
-  />
+  <path d="M 32 7 L 10 50 A 22 8 0 0 1 54 50 Z" fill="url(#coneFill)" />
+  <ellipse cx="32" cy="50" rx="22" ry="8" fill="url(#baseFill)" opacity="0.9" />
 
-  <!-- Taban diski -->
-  <ellipse
-    cx="32"
-    cy="50"
-    rx="23"
-    ry="8"
-    fill="url(#baseFill)"
-    opacity="0.9"
-  />
-
-  <!-- Koni dış ayrıtları -->
-  <g
-    fill="none"
-    stroke="#111827"
-    stroke-width="1"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-  >
-    <line x1="32" y1="6" x2="9" y2="50" />
-    <line x1="32" y1="6" x2="55" y2="50" />
+  <g fill="none" stroke="#111827" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="32" y1="7" x2="10" y2="50" />
+    <line x1="32" y1="7" x2="54" y2="50" />
   </g>
 
-  <!-- Taban elipsi -->
-  <ellipse
-    cx="32"
-    cy="50"
-    rx="23"
-    ry="8"
-    fill="none"
-    stroke="#111827"
-    stroke-width="1"
-  />
+  <ellipse cx="32" cy="50" rx="22" ry="8" fill="none" stroke="#111827" stroke-width="1" />
+  <path d="M 10 50 A 22 8 0 0 1 54 50" fill="none" stroke="#111827" stroke-width="0.75" opacity="0.55" />
 
-  <!-- Tabanın arka yayı / iç çizgi hissi -->
-  <path
-    d="M 9 50
-       A 23 8 0 0 1 55 50"
-    fill="none"
-    stroke="#111827"
-    stroke-width="0.75"
-    opacity="0.55"
-  />
+  <line x1="32" y1="7" x2="32" y2="47" stroke="#7a1978" stroke-width="0.7" stroke-dasharray="2.2 1.9" stroke-linecap="round" opacity="0.48" />
+  <line x1="32" y1="47" x2="54" y2="50" stroke="#5b351b" stroke-width="1.45" stroke-linecap="round" />
 
-  <!-- Yükseklik: tepe noktasından taban merkezine -->
-  <line
-    x1="32"
-    y1="6"
-    x2="32"
-    y2="47"
-    stroke="#7a1978"
-    stroke-width="0.8"
-    stroke-dasharray="2 1.8"
-    stroke-linecap="round"
-    opacity="0.9"
-  />
-
-  <!-- Yarıçap -->
-  <line
-    x1="32"
-    y1="47"
-    x2="55"
-    y2="50"
-    stroke="#5b351b"
-    stroke-width="1.8"
-    stroke-linecap="round"
-  />
-
-  <!-- Tepe mor nokta -->
-  <circle
-    cx="32"
-    cy="6"
-    r="1.7"
-    fill="url(#purplePointBody)"
-    stroke="#32003a"
-    stroke-width="0.35"
-  />
-
-  <!-- Merkez gri nokta -->
-  <circle
-    cx="32"
-    cy="47"
-    r="1.35"
-    fill="url(#grayPointBody)"
-    stroke="#2f3b49"
-    stroke-width="0.35"
-  />
-
-  <!-- Yarıçap uç mavi nokta -->
-  <circle
-    cx="55"
-    cy="50"
-    r="1.65"
-    fill="url(#bluePointBody)"
-    stroke="#00358f"
-    stroke-width="0.35"
-  />
+  <circle cx="32" cy="7" r="1.7" fill="url(#purplePointBody)" stroke="#32003a" stroke-width="0.35" />
+  <circle cx="32" cy="47" r="1.35" fill="url(#grayPointBody)" stroke="#2f3b49" stroke-width="0.35" />
+  <circle cx="54" cy="50" r="1.65" fill="url(#bluePointBody)" stroke="#00358f" stroke-width="0.35" />
 </svg>

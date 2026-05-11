@@ -1,106 +1,113 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg id="katman_1" xmlns="http://www.w3.org/2000/svg" version="1.1"
-  xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="200 -100 1500 1300">
+<svg
+  viewBox="0 0 64 64"
+  width="100%"
+  height="100%"
+  xmlns="http://www.w3.org/2000/svg"
+  role="img"
+  aria-label="Küp"
+>
   <defs>
-    <style>
-      .st0 {
-        fill: url(#Adsız_degrade_3);
-      }
-
-      .st1 {
-        fill: #555;
-        stroke: #2f2f2f;
-      }
-
-      .st1, .st2, .st3, .st4 {
-        stroke-miterlimit: 48;
-      }
-
-      .st1, .st3, .st4 {
-        stroke-width: 6.6px;
-      }
-
-      .st2 {
-        fill: #6f6745;
-        stroke: #4a422a;
-        stroke-width: 6px;
-      }
-
-      .st5 {
-        stroke-width: 16.2px;
-      }
-
-      .st5, .st6 {
-        fill: none;
-        stroke: #111827;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-      }
-
-      .st7 {
-        fill: url(#Adsız_degrade);
-      }
-
-      .st8 {
-        fill: url(#Adsız_degrade_2);
-      }
-
-      .st3 {
-        fill: #005eff;
-        stroke: #00358f;
-      }
-
-      .st4 {
-        fill: #6b007b;
-        stroke: #2f0038;
-      }
-
-      .st6 {
-        stroke-dasharray: 48 36;
-        stroke-width: 15px;
-      }
-    </style>
-    <linearGradient id="Adsız_degrade" data-name="Adsız degrade" x1=".02" y1="1080.02" x2="1.02"
-      y2="1079.02" gradientTransform="translate(336 155664) scale(1152 -144)"
-      gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#c9bea0" stop-opacity=".72" />
-      <stop offset="1" stop-color="#9c936f" stop-opacity=".72" />
+    <linearGradient id="cubeFrontFill" x1="12%" y1="10%" x2="88%" y2="92%">
+      <stop offset="0%" stop-color="#c9bea0" stop-opacity="0.78" />
+      <stop offset="100%" stop-color="#9c936f" stop-opacity="0.78" />
     </linearGradient>
-    <linearGradient id="Adsız_degrade_2" data-name="Adsız degrade 2" x1=".05" y1="1080.05" x2="1.05"
-      y2="1079.05" gradientTransform="translate(336 674184) scale(912 -624)"
-      gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#8f855d" stop-opacity=".72" />
-      <stop offset="1" stop-color="#726a45" stop-opacity=".72" />
+    <linearGradient id="cubeTopFill" x1="10%" y1="8%" x2="92%" y2="90%">
+      <stop offset="0%" stop-color="#aaa176" stop-opacity="0.76" />
+      <stop offset="100%" stop-color="#7d754f" stop-opacity="0.76" />
     </linearGradient>
-    <linearGradient id="Adsız_degrade_3" data-name="Adsız degrade 3" x1=".06" y1="1080.06" x2="1.06"
-      y2="1079.06" gradientTransform="translate(1104 790716) scale(432 -732)"
-      gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#9b9168" stop-opacity=".72" />
-      <stop offset="1" stop-color="#7d754f" stop-opacity=".72" />
+    <linearGradient id="cubeSideFill" x1="14%" y1="8%" x2="92%" y2="96%">
+      <stop offset="0%" stop-color="#8f855d" stop-opacity="0.76" />
+      <stop offset="100%" stop-color="#726a45" stop-opacity="0.76" />
     </linearGradient>
+    <radialGradient id="cubeBluePoint" cx="32%" cy="26%" r="68%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="16%" stop-color="#9dccff" />
+      <stop offset="42%" stop-color="#1f7aff" />
+      <stop offset="72%" stop-color="#0066ff" />
+      <stop offset="100%" stop-color="#003f9e" />
+    </radialGradient>
+    <radialGradient id="cubePurplePoint" cx="32%" cy="26%" r="68%">
+      <stop offset="0%" stop-color="#f0d4ff" />
+      <stop offset="20%" stop-color="#b44de0" />
+      <stop offset="72%" stop-color="#6b007b" />
+      <stop offset="100%" stop-color="#43004d" />
+    </radialGradient>
+    <radialGradient id="cubeGrayPoint" cx="32%" cy="26%" r="68%">
+      <stop offset="0%" stop-color="#cbd5e1" />
+      <stop offset="42%" stop-color="#64748b" />
+      <stop offset="100%" stop-color="#334155" />
+    </radialGradient>
+    <radialGradient id="cubePointLight" cx="35%" cy="30%" r="32%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95" />
+      <stop offset="55%" stop-color="#ffffff" stop-opacity="0.35" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+    </radialGradient>
+    <filter id="cubePointShadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0.45" dy="0.7" stdDeviation="0.55" flood-color="#000000" flood-opacity="0.32" />
+    </filter>
   </defs>
-  <polygon class="st7" points="336 264 984 144 1488 156 1104 288 336 264" />
-  <polygon class="st8" points="336 264 1104 288 1248 888 576 816 336 264" />
-  <polygon class="st0" points="1104 288 1488 156 1536 600 1248 888 1104 288" />
-  <line class="st5" x1="336" y1="264" x2="1104" y2="288" />
-  <line class="st5" x1="1104" y1="288" x2="1248" y2="888" />
-  <line class="st5" x1="1248" y1="888" x2="576" y2="816" />
-  <line class="st5" x1="576" y1="816" x2="336" y2="264" />
-  <line class="st5" x1="336" y1="264" x2="984" y2="144" />
-  <line class="st5" x1="984" y1="144" x2="1488" y2="156" />
-  <line class="st5" x1="1488" y1="156" x2="1104" y2="288" />
-  <line class="st5" x1="1488" y1="156" x2="1536" y2="600" />
-  <line class="st5" x1="1536" y1="600" x2="1248" y2="888" />
-  <line class="st6" x1="336" y1="264" x2="576" y2="816" />
-  <line class="st6" x1="984" y1="144" x2="1081.53" y2="550.38" />
-  <line class="st6" x1="1064.76" y1="540" x2="576" y2="816" />
-  <line class="st6" x1="1081.53" y1="540" x2="1535.83" y2="602.73" />
-  <circle class="st4" cx="336" cy="264" r="32.4" />
-  <circle class="st3" cx="576" cy="816" r="32.4" />
-  <circle class="st3" cx="1248" cy="888" r="32.4" />
-  <circle class="st1" cx="1104" cy="288" r="29.4" />
-  <circle class="st1" cx="984" cy="144" r="27" />
-  <circle class="st1" cx="1488" cy="156" r="27" />
-  <circle class="st1" cx="1536" cy="600" r="25.8" />
-  <circle class="st2" cx="1077.34" cy="532.9" r="25.8" />
+
+  <polygon points="18,22 40,22 52,12 30,12" fill="url(#cubeTopFill)" />
+  <polygon points="40,22 52,12 52,34 40,44" fill="url(#cubeSideFill)" />
+  <polygon points="18,22 40,22 40,44 18,44" fill="url(#cubeFrontFill)" />
+
+  <g fill="none" stroke="#111827" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="18" y1="22" x2="40" y2="22" />
+    <line x1="40" y1="22" x2="40" y2="44" />
+    <line x1="40" y1="44" x2="18" y2="44" />
+    <line x1="18" y1="44" x2="18" y2="22" />
+    <line x1="18" y1="22" x2="30" y2="12" />
+    <line x1="40" y1="22" x2="52" y2="12" />
+    <line x1="40" y1="44" x2="52" y2="34" />
+    <line x1="30" y1="12" x2="52" y2="12" />
+    <line x1="52" y1="12" x2="52" y2="34" />
+  </g>
+
+  <g fill="none" stroke="#111827" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 2.4" opacity="0.66">
+    <line x1="30" y1="12" x2="30" y2="34" />
+    <line x1="30" y1="34" x2="52" y2="34" />
+    <line x1="18" y1="44" x2="30" y2="34" />
+  </g>
+
+  <g filter="url(#cubePointShadow)">
+    <circle cx="18" cy="22" r="2" fill="url(#cubePurplePoint)" />
+    <circle cx="18" cy="22" r="1.82" fill="none" stroke="#2f0038" stroke-width="0.35" opacity="0.65" />
+    <ellipse cx="17.3" cy="21.2" rx="0.78" ry="0.58" fill="url(#cubePointLight)" transform="rotate(-22 17.3 21.2)" />
+  </g>
+  <g filter="url(#cubePointShadow)">
+    <circle cx="18" cy="44" r="2" fill="url(#cubeBluePoint)" />
+    <circle cx="18" cy="44" r="1.82" fill="none" stroke="#00358f" stroke-width="0.35" opacity="0.65" />
+    <ellipse cx="17.3" cy="43.2" rx="0.78" ry="0.58" fill="url(#cubePointLight)" transform="rotate(-22 17.3 43.2)" />
+  </g>
+  <g filter="url(#cubePointShadow)">
+    <circle cx="40" cy="44" r="2" fill="url(#cubeBluePoint)" />
+    <circle cx="40" cy="44" r="1.82" fill="none" stroke="#00358f" stroke-width="0.35" opacity="0.65" />
+    <ellipse cx="39.3" cy="43.2" rx="0.78" ry="0.58" fill="url(#cubePointLight)" transform="rotate(-22 39.3 43.2)" />
+  </g>
+  <g filter="url(#cubePointShadow)">
+    <circle cx="30" cy="12" r="1.75" fill="url(#cubeGrayPoint)" />
+    <circle cx="30" cy="12" r="1.58" fill="none" stroke="#2f2f2f" stroke-width="0.32" opacity="0.6" />
+    <ellipse cx="29.4" cy="11.3" rx="0.68" ry="0.5" fill="url(#cubePointLight)" transform="rotate(-22 29.4 11.3)" />
+  </g>
+  <g filter="url(#cubePointShadow)">
+    <circle cx="52" cy="12" r="1.75" fill="url(#cubeGrayPoint)" />
+    <circle cx="52" cy="12" r="1.58" fill="none" stroke="#2f2f2f" stroke-width="0.32" opacity="0.6" />
+    <ellipse cx="51.4" cy="11.3" rx="0.68" ry="0.5" fill="url(#cubePointLight)" transform="rotate(-22 51.4 11.3)" />
+  </g>
+  <g filter="url(#cubePointShadow)">
+    <circle cx="52" cy="34" r="1.75" fill="url(#cubeGrayPoint)" />
+    <circle cx="52" cy="34" r="1.58" fill="none" stroke="#2f2f2f" stroke-width="0.32" opacity="0.6" />
+    <ellipse cx="51.4" cy="33.3" rx="0.68" ry="0.5" fill="url(#cubePointLight)" transform="rotate(-22 51.4 33.3)" />
+  </g>
+  <g filter="url(#cubePointShadow)">
+    <circle cx="30" cy="34" r="1.75" fill="url(#cubeGrayPoint)" />
+    <circle cx="30" cy="34" r="1.58" fill="none" stroke="#2f2f2f" stroke-width="0.32" opacity="0.6" />
+    <ellipse cx="29.4" cy="33.3" rx="0.68" ry="0.5" fill="url(#cubePointLight)" transform="rotate(-22 29.4 33.3)" />
+  </g>
+  <g filter="url(#cubePointShadow)">
+    <circle cx="40" cy="22" r="1.75" fill="url(#cubeGrayPoint)" />
+    <circle cx="40" cy="22" r="1.58" fill="none" stroke="#2f2f2f" stroke-width="0.32" opacity="0.6" />
+    <ellipse cx="39.4" cy="21.3" rx="0.68" ry="0.5" fill="url(#cubePointLight)" transform="rotate(-22 39.4 21.3)" />
+  </g>
 </svg>

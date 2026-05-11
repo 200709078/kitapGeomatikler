@@ -9,6 +9,7 @@ export class ConeTool extends BaseTool {
   selectableObjects: THREE.Object3D[]
 
   centerPoint: THREE.Mesh | null = null
+  private centerPointCreated = false
 
   cursorPreview: THREE.Mesh
   radiusPreview: THREE.Line | null = null
@@ -57,6 +58,7 @@ export class ConeTool extends BaseTool {
     this.basePreview = null
     this.heightPreview = null
     this.centerPoint = null
+    this.centerPointCreated = false
     this.cursorPreview.visible = false
   }
 
@@ -92,6 +94,7 @@ export class ConeTool extends BaseTool {
 
     if (!this.centerPoint) {
       this.centerPoint = point
+      this.centerPointCreated = result.created
       return
     }
 
@@ -103,11 +106,18 @@ export class ConeTool extends BaseTool {
     const radiusSegment = new LineSegment(this.centerPoint, point)
     this.scene.add(radiusSegment.mesh)
 
+    const ownedPoints = [
+      ...(this.centerPointCreated ? [this.centerPoint] : []),
+      ...(result.created ? [point] : []),
+    ]
+
     new Cone(
       this.scene,
       this.selectableObjects,
       this.centerPoint,
-      point
+      point,
+      radiusSegment,
+      ownedPoints
     )
 
     this.reset()

@@ -10,6 +10,7 @@ export class PyramidTool extends BaseTool {
   sideCount = 4
 
   pointA: THREE.Mesh | null = null
+  private pointACreated = false
 
   cursorPreview: THREE.Mesh
   edgePreview: THREE.Line | null = null
@@ -114,6 +115,7 @@ export class PyramidTool extends BaseTool {
     }
 
     this.pointA = null
+    this.pointACreated = false
     this.cursorPreview.visible = false
   }
 
@@ -148,6 +150,7 @@ export class PyramidTool extends BaseTool {
 
     if (!this.pointA) {
       this.pointA = point
+      this.pointACreated = result.created
       return
     }
 
@@ -159,12 +162,19 @@ export class PyramidTool extends BaseTool {
     const edge = new LineSegment(this.pointA, point)
     this.scene.add(edge.mesh)
 
+    const ownedPoints = [
+      ...(this.pointACreated ? [this.pointA] : []),
+      ...(result.created ? [point] : []),
+    ]
+
     this.lastPyramid = new Pyramid(
       this.scene,
       this.selectableObjects,
       this.pointA,
       point,
-      this.sideCount
+      this.sideCount,
+      edge,
+      ownedPoints
     )
 
     this.reset()

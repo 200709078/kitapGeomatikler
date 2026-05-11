@@ -1,4 +1,5 @@
 import * as THREE from "three"
+import { LineSegment } from "./LineSegment"
 import { HEIGHT_POINT_SIZE } from "../interaction/Pointer"
 import { getRandomColor } from "../utils/color"
 import { ConeUnfolder } from "../unfold/ConeUnfolder"
@@ -8,6 +9,8 @@ export class Cone {
   radiusPoint: THREE.Mesh
   apexPoint: THREE.Mesh
 
+  initialEdge: LineSegment | null = null
+  ownedPoints: THREE.Mesh[] = []
   mesh: THREE.Mesh
   baseLine: THREE.LineLoop
   heightLine: THREE.Line
@@ -22,16 +25,24 @@ export class Cone {
     scene: THREE.Scene,
     selectableObjects: THREE.Object3D[],
     baseCenterPoint: THREE.Mesh,
-    radiusPoint: THREE.Mesh
+    radiusPoint: THREE.Mesh,
+    initialEdge?: LineSegment,
+    ownedPoints: THREE.Mesh[] = []
   ) {
     this.baseCenterPoint = baseCenterPoint
     this.radiusPoint = radiusPoint
+    this.initialEdge = initialEdge ?? null
+    this.ownedPoints = ownedPoints
     this.height = baseCenterPoint.position.distanceTo(radiusPoint.position) * 2
     this.apexPoint = this.createPurplePoint(baseCenterPoint.position.clone())
 
     this.baseCenterPoint.userData.pointRole ??= "free"
     this.radiusPoint.userData.pointRole ??= "free"
     this.apexPoint.userData.pointRole = "height"
+    this.apexPoint.userData.owner = this
+    this.ownedPoints.forEach((point) => {
+      point.userData.owner = this
+    })
 
     scene.add(this.apexPoint)
     selectableObjects.push(this.apexPoint)
@@ -90,6 +101,28 @@ export class Cone {
     this.radiusPoint.userData.dependents.push(this)
 
     this.update()
+  }
+
+  onBeforeDelete() {
+    if (!this.initialEdge) return
+
+    this.removeDependent(this.baseCenterPoint, this.initialEdge)
+    this.removeDependent(this.radiusPoint, this.initialEdge)
+  }
+
+  getOwnedObjectsForDeletion() {
+    const objects: Array<THREE.Object3D | null> = [
+      ...this.ownedPoints,
+      this.apexPoint,
+      this.mesh,
+      this.initialEdge?.mesh ?? null,
+      this.baseLine,
+      this.heightLine,
+      this.slantLine,
+      this.unFoldGroup,
+    ]
+
+    return objects.filter((object): object is THREE.Object3D => object instanceof THREE.Object3D)
   }
 
   moveAlongNormal(delta: number) {
@@ -267,6 +300,7 @@ export class Cone {
     mesh.position.copy(position)
 
     mesh.userData.pointRole = "height"
+    mesh.userData.owner = this
     mesh.userData.lockMouseDrag = true
     mesh.userData.normalWheelController = this
     mesh.userData.dependents ??= []
@@ -279,5 +313,13 @@ export class Cone {
       if (dependent === this) return
       dependent.update?.()
     })
+  }
+
+  private removeDependent(point: THREE.Object3D, dependent: unknown) {
+    const dependents = point.userData.dependents
+
+    if (!Array.isArray(dependents)) return
+
+    point.userData.dependents = dependents.filter((item: unknown) => item !== dependent)
   }
 }

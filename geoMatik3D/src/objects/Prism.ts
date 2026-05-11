@@ -1,5 +1,6 @@
 import * as THREE from "three"
 import { createPoint } from "./Point"
+import { LineSegment } from "./LineSegment"
 import { HEIGHT_POINT_SIZE, LOCKED_POINT_SIZE } from "../interaction/Pointer"
 import { getRandomColor } from "../utils/color"
 import { PrismUnfolder } from "../unfold/PrismUnfolder"
@@ -11,12 +12,14 @@ export class Prism {
   pointAprime: THREE.Mesh
 
   mesh: THREE.Mesh
+  initialEdge: LineSegment | null = null
   baseLine: THREE.LineLoop
   topLine: THREE.LineLoop
   heightLine: THREE.Line
 
   sideLines: THREE.LineSegments
   cornerPoints: THREE.Mesh[] = []
+  ownedPoints: THREE.Mesh[] = []
 
   selectableObjects: THREE.Object3D[]
 
@@ -31,10 +34,14 @@ export class Prism {
     selectableObjects: THREE.Object3D[],
     pointA: THREE.Mesh,
     pointB: THREE.Mesh,
-    sideCount = 4
+    sideCount = 4,
+    initialEdge?: LineSegment,
+    ownedPoints: THREE.Mesh[] = []
   ) {
     this.pointA = pointA
     this.pointB = pointB
+    this.initialEdge = initialEdge ?? null
+    this.ownedPoints = ownedPoints
     this.sideCount = sideCount
     this.height = pointA.position.distanceTo(pointB.position)
     this.selectableObjects = selectableObjects
@@ -50,6 +57,11 @@ export class Prism {
     this.pointB.userData.pointRole ??= "free"
     this.pointC.userData.pointRole = "free"
     this.pointAprime.userData.pointRole = "height"
+    this.pointC.userData.owner = this
+    this.pointAprime.userData.owner = this
+    this.ownedPoints.forEach((point) => {
+      point.userData.owner = this
+    })
 
     scene.add(this.pointC)
     scene.add(this.pointAprime)
@@ -115,6 +127,32 @@ export class Prism {
     this.pointC.userData.dependents.push(this)
 
     this.update()
+  }
+
+  onBeforeDelete() {
+    if (!this.initialEdge) return
+
+    this.removeDependent(this.pointA, this.initialEdge)
+    this.removeDependent(this.pointB, this.initialEdge)
+  }
+
+  getOwnedObjectsForDeletion() {
+    const objects: Array<THREE.Object3D | null> = [
+      this.pointA,
+      this.pointB,
+      this.pointC,
+      this.pointAprime,
+      this.mesh,
+      this.initialEdge?.mesh ?? null,
+      this.baseLine,
+      this.topLine,
+      this.heightLine,
+      this.sideLines,
+      this.unFoldGroup,
+      ...this.cornerPoints,
+    ]
+
+    return objects.filter((object): object is THREE.Object3D => object instanceof THREE.Object3D)
   }
 
   setSideCount(n: number) {
@@ -260,6 +298,7 @@ export class Prism {
     mesh.position.copy(position)
 
     mesh.userData.pointRole = "locked"
+    mesh.userData.owner = this
     mesh.userData.lockMouseDrag = true
     mesh.userData.lockWheel = true
     mesh.userData.dependents ??= []
@@ -277,6 +316,7 @@ export class Prism {
     mesh.position.copy(position)
 
     mesh.userData.pointRole = "height"
+    mesh.userData.owner = this
     mesh.userData.lockMouseDrag = true
     mesh.userData.normalWheelController = this
     mesh.userData.dependents ??= []
@@ -482,5 +522,13 @@ export class Prism {
     }
 
     return direction.normalize()
+  }
+
+  private removeDependent(point: THREE.Object3D, dependent: unknown) {
+    const dependents = point.userData.dependents
+
+    if (!Array.isArray(dependents)) return
+
+    point.userData.dependents = dependents.filter((item: unknown) => item !== dependent)
   }
 }

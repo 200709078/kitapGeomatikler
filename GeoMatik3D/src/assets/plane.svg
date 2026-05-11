@@ -1,70 +1,41 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg id="katman_1" xmlns="http://www.w3.org/2000/svg" version="1.1"
-  xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="700 500 1000 500">
+<svg
+  viewBox="0 0 64 64"
+  width="100%"
+  height="100%"
+  xmlns="http://www.w3.org/2000/svg"
+  role="img"
+  aria-label="Düzlem"
+>
   <defs>
-    <style>
-      .st0 {
-        fill: url(#Adsız_degrade_6);
-      }
-
-      .st1 {
-        fill: url(#Adsız_degrade_62);
-      }
-
-      .st2 {
-        fill: url(#Adsız_degrade);
-      }
-
-      .st3 {
-        fill: url(#Adsız_degrade_61);
-      }
-
-      .st4 {
-        fill: url(#Adsız_degrade_5);
-      }
-    </style>
-    <linearGradient id="Adsız_degrade" data-name="Adsız degrade" x1="191.67" y1="1188.28"
-      x2="192.67" y2="1187.28"
-      gradientTransform="translate(-111691.5 457697.25) scale(587.25 -384.75)"
-      gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#eef4ff" />
-      <stop offset=".5" stop-color="#d7e6ff" />
-      <stop offset="1" stop-color="#aebfdf" />
+    <linearGradient id="planeFill" x1="12%" y1="12%" x2="88%" y2="90%">
+      <stop offset="0%" stop-color="#eef4ff" />
+      <stop offset="52%" stop-color="#d7e6ff" />
+      <stop offset="100%" stop-color="#aebfdf" />
     </linearGradient>
-    <radialGradient id="Adsız_degrade_5" data-name="Adsız degrade 5" cx="189.52" cy="1200.2"
-      fx="189.52" fy="1200.2" r=".32"
-      gradientTransform="translate(-8157.1239 17039.6101) scale(48.6 -13.77)"
-      gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#fff" stop-opacity=".95" />
-      <stop offset=".55" stop-color="#fff" stop-opacity=".35" />
-      <stop offset="1" stop-color="#fff" stop-opacity="0" />
+    <radialGradient id="planeBluePoint" cx="32%" cy="26%" r="68%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="16%" stop-color="#9dccff" />
+      <stop offset="42%" stop-color="#1f7aff" />
+      <stop offset="72%" stop-color="#0066ff" />
+      <stop offset="100%" stop-color="#003f9e" />
     </radialGradient>
-    <radialGradient id="Adsız_degrade_6" data-name="Adsız degrade 6" cx="189.72" cy="1190.99"
-      fx="189.72" fy="1190.99" r=".66"
-      gradientTransform="translate(-7171.1252 53723.9262) scale(44.55 -44.55)"
-      gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#fff" />
-      <stop offset=".16" stop-color="#9dccff" />
-      <stop offset=".42" stop-color="#1f7aff" />
-      <stop offset=".72" stop-color="#06f" />
-      <stop offset="1" stop-color="#003f9e" />
-    </radialGradient>
-    <radialGradient id="Adsız_degrade_61" data-name="Adsız degrade 6" cx="186.81" cy="1191.93"
-      fx="186.81" fy="1191.93" r=".66" xlink:href="#Adsız_degrade_6" />
-    <radialGradient id="Adsız_degrade_62" data-name="Adsız degrade 6" cx="184.6" cy="1189.38"
-      fx="184.6" fy="1189.38" r=".66" xlink:href="#Adsız_degrade_6" />
   </defs>
 
-  <g transform="translate(1162 700) scale(1.55) translate(-1162 -700)">
-    <polygon class="st2" points="868.5 789.75 1111.5 506.25 1455.75 607.5 1212.75 891 868.5 789.75"
-      stroke="#5f6b7a" stroke-width="6" stroke-linejoin="round" />
-    <ellipse class="st4" cx="1060.81" cy="515.68" rx="24.3" ry="6.89"
-      transform="translate(-115.93 434.94) rotate(-22)" />
-    <path class="st0"
-      d="M1289.11,656.63c12.3,0,22.27,9.97,22.27,22.27s-22.27,10.97-22.27,10.97c0,0-22.27,1.34-22.27-10.97s9.97-22.27,22.27-22.27Z" />
-    <path class="st3"
-      d="M1159.06,614.72c12.3,0,22.27,9.97,22.27,22.27s-22.27,10.97-22.27,10.97c0,0-22.27,1.34-22.27-10.97s9.97-22.27,22.27-22.27Z" />
-    <path class="st1"
-      d="M1060.81,728.22c12.3,0,22.27,9.97,22.27,22.27s-22.27,10.97-22.27,10.97c0,0-22.27,1.34-22.27-10.97s9.97-22.27,22.27-22.27Z" />
+  <g transform="translate(32 33) rotate(-18) skewX(-18) scale(1 .58) translate(-32 -32)">
+    <rect
+      x="9"
+      y="13"
+      width="46"
+      height="38"
+      rx="2"
+      fill="url(#planeFill)"
+      stroke="#64748b"
+      stroke-width="1.6"
+    />
+
+    <circle cx="20.5" cy="22.5" r="3.1" fill="url(#planeBluePoint)" stroke="#00358f" stroke-width="0.6" />
+    <circle cx="43.5" cy="22.5" r="3.1" fill="url(#planeBluePoint)" stroke="#00358f" stroke-width="0.6" />
+    <circle cx="32" cy="41.5" r="3.1" fill="url(#planeBluePoint)" stroke="#00358f" stroke-width="0.6" />
   </g>
 </svg>

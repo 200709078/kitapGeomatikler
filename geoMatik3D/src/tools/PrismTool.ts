@@ -10,6 +10,7 @@ export class PrismTool extends BaseTool {
   sideCount = 4
 
   pointA: THREE.Mesh | null = null
+  private pointACreated = false
 
   cursorPreview: THREE.Mesh
   edgePreview: THREE.Line | null = null
@@ -108,6 +109,7 @@ export class PrismTool extends BaseTool {
     }
 
     this.pointA = null
+    this.pointACreated = false
     this.cursorPreview.visible = false
   }
 
@@ -142,6 +144,7 @@ export class PrismTool extends BaseTool {
 
     if (!this.pointA) {
       this.pointA = point
+      this.pointACreated = result.created
       return
     }
 
@@ -153,12 +156,19 @@ export class PrismTool extends BaseTool {
     const edge = new LineSegment(this.pointA, point)
     this.scene.add(edge.mesh)
 
+    const ownedPoints = [
+      ...(this.pointACreated ? [this.pointA] : []),
+      ...(result.created ? [point] : []),
+    ]
+
     this.lastPrism = new Prism(
       this.scene,
       this.selectableObjects,
       this.pointA,
       point,
-      this.sideCount
+      this.sideCount,
+      edge,
+      ownedPoints
     )
 
     this.reset()

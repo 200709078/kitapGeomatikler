@@ -1,5 +1,6 @@
 import * as THREE from "three"
 import { createPoint } from "./Point"
+import { LineSegment } from "./LineSegment"
 import { HEIGHT_POINT_SIZE, LOCKED_POINT_SIZE } from "../interaction/Pointer"
 import { getRandomColor } from "../utils/color"
 import { PyramidUnfolder } from "../unfold/PyramidUnfolder"
@@ -14,9 +15,11 @@ export class Pyramid {
     cornerPoints: THREE.Mesh[] = []
 
     mesh: THREE.Mesh
+    initialEdge: LineSegment | null = null
     baseLine: THREE.LineLoop
     heightLine: THREE.Line
     sideLines: THREE.LineSegments
+    ownedPoints: THREE.Mesh[] = []
 
     selectableObjects: THREE.Object3D[]
 
@@ -31,12 +34,16 @@ export class Pyramid {
         selectableObjects: THREE.Object3D[],
         pointA: THREE.Mesh,
         pointB: THREE.Mesh,
-        sideCount = 4
+        sideCount = 4,
+        initialEdge?: LineSegment,
+        ownedPoints: THREE.Mesh[] = []
     ) {
         this.selectableObjects = selectableObjects
 
         this.pointA = pointA
         this.pointB = pointB
+        this.initialEdge = initialEdge ?? null
+        this.ownedPoints = ownedPoints
         this.sideCount = sideCount
         this.height = pointA.position.distanceTo(pointB.position)
 
@@ -54,6 +61,12 @@ export class Pyramid {
         this.pointC.userData.pointRole = "free"
         this.apexPoint.userData.pointRole = "height"
         this.centerPoint.userData.pointRole = "locked"
+        this.pointC.userData.owner = this
+        this.apexPoint.userData.owner = this
+        this.centerPoint.userData.owner = this
+        this.ownedPoints.forEach((point) => {
+            point.userData.owner = this
+        })
 
         scene.add(this.pointC)
         scene.add(this.apexPoint)
@@ -115,6 +128,31 @@ export class Pyramid {
         this.pointC.userData.dependents.push(this)
 
         this.update()
+    }
+
+    onBeforeDelete() {
+        if (!this.initialEdge) return
+
+        this.removeDependent(this.pointA, this.initialEdge)
+        this.removeDependent(this.pointB, this.initialEdge)
+    }
+
+    getOwnedObjectsForDeletion() {
+        const objects: Array<THREE.Object3D | null> = [
+            ...this.ownedPoints,
+            this.pointC,
+            this.apexPoint,
+            this.centerPoint,
+            this.mesh,
+            this.initialEdge?.mesh ?? null,
+            this.baseLine,
+            this.heightLine,
+            this.sideLines,
+            this.unFoldGroup,
+            ...this.cornerPoints,
+        ]
+
+        return objects.filter((object): object is THREE.Object3D => object instanceof THREE.Object3D)
     }
 
     setSideCount(n: number) {
@@ -242,6 +280,7 @@ export class Pyramid {
         mesh.position.copy(position)
 
         mesh.userData.pointRole = "height"
+        mesh.userData.owner = this
         mesh.userData.lockMouseDrag = true
         mesh.userData.normalWheelController = this
         mesh.userData.dependents ??= []
@@ -260,6 +299,7 @@ export class Pyramid {
         mesh.position.copy(position)
 
         mesh.userData.pointRole = "locked"
+        mesh.userData.owner = this
         mesh.userData.lockMouseDrag = true
         mesh.userData.lockWheel = true
         mesh.userData.dependents ??= []
@@ -500,5 +540,13 @@ export class Pyramid {
         }
 
         return direction.normalize()
+    }
+
+    private removeDependent(point: THREE.Object3D, dependent: unknown) {
+        const dependents = point.userData.dependents
+
+        if (!Array.isArray(dependents)) return
+
+        point.userData.dependents = dependents.filter((item: unknown) => item !== dependent)
     }
 }

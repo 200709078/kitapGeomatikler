@@ -1,7 +1,7 @@
 import handIcon from "../assets/hand.svg"
 import pointIcon from "../assets/point.svg"
 import lineIcon from "../assets/line.svg"
-import lineSegmentIcon from "../assets/lineSegment.svg"
+import lineSegmentIcon from "../assets/linesegment.svg"
 import rayIcon from "../assets/ray.svg"
 import angleIcon from "../assets/angle.svg"
 import planeIcon from "../assets/plane.svg"
@@ -11,6 +11,7 @@ import sphereIcon from "../assets/sphere.svg"
 import cylinderIcon from "../assets/cylinder.svg"
 import coneIcon from "../assets/cone.svg"
 import deleteIcon from "../assets/delete.svg"
+import visibilityIcon from "../assets/visibility.svg"
 
 type ToolName = "select" | "point" | "lineSegment" | "ray" | "plane" | "angle" | "line" | "sphere" | "prism" | "pyramid" | "cylinder" | "cone" | "togglePlane"
 
@@ -32,7 +33,7 @@ export function createToolbar(onToolSelect: (toolName: ToolName) => void) {
   </button>
 
   <button data-tool="lineSegment" title="Doğru Parçası">
-  <img src="${lineSegmentIcon}" alt="Doğru" class="toolbar-icon" />
+  <img src="${lineSegmentIcon}" alt="Doğru Parçası" class="toolbar-icon" />
   </button>
 
   <button data-tool="ray" title="Işın">
@@ -102,59 +103,49 @@ export function createToolbar(onToolSelect: (toolName: ToolName) => void) {
   defaultButton?.classList.add("active")
   document.body.style.cursor = "default"
 
-  const planeToggleControl = document.createElement("div")
-  planeToggleControl.id = "planeToggleControl"
-  planeToggleControl.innerHTML = `
-    <button data-tool="togglePlane" title="Düzlemi Göster/Gizle">
+  const rightActionToolbar = document.createElement("div")
+  rightActionToolbar.id = "rightActionToolbar"
+  rightActionToolbar.innerHTML = `
+    <button id="toggleButton" data-tool="togglePlane" title="Düzlemi Göster/Gizle">
       <img id="planeToggleIcon" src="${planeIcon}" alt="Düzlemi Göster/Gizle" class="toolbar-icon" />
+    </button>
+
+    <button id="deleteButton" type="button" title="Sil" disabled>
+      <img src="${deleteIcon}" alt="Sil" class="delete-icon" />
+    </button>
+
+    <button id="showButton" type="button" title="Tümünü Göster" disabled>
+      <img src="${visibilityIcon}" alt="Tümünü Göster" class="toolbar-icon" />
+    </button>
+
+    <button id="hideButton" type="button" title="Gizle" disabled>
+      <img src="${visibilityIcon}" alt="Gizle" class="toolbar-icon" />
     </button>
   `
 
-  const planeToggleButton = planeToggleControl.querySelector<HTMLButtonElement>(
+  const toggleButton = rightActionToolbar.querySelector<HTMLButtonElement>(
     'button[data-tool="togglePlane"]'
   )
 
-  planeToggleButton?.addEventListener("click", (event) => {
+  toggleButton?.addEventListener("click", (event) => {
     event.preventDefault()
     event.stopPropagation()
     onToolSelect("togglePlane")
   })
 
-  planeToggleControl.addEventListener("pointerdown", (event) => {
+  rightActionToolbar.addEventListener("pointerdown", (event) => {
     event.stopPropagation()
   })
 
-  planeToggleControl.addEventListener("mousedown", (event) => {
+  rightActionToolbar.addEventListener("mousedown", (event) => {
     event.stopPropagation()
   })
 
-  planeToggleControl.addEventListener("click", (event) => {
+  rightActionToolbar.addEventListener("click", (event) => {
     event.stopPropagation()
   })
 
-  document.body.appendChild(planeToggleControl)
-
-  const deleteSelectionControl = document.createElement("div")
-  deleteSelectionControl.id = "deleteSelectionControl"
-  deleteSelectionControl.innerHTML = `
-  <button id="deleteSelectionButton" type="button" title="Sil" disabled>
-    <img src="${deleteIcon}" alt="Sil" class="delete-icon" />
-  </button>
-`
-
-  deleteSelectionControl.addEventListener("pointerdown", (event) => {
-    event.stopPropagation()
-  })
-
-  deleteSelectionControl.addEventListener("mousedown", (event) => {
-    event.stopPropagation()
-  })
-
-  deleteSelectionControl.addEventListener("click", (event) => {
-    event.stopPropagation()
-  })
-
-  document.body.appendChild(deleteSelectionControl)
+  document.body.appendChild(rightActionToolbar)
 
   return toolbar
 }

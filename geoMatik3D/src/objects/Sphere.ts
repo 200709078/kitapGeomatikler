@@ -1,10 +1,13 @@
 import * as THREE from "three"
+import { LineSegment } from "./LineSegment"
 import { getRandomColor } from "../utils/color"
 
 export class SphereObject {
   centerPoint: THREE.Mesh
   surfacePoint: THREE.Mesh
   mesh: THREE.Mesh
+  ownedPoints: THREE.Mesh[]
+  radiusSegmentObject: LineSegment | null = null
   radiusSegment: THREE.Mesh | null = null
   originalRadiusColor: THREE.Color | null = null
 
@@ -12,11 +15,14 @@ export class SphereObject {
     centerPoint: THREE.Mesh,
     surfacePoint: THREE.Mesh,
     selectableObjects?: THREE.Object3D[],
-    radiusSegment?: THREE.Mesh
+    radiusSegment?: LineSegment,
+    ownedPoints: THREE.Mesh[] = []
   ) {
     this.centerPoint = centerPoint
     this.surfacePoint = surfacePoint
-    this.radiusSegment = radiusSegment ?? null
+    this.radiusSegmentObject = radiusSegment ?? null
+    this.radiusSegment = radiusSegment?.mesh ?? null
+    this.ownedPoints = ownedPoints
 
     const geometry = new THREE.SphereGeometry(1, 32, 32)
     const material = new THREE.MeshStandardMaterial({
@@ -41,6 +47,23 @@ export class SphereObject {
     this.surfacePoint.userData.dependents.push(this)
 
     this.update()
+  }
+
+  onBeforeDelete() {
+    if (!this.radiusSegmentObject) return
+
+    this.removeDependent(this.centerPoint, this.radiusSegmentObject)
+    this.removeDependent(this.surfacePoint, this.radiusSegmentObject)
+  }
+
+  getOwnedObjectsForDeletion() {
+    const objects: Array<THREE.Object3D | null> = [
+      this.mesh,
+      this.radiusSegment,
+      ...this.ownedPoints,
+    ]
+
+    return objects.filter((object): object is THREE.Object3D => object instanceof THREE.Object3D)
   }
 
   onSelect() {
@@ -80,5 +103,13 @@ export class SphereObject {
 
     this.mesh.position.copy(center)
     this.mesh.scale.set(radius, radius, radius)
+  }
+
+  private removeDependent(point: THREE.Object3D, dependent: unknown) {
+    const dependents = point.userData.dependents
+
+    if (!Array.isArray(dependents)) return
+
+    point.userData.dependents = dependents.filter((item: unknown) => item !== dependent)
   }
 }

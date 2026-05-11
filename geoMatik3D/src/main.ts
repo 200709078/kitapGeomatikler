@@ -1,5 +1,5 @@
-//Geçici kenarlar noktalar cismin meshine eklenecek.
 // undo redo
+// ESC kontrol edilecek.
 
 import './style.css'
 import * as THREE from 'three'

@@ -9,6 +9,7 @@ export class SphereTool extends BaseTool {
   selectableObjects: THREE.Object3D[]
 
   centerPoint: THREE.Mesh | null = null
+  private centerPointCreated = false
 
   cursorPreview: THREE.Mesh
   radiusPreview: THREE.Line | null = null
@@ -55,6 +56,7 @@ export class SphereTool extends BaseTool {
     }
 
     this.centerPoint = null
+    this.centerPointCreated = false
     this.cursorPreview.visible = false
   }
 
@@ -110,6 +112,7 @@ export class SphereTool extends BaseTool {
     )
 
     if (!this.centerPoint) {
+      const centerCreated = !existingPoint
       const center = existingPoint ?? createPoint(
         getPointerIntersection(_event, this.camera),
         getPointerPointSize(_event)
@@ -123,9 +126,11 @@ export class SphereTool extends BaseTool {
       }
 
       this.centerPoint = center
+      this.centerPointCreated = centerCreated
       return
     }
 
+    const surfacePointCreated = !existingPoint
     const surfacePoint = existingPoint ?? createPoint(
       getPointerIntersection(_event, this.camera),
       getPointerPointSize(_event)
@@ -145,11 +150,17 @@ export class SphereTool extends BaseTool {
     const radiusSegment = new LineSegment(this.centerPoint, surfacePoint)
     this.scene.add(radiusSegment.mesh)
 
+    const ownedPoints = [
+      ...(this.centerPointCreated ? [this.centerPoint] : []),
+      ...(surfacePointCreated ? [surfacePoint] : []),
+    ]
+
     const sphere = new SphereObject(
       this.centerPoint,
       surfacePoint,
       this.selectableObjects,
-      radiusSegment.mesh
+      radiusSegment,
+      ownedPoints
     )
     this.scene.add(sphere.mesh)
 

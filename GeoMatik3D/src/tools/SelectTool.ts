@@ -42,7 +42,12 @@ export class SelectTool extends BaseTool {
 
     deleteControl: HTMLElement | null = null
     deleteButton: HTMLButtonElement | null = null
+    showButton: HTMLButtonElement | null = null
+    hideButton: HTMLButtonElement | null = null
     deleteButtonListenerAttached = false
+    showButtonListenerAttached = false
+    hideButtonListenerAttached = false
+    hiddenObjects = new Set<THREE.Object3D>()
 
     isDragging = false
     verticalMove = false
@@ -92,8 +97,8 @@ export class SelectTool extends BaseTool {
             this.selectedUnFoldController?.setUnFoldAngle(value)
         })
 
-        this.ensureDeleteControl()
-        this.updateDeleteControl()
+        this.ensureActionControls()
+        this.updateActionControls()
     }
 
     setSelectableObjects(objects: THREE.Object3D[]) {
@@ -263,7 +268,7 @@ export class SelectTool extends BaseTool {
             this.addSelectionOutline(this.selectedObject)
             this.updateSideCountControl(this.selectedOwner)
             this.updateUnFoldControl(this.selectedOwner)
-            this.updateDeleteControl()
+            this.updateActionControls()
         } else if (this.selectedObject instanceof THREE.Mesh) {
             this.originalMaterial = this.selectedObject.material
 
@@ -272,7 +277,7 @@ export class SelectTool extends BaseTool {
             })
             this.updateSideCountControl(null)
             this.updateUnFoldControl(null)
-            this.updateDeleteControl()
+            this.updateActionControls()
         }
 
         if (showHelpers) {
@@ -289,7 +294,7 @@ export class SelectTool extends BaseTool {
         this.selectedOwner = null
         this.updateSideCountControl(null)
         this.updateUnFoldControl(null)
-        this.updateDeleteControl()
+        this.updateActionControls()
         this.verticalMove = false
         this.controls.enabled = true
     }
@@ -375,26 +380,44 @@ export class SelectTool extends BaseTool {
         this.unFoldSlider.disabled = !active
     }
 
-    private updateDeleteControl() {
-        this.ensureDeleteControl()
+    private updateActionControls() {
+        this.ensureActionControls()
 
-        if (!this.deleteControl || !this.deleteButton) return
+        if (!this.deleteControl || !this.deleteButton || !this.showButton || !this.hideButton) return
 
         const canDelete = this.canDeleteSelected()
+        const canHide = this.canHideSelected()
+        const canShow = this.hiddenObjects.size > 0
 
-        this.deleteControl.style.display = "block"
+        this.deleteControl.style.display = "flex"
         this.deleteButton.disabled = !canDelete
+        this.hideButton.disabled = !canHide
+        this.showButton.disabled = !canShow
 
         this.deleteButton.classList.toggle("active", canDelete)
         this.deleteButton.classList.toggle("passive", !canDelete)
+        this.hideButton.classList.toggle("active", canHide)
+        this.hideButton.classList.toggle("passive", !canHide)
+        this.showButton.classList.toggle("active", canShow)
+        this.showButton.classList.toggle("passive", !canShow)
 
         this.deleteButton.title = canDelete
             ? "Sil"
             : "Silinecek nesne seçilmedi"
+
+        this.hideButton.title = canHide
+            ? "Gizle"
+            : "Gizlenecek nesne seçilmedi"
+
+        this.showButton.title = canShow
+            ? "Tümünü Göster"
+            : "Gizli nesne yok"
     }
-    private ensureDeleteControl() {
-        this.deleteControl ??= document.getElementById("deleteSelectionControl")
-        this.deleteButton ??= this.deleteControl?.querySelector("button") ?? null
+    private ensureActionControls() {
+        this.deleteControl ??= document.getElementById("rightActionToolbar")
+        this.deleteButton ??= document.getElementById("deleteButton") as HTMLButtonElement | null
+        this.showButton ??= document.getElementById("showButton") as HTMLButtonElement | null
+        this.hideButton ??= document.getElementById("hideButton") as HTMLButtonElement | null
 
         if (!this.deleteButton || this.deleteButtonListenerAttached) return
 
@@ -402,6 +425,20 @@ export class SelectTool extends BaseTool {
             this.deleteSelected()
         })
         this.deleteButtonListenerAttached = true
+
+        if (this.showButton && !this.showButtonListenerAttached) {
+            this.showButton.addEventListener("click", () => {
+                this.showHiddenObjects()
+            })
+            this.showButtonListenerAttached = true
+        }
+
+        if (this.hideButton && !this.hideButtonListenerAttached) {
+            this.hideButton.addEventListener("click", () => {
+                this.hideSelected()
+            })
+            this.hideButtonListenerAttached = true
+        }
     }
 
     private canDeleteSelected() {
@@ -415,7 +452,46 @@ export class SelectTool extends BaseTool {
             return false
         }
 
+        if (
+            this.selectedObject.userData.owner instanceof Prism ||
+            this.selectedObject.userData.owner instanceof Pyramid ||
+            this.selectedObject.userData.owner instanceof Cone ||
+            this.selectedObject.userData.owner instanceof Cylinder
+        ) {
+            return false
+        }
+
         return (this.selectedObject.userData.dependents?.length ?? 0) === 0
+    }
+
+    private canHideSelected() {
+        return this.selectedObject !== null && this.selectedObject.visible
+    }
+
+    private hideSelected() {
+        if (!this.selectedObject || !this.canHideSelected()) return
+
+        const selected = this.selectedObject
+        const owner = this.selectedOwner ?? this.getVisibilityOwner(selected)
+        const objectsToHide = this.getObjectsForVisibilityAction(selected, owner)
+
+        this.clearSelection()
+
+        objectsToHide.forEach((object) => {
+            object.visible = false
+            this.hiddenObjects.add(object)
+        })
+
+        this.updateActionControls()
+    }
+
+    private showHiddenObjects() {
+        this.hiddenObjects.forEach((object) => {
+            object.visible = true
+        })
+
+        this.hiddenObjects.clear()
+        this.updateActionControls()
     }
 
     private deleteSelected() {
@@ -439,12 +515,17 @@ export class SelectTool extends BaseTool {
     }
 
     private deleteOwner(owner: any) {
+        owner.onBeforeDelete?.()
         this.removeOwnerFromDependents(owner)
 
         const removedObjects = new Set<THREE.Object3D>()
         const candidatePoints = new Set<THREE.Object3D>()
 
-        Object.values(owner).forEach((value) => {
+        const ownedObjects = typeof owner.getOwnedObjectsForDeletion === "function"
+            ? owner.getOwnedObjectsForDeletion()
+            : Object.values(owner)
+
+        ownedObjects.forEach((value: unknown) => {
             this.collectOwnedObjects(value, removedObjects, candidatePoints)
         })
 
@@ -467,6 +548,28 @@ export class SelectTool extends BaseTool {
             }
             this.disposeObject(point)
         })
+    }
+
+    private getObjectsForVisibilityAction(selected: THREE.Object3D, owner: any) {
+        if (owner && typeof owner.getOwnedObjectsForDeletion === "function") {
+            return owner.getOwnedObjectsForDeletion() as THREE.Object3D[]
+        }
+
+        return [selected]
+    }
+
+    private getVisibilityOwner(object: THREE.Object3D) {
+        if (object.userData.owner) {
+            return object.userData.owner
+        }
+
+        const dependents = object.userData.dependents
+
+        if (!Array.isArray(dependents)) return null
+
+        return dependents.find(
+            (dependent: any) => typeof dependent?.getOwnedObjectsForDeletion === "function"
+        ) ?? null
     }
 
     private collectOwnedObjects(
