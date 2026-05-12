@@ -1,6 +1,6 @@
 :root {
-  --toolbar-stage-size: 300px;
-  --toolbar-size: 260px;
+  --toolbar-stage-size: 120px;
+  --toolbar-size: 104px;
 
   --page-bg: #f4f4f4;
 
@@ -63,6 +63,8 @@ body {
   overflow: visible;
   user-select: none;
   pointer-events: none;
+  transform: scale(0.8);
+  transform-origin: center;
 }
 
 .slice-button,
@@ -168,8 +170,8 @@ body {
 
 @media (max-width: 560px) {
   :root {
-    --toolbar-stage-size: 260px;
-    --toolbar-size: 225px;
+    --toolbar-stage-size: 104px;
+    --toolbar-size: 90px;
   }
 
   .toolbar-stage {

@@ -3171,7 +3171,6 @@ function labelsCreator() {
 		sliderA.addEventListener('change', commitSliderHistory)
 		sliderB.addEventListener('change', commitSliderHistory)
 
-		input.style.height = '24px'
 		output.innerHTML = ''
 		if (item.type == 'point') {
 			let reflectConstraint = getReflectPointConstraint(item)
@@ -3204,12 +3203,12 @@ function labelsCreator() {
 				input.value = item.name + '=Te\u011fetNokta(' + (tangent ? tangent.name : '?') + ',' + ((circleTangentTouchPointConstraint.pointIndex || 0) + 1) + ')'
 				output.value = item.name + '=(' + getPointDisplayCoordinate(item.a) + ',' + getPointDisplayCoordinate(item.b) + ')'
 			} else {
-				input.value = item.name + "=(" + Number(item.a).toFixed(2) + "," + Number(item.b).toFixed(2) + ")"
+				input.value = item.name + '=' + formatPointPair(item)
 			}
 		} else if (item.type == 'verLine') {
 			labelB.hidden = true
 			sliderB.hidden = true
-			input.value = item.name + ": x = " + item.x
+			input.value = item.name + ": x = " + formatDisplayNumber(item.x)
 		} else if (item.type == 'circleR') {
 			labelB.hidden = true
 			sliderB.hidden = true
@@ -3242,7 +3241,7 @@ function labelsCreator() {
 			input.value = item.name + ': YayÖlçüsü(' + item.A.name + ',' + item.B.name + ')'
 			output.value = item.name + '=' + (arcInfo ? formatAngleValue(arcInfo.span) + '\u00b0' : '?')
 		} else if (item.type == 'lineWithEquation') {
-			let lineEquation = item.name + ': y = ' + item.m + 'x + ' + item.n
+			let lineEquation = item.name + ': y = ' + formatDisplayNumber(item.m) + 'x + ' + formatDisplayNumber(item.n)
 			lineEquation = lineEquation.replace('+ -', '- ')
 			lineEquation = lineEquation.replace('1x', 'x')
 			lineEquation = lineEquation.replace('0x ', '')
@@ -3253,9 +3252,9 @@ function labelsCreator() {
 			sliderA.hidden = true
 			labelB.hidden = true
 			sliderB.hidden = true
-			input.value = item.name + ': ' + 'Doğru((' + item.A.a + ',' + item.A.b + '), ' + '(' + item.B.a + ',' + item.B.b + '))'
+			input.value = item.name + ': ' + 'Doğru(' + formatPointPair(item.A) + ', ' + formatPointPair(item.B) + ')'
 			if (item.A.a == item.B.a && item.A.b != item.B.b) {
-				output.value = "x = " + item.A.a
+				output.value = "x = " + formatDisplayNumber(item.A.a)
 			} else if (item.A.b == item.B.b) {
 				output.innerHTML = ''
 			}
@@ -3267,13 +3266,13 @@ function labelsCreator() {
 			sliderA.hidden = true
 			labelB.hidden = true
 			sliderB.hidden = true
-			input.value = item.name + ': ' + 'DoğruParçası((' + item.A.a + ',' + item.A.b + '), ' + '(' + item.B.a + ',' + item.B.b + '))'
+			input.value = item.name + ': ' + 'DoğruParçası(' + formatPointPair(item.A) + ', ' + formatPointPair(item.B) + ')'
 		} else if (item.type == 'distanceSegment') {
 			labelA.hidden = true
 			sliderA.hidden = true
 			labelB.hidden = true
 			sliderB.hidden = true
-			input.value = item.name + ': Uzaklık((' + item.A.a + ',' + item.A.b + '), ' + '(' + item.B.a + ',' + item.B.b + '))'
+			input.value = item.name + ': Uzaklık(' + formatPointPair(item.A) + ', ' + formatPointPair(item.B) + ')'
 		} else if (item.type == 'circleTangent') {
 			labelA.hidden = true
 			sliderA.hidden = true
@@ -3298,10 +3297,10 @@ function labelsCreator() {
 			let tan, eq
 			if (item.aodLine.A.a == item.aodLine.B.a && item.aodLine.A.b == item.aodLine.B.b) {
 				eq = item.name + "'(" + item.approachVal + ")="
-				tan = item.tngLine.m
+				tan = formatDisplayNumber(item.tngLine.m)
 			} else {
 				eq = ''
-				tan = tan = createLineEquation(item.aodLine.A, item.aodLine.B).m.toFixed(2)
+				tan = formatDisplayNumber(createLineEquation(item.aodLine.A, item.aodLine.B).m)
 			}
 
 			let N = item.haveH ? 'H' : 'X'
@@ -3343,17 +3342,17 @@ function labelsCreator() {
 		sliderB.min = (minY + Math.round(canvas.height / scaleX) + 1) * -unitX
 		if (item.type == 'point') {
 			sliderA.value = item.a
-			labelA.innerHTML = 'a = ' + Number(item.a).toFixed(2)
+			labelA.innerHTML = 'a = ' + formatDisplayNumber(item.a)
 			sliderB.value = item.b
-			labelB.innerHTML = 'b = ' + Number(item.b).toFixed(2)
+			labelB.innerHTML = 'b = ' + formatDisplayNumber(item.b)
 		} else if (item.type == 'verLine') {
 			sliderA.value = item.x
-			labelA.innerHTML = 'x = ' + item.x
+			labelA.innerHTML = 'x = ' + formatDisplayNumber(item.x)
 		} else if (item.type == 'circleR') {
 			sliderA.min = 0
 			sliderA.max = (minX + Math.round(canvas.width / scaleY) + 1) * unitY
 			sliderA.value = item.r
-			labelA.innerHTML = 'r = ' + item.r
+			labelA.innerHTML = 'r = ' + formatDisplayNumber(item.r)
 		} else if (item.type == 'arcMeasure') {
 			labelA.hidden = true
 			sliderA.hidden = true
@@ -3364,12 +3363,12 @@ function labelsCreator() {
 			output.value = item.name + '=' + (arcInfo ? formatAngleValue(arcInfo.span) + '\u00b0' : '?')
 		} else if (item.type == 'lineWithEquation') {
 			sliderA.value = item.m
-			labelA.innerHTML = 'm = ' + item.m
+			labelA.innerHTML = 'm = ' + formatDisplayNumber(item.m)
 			sliderB.value = item.n
-			labelB.innerHTML = 'n = ' + item.n
+			labelB.innerHTML = 'n = ' + formatDisplayNumber(item.n)
 		} else if (item.type == 'limit') {
-			let verticalMNumberRight = Number(item.approachValRight * 1).toFixed(2)
-			let verticalMNumberLeft = Number(item.approachValLeft * 1).toFixed(2)
+			let verticalMNumberRight = formatDisplayNumber(item.approachValRight * 1)
+			let verticalMNumberLeft = formatDisplayNumber(item.approachValLeft * 1)
 			let mostLeft = minX * unitY
 			let mostRight = (minX + Math.round(canvas.width / scaleY) + 1) * unitY
 
@@ -3411,8 +3410,8 @@ function labelsCreator() {
 			labelB.hidden = true
 			sliderB.hidden = true
 		} else {
-			input.style.backgroundColor = 'lightgreen'
-			output.style.backgroundColor = 'lightgreen'
+			input.style.backgroundColor = '#eaf3ff'
+			output.style.backgroundColor = '#f2f7ff'
 		}
 
 		sliderDiv.appendChild(labelA)
@@ -3469,14 +3468,193 @@ function closeHelp() {
 	document.getElementById('help-popup').style.display = 'none';
 }
 
+function initializeHelpMenu() {
+	const helpPopup = document.getElementById('help-popup')
+	const helpContent = document.querySelector('.help-content')
+	const helpHeader = document.getElementById('help-header')
+	const helpSection = document.querySelector('.help-section')
+	if (!helpPopup || !helpContent || !helpHeader || !helpSection) return
+
+	if (!document.getElementById('helpSearch')) {
+		const searchWrap = document.createElement('div')
+		searchWrap.className = 'help-search'
+
+		const searchInput = document.createElement('input')
+		searchInput.id = 'helpSearch'
+		searchInput.type = 'search'
+		searchInput.placeholder = 'Komut ara...'
+		searchInput.autocomplete = 'off'
+
+		searchWrap.appendChild(searchInput)
+		helpHeader.after(searchWrap)
+
+		searchInput.addEventListener('input', () => filterHelpTopics(searchInput.value))
+	}
+
+	if (!helpSection.classList.contains('is-accordion-ready')) {
+		helpSection.classList.add('is-accordion-ready')
+		const sectionChildren = Array.from(helpSection.children)
+		const topicTitles = sectionChildren.filter(child => child.tagName == 'H4')
+
+		topicTitles.forEach((title, index) => {
+			const details = document.createElement('details')
+			details.className = 'help-topic'
+			if (index == 0) details.open = true
+
+			const summary = document.createElement('summary')
+			summary.textContent = title.textContent
+
+			const body = document.createElement('div')
+			body.className = 'help-topic-body'
+
+			let next = title.nextElementSibling
+			while (next && next.tagName != 'H4') {
+				const current = next
+				next = next.nextElementSibling
+				body.appendChild(current)
+			}
+
+			details.appendChild(summary)
+			details.appendChild(body)
+			title.replaceWith(details)
+		})
+	}
+
+	if (!helpPopup.dataset.backdropCloseReady) {
+		helpPopup.dataset.backdropCloseReady = 'true'
+		helpPopup.addEventListener('click', (event) => {
+			if (event.target == helpPopup) closeHelp()
+		})
+	}
+}
+
+function filterHelpTopics(query) {
+	const normalizedQuery = query.trim().toLocaleLowerCase('tr-TR')
+	const topics = document.querySelectorAll('.help-topic')
+
+	topics.forEach(topic => {
+		const matches = normalizedQuery == '' || topic.textContent.toLocaleLowerCase('tr-TR').includes(normalizedQuery)
+		topic.hidden = !matches
+		if (normalizedQuery != '' && matches) topic.open = true
+	})
+}
+
+function getCommandSuggestionItems() {
+	const examples = Array.from(document.querySelectorAll('code.example'))
+	const uniqueCommands = new Map()
+
+	examples.forEach(example => {
+		const command = example.textContent.trim()
+		if (!command || uniqueCommands.has(command)) return
+
+		const topic = example.closest('.help-topic')
+		const topicTitle = topic?.querySelector('summary')?.textContent?.trim() || ''
+		uniqueCommands.set(command, {
+			command: command,
+			topic: topicTitle,
+			searchText: (command + ' ' + topicTitle).toLocaleLowerCase('tr-TR')
+		})
+	})
+
+	return Array.from(uniqueCommands.values())
+}
+
+function ensureCommandSuggestionsBox(giris) {
+	let suggestionsBox = document.getElementById('commandSuggestions')
+	if (suggestionsBox) return suggestionsBox
+
+	suggestionsBox = document.createElement('div')
+	suggestionsBox.id = 'commandSuggestions'
+	suggestionsBox.className = 'command-suggestions'
+	suggestionsBox.hidden = true
+	giris.insertAdjacentElement('afterend', suggestionsBox)
+	return suggestionsBox
+}
+
+function hideCommandSuggestions() {
+	const suggestionsBox = document.getElementById('commandSuggestions')
+	if (suggestionsBox) suggestionsBox.hidden = true
+}
+
+function renderCommandSuggestions(giris) {
+	const suggestionsBox = ensureCommandSuggestionsBox(giris)
+	const query = giris.value.trim().toLocaleLowerCase('tr-TR')
+
+	if (!query) {
+		hideCommandSuggestions()
+		return
+	}
+
+	const matches = getCommandSuggestionItems()
+		.filter(item => item.searchText.includes(query))
+		.slice(0, 8)
+
+	if (matches.length == 0) {
+		hideCommandSuggestions()
+		return
+	}
+
+	suggestionsBox.replaceChildren()
+	matches.forEach(item => {
+		const button = document.createElement('button')
+		button.type = 'button'
+		button.className = 'command-suggestion'
+		const commandText = document.createElement('span')
+		commandText.textContent = item.command
+		button.appendChild(commandText)
+		if (item.topic) {
+			const topicText = document.createElement('small')
+			topicText.textContent = item.topic
+			button.appendChild(topicText)
+		}
+		button.addEventListener('mousedown', event => event.preventDefault())
+		button.addEventListener('click', () => {
+			giris.value = item.command
+			hideCommandSuggestions()
+			giris.focus()
+		})
+		suggestionsBox.appendChild(button)
+	})
+
+	suggestionsBox.hidden = false
+}
+
+function initializeCommandSuggestions() {
+	const giris = document.getElementById('giris')
+	if (!giris || giris.dataset.commandSuggestionsReady) return
+
+	giris.dataset.commandSuggestionsReady = 'true'
+	ensureCommandSuggestionsBox(giris)
+
+	giris.addEventListener('input', () => renderCommandSuggestions(giris))
+	giris.addEventListener('focus', () => renderCommandSuggestions(giris))
+	giris.addEventListener('keydown', event => {
+		if (event.key == 'Escape') hideCommandSuggestions()
+	})
+
+	document.addEventListener('click', event => {
+		if (event.target == giris || event.target.closest('#commandSuggestions')) return
+		hideCommandSuggestions()
+	})
+}
+
 const helpMenuButton = document.getElementById('helpMenuButton')
+
+initializeCommandSuggestions()
 
 if (helpMenuButton) {
 	helpMenuButton.addEventListener('click', () => {
+		initializeHelpMenu()
 		document.getElementById('help-popup').style.display = 'flex'
 
 		const giris = document.getElementById('giris')
 		if (giris) giris.value = ''
+		const helpSearch = document.getElementById('helpSearch')
+		if (helpSearch) {
+			helpSearch.value = ''
+			filterHelpTopics('')
+			helpSearch.focus()
+		}
 	})
 }
 
@@ -3490,8 +3668,8 @@ if (helpMenuButton) {
 
 function changeActiveElement(id) {
 	let clickedid = Number(id.substring(0, id.indexOf("-")))
-	if (activeElementID != null) document.getElementById(activeElementID + '-input').style.background = 'white'
-	if (activeElementID != null) document.getElementById(activeElementID + '-output').style.background = 'white'
+	if (activeElementID != null) document.getElementById(activeElementID + '-input').style.background = '#ffffff'
+	if (activeElementID != null) document.getElementById(activeElementID + '-output').style.background = '#fbfcff'
 
 	let sliders = document.querySelectorAll("input[type='range']");
 	sliders.forEach(slider => {
@@ -3502,8 +3680,8 @@ function changeActiveElement(id) {
 		label.hidden = true
 	})
 	activeElementID = clickedid
-	document.getElementById(activeElementID + '-input').style.background = 'lightgreen'
-	document.getElementById(activeElementID + '-output').style.background = 'lightgreen'
+	document.getElementById(activeElementID + '-input').style.background = '#eaf3ff'
+	document.getElementById(activeElementID + '-output').style.background = '#f2f7ff'
 	let activeitem = arrObjects.find(item => item.id == activeElementID)
 
 	document.getElementById(activeElementID + '-labelA').hidden = false
@@ -3644,11 +3822,11 @@ function crossSlider() {
 		}
 
 		if (item.type == 'point') {
-			labelA.innerHTML = 'a = ' + sliderA.value
 			item.a = Number(sliderA.value)
-			labelB.innerHTML = 'b = ' + sliderB.value
 			item.b = Number(sliderB.value)
-			input.value = item.name + '(' + item.a + ',' + item.b + ')'
+			labelA.innerHTML = 'a = ' + formatDisplayNumber(item.a)
+			labelB.innerHTML = 'b = ' + formatDisplayNumber(item.b)
+			input.value = item.name + '=' + formatPointPair(item)
 
 			let ownerS = arrObjects.filter(obj => {
 				const validTypes = ['lineSegment', 'distanceSegment', 'lineWithPoints', 'circle', 'circle2', 'circle3', 'angle', 'arcMeasure'];
@@ -3669,11 +3847,11 @@ function crossSlider() {
 				}
 				let inputOwner = document.getElementById(owner.id + '-input')
 				if (owner.type === 'lineWithPoints') {
-					inputOwner.value = owner.name + ': Doğru((' + owner.A.a + ',' + owner.A.b + '),(' + owner.B.a + ',' + owner.B.b + '))'
+					inputOwner.value = owner.name + ': Doğru(' + formatPointPair(owner.A) + ',' + formatPointPair(owner.B) + ')'
 				} else if (owner.type === 'lineSegment') {
-					inputOwner.value = owner.name + ': DoğruParçası((' + owner.A.a + ',' + owner.A.b + '),(' + owner.B.a + ',' + owner.B.b + '))'
+					inputOwner.value = owner.name + ': DoğruParçası(' + formatPointPair(owner.A) + ',' + formatPointPair(owner.B) + ')'
 				} else if (owner.type === 'distanceSegment') {
-					inputOwner.value = owner.name + ': Uzaklık((' + owner.A.a + ',' + owner.A.b + '),(' + owner.B.a + ',' + owner.B.b + '))'
+					inputOwner.value = owner.name + ': Uzaklık(' + formatPointPair(owner.A) + ',' + formatPointPair(owner.B) + ')'
 				} else if (owner.type === 'circleR') {
 					inputOwner.value = formatCircleInput(owner)
 				} else if (owner.type === 'circle2') {
@@ -3715,16 +3893,16 @@ function crossSlider() {
 			let tan, eq
 			if (item.aodLine.A.a == item.aodLine.B.a && item.aodLine.A.b == item.aodLine.B.b) {
 				eq = item.name + "'(" + item.approachVal + ")="
-				tan = item.tngLine.m
+				tan = formatDisplayNumber(item.tngLine.m)
 			} else {
 				eq = ''
-				tan = tan = createLineEquation(item.aodLine.A, item.aodLine.B).m.toFixed(2)
+				tan = formatDisplayNumber(createLineEquation(item.aodLine.A, item.aodLine.B).m)
 			}
 
 			let N = item.haveH ? 'H' : 'X'
 			input.value = 'Teğet' + N + '(' + item.func + ',' + item.approachVal + ')'
 			if (item.haveH) output.value = '[' + item.name + '(' + item.approachVal + '+h) - ' + item.name + '(' + item.approachVal + ')] / h = ' + eq + tan
-			if (!item.haveH) output.value = '[' + item.name + '(' + item.h.toFixed(2) + ') - ' + item.name + '(x₀)] /(' + item.h.toFixed(2) + '-x₀)  = ' + eq + tan
+			if (!item.haveH) output.value = '[' + item.name + '(' + formatDisplayNumber(item.h) + ') - ' + item.name + '(x₀)] /(' + formatDisplayNumber(item.h) + '-x₀)  = ' + eq + tan
 		} else if (item.type == 'arcMeasure') {
 			labelA.hidden = true
 			sliderA.hidden = true
@@ -3750,10 +3928,10 @@ function crossSlider() {
 		} else if (item.type == 'limit') {
 			item.approachValRight = Number(sliderA.value)
 			labelA.innerHTML = sliderA.min + '⁺ = ' + sliderA.value
-			sliderA.innerHTML = item.approachValRight + '⁺ = ' + Number(sliderA.value).toFixed(2)
+			sliderA.innerHTML = item.approachValRight + '⁺ = ' + formatDisplayNumber(sliderA.value)
 			item.approachValLeft = Number(sliderB.value)
 			labelB.innerHTML = sliderB.max + '⁻ = ' + sliderB.value
-			sliderB.innerHTML = item.approachVal + '⁻ = ' + Number(sliderB.value).toFixed(2)
+			sliderB.innerHTML = item.approachVal + '⁻ = ' + formatDisplayNumber(sliderB.value)
 
 			let A = new mPoint(Number(sliderA.value), 0)
 			let B = new mPoint(Number(sliderA.value), math.evaluate(item.func, { x: A.a }))
@@ -4254,8 +4432,10 @@ function activateToolFromAction(action) {
 			break
 
 		case 'help':
+			initializeHelpMenu()
 			document.getElementById('help-popup').style.display = 'flex'
 			document.getElementById('giris').value = ''
+			document.getElementById('helpSearch')?.focus()
 			break
 
 		default:
