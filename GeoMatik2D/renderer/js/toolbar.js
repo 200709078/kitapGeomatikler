@@ -2,7 +2,6 @@ const toolbarStage = document.getElementById("toolbarStage")
 const radialToolbar = document.getElementById("radialToolbar")
 
 const TOOLBAR_POSITION_KEY = "geomatik2d.radialToolbar.position"
-const TOOLBAR_ACTIVE_TOOL_KEY = "geomatik2d.radialToolbar.activeTool"
 
 const slotGeometries = [
     {
@@ -286,8 +285,6 @@ function swapWithCenter(toolIndex) {
     toolsArr[toolIndex] = toolsArr[0]
     toolsArr[0] = selectedTool
 
-    saveActiveTool(selectedTool.id)
-
     clearTimeout(menuCloseTimer)
     radialToolbar.classList.remove("is-open")
 
@@ -463,26 +460,6 @@ function loadToolbarPosition() {
     }
 }
 
-function saveActiveTool(toolId) {
-    localStorage.setItem(TOOLBAR_ACTIVE_TOOL_KEY, toolId)
-}
-
-function loadActiveTool() {
-    const savedToolId = localStorage.getItem(TOOLBAR_ACTIVE_TOOL_KEY)
-
-    if (!savedToolId) return
-    if (savedToolId === toolsArr[0].id) return
-
-    const toolIndex = toolsArr.findIndex(tool => tool.id === savedToolId)
-
-    if (toolIndex <= 0) return
-
-    const savedTool = toolsArr[toolIndex]
-
-    toolsArr[toolIndex] = toolsArr[0]
-    toolsArr[0] = savedTool
-}
-
 function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max)
 }
@@ -513,8 +490,6 @@ function selectToolByAction(action, options = {}) {
     toolsArr[toolIndex] = toolsArr[0]
     toolsArr[0] = selectedTool
 
-    saveActiveTool(selectedTool.id)
-
     clearTimeout(menuCloseTimer)
     radialToolbar.classList.remove("is-open")
 
@@ -527,6 +502,5 @@ window.GeoMatikRadialToolbar = {
     selectToolByAction: selectToolByAction
 }
 
-loadActiveTool()
 renderRadialToolbar()
 loadToolbarPosition()

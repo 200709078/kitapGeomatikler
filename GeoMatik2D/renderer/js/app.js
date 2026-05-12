@@ -1,5 +1,3 @@
-//ESC ile yarım kalan işlemler kontrol edilecek.
-
 class mPoint {
 	constructor(a, b, temp = false) {
 		this.type = 'point'
@@ -3118,6 +3116,7 @@ function labelsCreator() {
 		exprDiv.classList = 'expr-block'
 		let input = document.createElement('input')
 		input.id = item.id + '-input'
+		input.readOnly = true
 		let output = document.createElement('output')
 		output.id = item.id + '-output'
 
@@ -3160,12 +3159,17 @@ function labelsCreator() {
 		sliderB.hidden = false
 
 		input.addEventListener('click', () => changeActiveElement(input.id))
-		input.addEventListener('keydown', (e) => digerKeyDown(e, input.id))
 		btnSil.addEventListener('click', (e) => delBtnClick(e))
 		btnGizle.addEventListener('click', (e) => visibilityBtnClick(e))
 
+		sliderA.addEventListener('pointerdown', beginSliderHistory)
+		sliderB.addEventListener('pointerdown', beginSliderHistory)
+		sliderA.addEventListener('keydown', beginSliderHistory)
+		sliderB.addEventListener('keydown', beginSliderHistory)
 		sliderA.addEventListener('input', () => crossSlider())
 		sliderB.addEventListener('input', () => crossSlider())
+		sliderA.addEventListener('change', commitSliderHistory)
+		sliderB.addEventListener('change', commitSliderHistory)
 
 		input.style.height = '24px'
 		output.innerHTML = ''
@@ -3520,15 +3524,6 @@ function changeActiveElement(id) {
 	drawAll()
 }
 
-function digerKeyDown(evt, id) {
-	let allowKeys = '(){}[],=-+.;<>*^/_abcçdefgğhıijklmnoöpqrsştuüvwxyzCÇEFGĞHIİJKMNOÖPQRSŞTUÜVWXYZBackspaceArrowLeftArrowRightShiftDelete'
-	if (isNaN(evt.key) && !allowKeys.includes(evt.key)) {
-		evt.preventDefault()
-	}
-	if (evt.key === 'Enter') {
-		console.log(id, ' id li giriş.')
-	}
-}
 
 function handleParanthesis(e) {
 	const el = e.target
@@ -3850,6 +3845,8 @@ let arrObjects = []
 let undoStack = []
 let redoStack = []
 let lastHistoryKey = null
+let transientObjectIds = []
+let sliderHistoryStartKey = null
 let bigNames = "ABCDEFG"
 let smallNames = "abccdefg"
 let lineNames = "fghpqr"
@@ -3895,6 +3892,60 @@ function resetTransientDrawingState() {
 	arcMeasureA = arcMeasureB = arcMeasureCircle = null
 	arcMeasureCreatedA = false
 	circleTangentCircle = null
+}
+
+function trackTransientObject(obj) {
+	if (!obj || obj.id == null) return
+	if (!transientObjectIds.includes(obj.id)) transientObjectIds.push(obj.id)
+}
+
+function clearTransientObjectIds() {
+	transientObjectIds = []
+}
+
+function removeTransientObjects() {
+	if (transientObjectIds.length == 0) return false
+	arrObjects = arrObjects.filter(item => !transientObjectIds.includes(item.id))
+	clearTransientObjectIds()
+	return true
+}
+
+function commitDrawingHistoryState() {
+	clearTransientObjectIds()
+	commitHistoryState()
+}
+
+function beginSliderHistory() {
+	if (sliderHistoryStartKey != null) return
+	sliderHistoryStartKey = JSON.stringify(arrObjects)
+}
+
+function commitSliderHistory() {
+	if (sliderHistoryStartKey == null) return
+	let sliderHistoryEndKey = JSON.stringify(arrObjects)
+	if (sliderHistoryStartKey !== sliderHistoryEndKey) {
+		commitHistoryState()
+	}
+	sliderHistoryStartKey = null
+}
+
+function cancelActiveToolAndReturnSelect() {
+	removeTransientObjects()
+	resetTransientDrawingState()
+	grabbing = false
+	hitObject = null
+	firstMousePos = lastMousePos = panStartMouse = axisUnitDrag = null
+	activeElementID = null
+	activeObject = 'select'
+
+	if (window.GeoMatikRadialToolbar?.selectToolByAction) {
+		window.GeoMatikRadialToolbar.selectToolByAction('select', {
+			showToast: false
+		})
+	}
+
+	drawAll()
+	labelsCreator()
 }
 
 function commitHistoryState() {
@@ -4137,6 +4188,12 @@ function createName(type) {
 
 function activateToolFromAction(action) {
 	if (!action) return
+	if (action !== activeObject) {
+		let removedTransientObjects = removeTransientObjects()
+		resetTransientDrawingState()
+		activeElementID = null
+		if (removedTransientObjects) labelsCreator()
+	}
 
 	switch (action) {
 		case 'select':
@@ -4326,6 +4383,7 @@ function handleCircleTangentMouseDown(evt) {
 		} else {
 			circleTangentPoint = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
 			arrObjects.push(circleTangentPoint)
+			trackTransientObject(circleTangentPoint)
 			labelsCreator()
 			drawAll()
 		}
@@ -4334,7 +4392,7 @@ function handleCircleTangentMouseDown(evt) {
 		if (tangentData.status) {
 			let tangent = addCircleTangentWithTouchPoints(circleTangentPoint, circleTangentCircle)
 			activeElementID = tangent.id
-			commitHistoryState()
+			commitDrawingHistoryState()
 			circleTangentCircle = null
 
 			finishToolAndReturnSelect()
@@ -4366,7 +4424,10 @@ function handleArcMeasureMouseDown(evt) {
 	if (!arcMeasureDrawing) {
 		arcMeasureA = selected.point
 		arcMeasureCircle = selected.circle
-		if (selected.created) arrObjects.push(arcMeasureA)
+		if (selected.created) {
+			arrObjects.push(arcMeasureA)
+			trackTransientObject(arcMeasureA)
+		}
 		arcMeasureCreatedA = selected.created
 		arcMeasureDrawing = true
 		activeElementID = arcMeasureA.id
@@ -4381,12 +4442,15 @@ function handleArcMeasureMouseDown(evt) {
 		showToast('Yay Ölçüsü', 'Farklı bir nokta seçin.')
 		return
 	}
-	if (selected.created) arrObjects.push(arcMeasureB)
+	if (selected.created) {
+		arrObjects.push(arcMeasureB)
+		trackTransientObject(arcMeasureB)
+	}
 
 	let arcMeasure = new mArcMeasure(arcMeasureA, arcMeasureB, arcMeasureCircle)
 	arrObjects.push(arcMeasure)
 	activeElementID = arcMeasure.id
-	commitHistoryState()
+	commitDrawingHistoryState()
 	arcMeasureDrawing = false
 	arcMeasureA = arcMeasureB = arcMeasureCircle = null
 	arcMeasureCreatedA = false
@@ -5054,7 +5118,7 @@ document.addEventListener('DOMContentLoaded', function () {
 						let points = createIntersectionPoints(intersectLineA, intersectLineB)
 						points.forEach(point => arrObjects.push(point))
 						activeElementID = points[0].id
-						commitHistoryState()
+						commitDrawingHistoryState()
 						intersectDrawing = false
 						intersectLineA = intersectLineB = null
 
@@ -5063,42 +5127,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
 					} else {
 						showToast('Kesiştir', 'Farklı bir nesne seçiniz.')
-					}
-				}
-				hitObject = { hit: null, hitType: null }
-			}
-			if (activeObject === 'circletangent') {
-				if (!circleTangentPoint) {
-					if (hitObject.hitType == 'point' || !hitObject.hit) {
-						if (hitObject.hitType == 'point') {
-							circleTangentPoint = hitObject.hit
-						} else {
-							circleTangentPoint = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
-							arrObjects.push(circleTangentPoint)
-							commitHistoryState()
-							labelsCreator()
-							drawAll()
-						}
-						activeElementID = circleTangentPoint.id
-						showToast('Teğet', 'Şimdi teğet çizilecek çemberi seçiniz.')
-					} else {
-						showToast('Teğet', 'Önce teğetin çizileceği noktayı seçiniz.')
-					}
-				} else {
-					if (hitObject.hitType == 'circleR' || hitObject.hitType == 'circle2' || hitObject.hitType == 'circle3') {
-						let tangentData = getCircleTangentLines(circleTangentPoint, hitObject.hit)
-						if (tangentData.status) {
-							let tangent = addCircleTangentWithTouchPoints(circleTangentPoint, hitObject.hit)
-							activeElementID = tangent.id
-							commitHistoryState()
-							circleTangentPoint = null
-						} else if (tangentData.reason == 'inside') {
-							showToast('Teğet', 'Seçilen nokta çemberin içinde olduğu için teğet çizilemez.')
-						} else {
-							showToast('Teğet', 'Bu çember için teğet çizilemedi.')
-						}
-					} else {
-						showToast('Teğet', 'Teğet çizilecek çemberi seçiniz.')
 					}
 				}
 				hitObject = { hit: null, hitType: null }
@@ -5171,16 +5199,22 @@ document.addEventListener('DOMContentLoaded', function () {
 				if (lineDrawing == false) {
 					lineA
 					hitObject.hitType == 'point' ? lineA = hitObject.hit : lineA = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
-					if (!hitObject.hit) arrObjects.push(lineA)
+					if (hitObject.hitType != 'point') {
+						arrObjects.push(lineA)
+						trackTransientObject(lineA)
+					}
 					lineDrawing = true
 				} else {
 					lineB
 					hitObject.hitType == 'point' ? lineB = hitObject.hit : lineB = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
-					if (!hitObject.hit) arrObjects.push(lineB)
+					if (hitObject.hitType != 'point') {
+						arrObjects.push(lineB)
+						trackTransientObject(lineB)
+					}
 					let lwp = new mLineWithPoints(lineA, lineB)
 					arrObjects.push(lwp)
 					activeElementID = lwp.id
-					commitHistoryState()
+					commitDrawingHistoryState()
 					lineDrawing = false
 					lineA = lineB = null
 
@@ -5193,16 +5227,22 @@ document.addEventListener('DOMContentLoaded', function () {
 				if (lineSegmentDrawing == false) {
 					let pointResult = createPointFromHitOrMouse(hitObject, mousePos)
 					lineSegmentA = pointResult.point
-					if (pointResult.created) arrObjects.push(lineSegmentA)
+					if (pointResult.created) {
+						arrObjects.push(lineSegmentA)
+						trackTransientObject(lineSegmentA)
+					}
 					lineSegmentDrawing = true
 				} else {
 					let pointResult = createPointFromHitOrMouse(hitObject, mousePos)
 					lineSegmentB = pointResult.point
-					if (pointResult.created) arrObjects.push(lineSegmentB)
+					if (pointResult.created) {
+						arrObjects.push(lineSegmentB)
+						trackTransientObject(lineSegmentB)
+					}
 					let ls = new mLineSegment(lineSegmentA, lineSegmentB)
 					arrObjects.push(ls)
 					activeElementID = ls.id
-					commitHistoryState()
+					commitDrawingHistoryState()
 					lineSegmentDrawing = false
 					lineSegmentA = lineSegmentB = null
 
@@ -5214,16 +5254,22 @@ document.addEventListener('DOMContentLoaded', function () {
 				if (distanceSegmentDrawing == false) {
 					distanceSegmentA
 					hitObject.hitType == 'point' ? distanceSegmentA = hitObject.hit : distanceSegmentA = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
-					if (!hitObject.hit) arrObjects.push(distanceSegmentA)
+					if (hitObject.hitType != 'point') {
+						arrObjects.push(distanceSegmentA)
+						trackTransientObject(distanceSegmentA)
+					}
 					distanceSegmentDrawing = true
 				} else {
 					distanceSegmentB
 					hitObject.hitType == 'point' ? distanceSegmentB = hitObject.hit : distanceSegmentB = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
-					if (!hitObject.hit) arrObjects.push(distanceSegmentB)
+					if (hitObject.hitType != 'point') {
+						arrObjects.push(distanceSegmentB)
+						trackTransientObject(distanceSegmentB)
+					}
 					let ds = new mDistanceSegment(distanceSegmentA, distanceSegmentB)
 					arrObjects.push(ds)
 					activeElementID = ds.id
-					commitHistoryState()
+					commitDrawingHistoryState()
 					distanceSegmentDrawing = false
 					distanceSegmentA = distanceSegmentB = null
 
@@ -5240,6 +5286,7 @@ document.addEventListener('DOMContentLoaded', function () {
 					} else {
 						reflectPointA = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
 						arrObjects.push(reflectPointA)
+						trackTransientObject(reflectPointA)
 						reflectPointCreatedA = true
 					}
 					reflectPointDrawing = true
@@ -5249,12 +5296,13 @@ document.addEventListener('DOMContentLoaded', function () {
 					} else {
 						reflectPointB = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
 						arrObjects.push(reflectPointB)
+						trackTransientObject(reflectPointB)
 					}
 
 					let reflectedPoint = createReflectedPoint(reflectPointA, reflectPointB)
 					arrObjects.push(reflectedPoint)
 					activeElementID = reflectedPoint.id
-					commitHistoryState()
+					commitDrawingHistoryState()
 					reflectPointDrawing = false
 					reflectPointA = reflectPointB = null
 
@@ -5268,16 +5316,22 @@ document.addEventListener('DOMContentLoaded', function () {
 				if (circleDrawing == false) {
 					circleA
 					hitObject.hitType == 'point' ? circleA = hitObject.hit : circleA = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
-					if (!hitObject.hit) arrObjects.push(circleA)
+					if (hitObject.hitType != 'point') {
+						arrObjects.push(circleA)
+						trackTransientObject(circleA)
+					}
 					circleDrawing = true
 				} else {
 					circleB
 					hitObject.hitType == 'point' ? circleB = hitObject.hit : circleB = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
-					if (!hitObject.hit) arrObjects.push(circleB)
+					if (hitObject.hitType != 'point') {
+						arrObjects.push(circleB)
+						trackTransientObject(circleB)
+					}
 					let c2 = new mCircle2(circleA, circleB)
 					arrObjects.push(c2)
 					activeElementID = c2.id
-					commitHistoryState()
+					commitDrawingHistoryState()
 					circleDrawing = false
 					circleA = circleB = null
 
@@ -5289,21 +5343,30 @@ document.addEventListener('DOMContentLoaded', function () {
 					if (!circleA) {
 						circleA
 						hitObject.hitType == 'point' ? circleA = hitObject.hit : circleA = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
-						if (!hitObject.hit) arrObjects.push(circleA)
+						if (hitObject.hitType != 'point') {
+							arrObjects.push(circleA)
+							trackTransientObject(circleA)
+						}
 					} else {
 						circleB
 						hitObject.hitType == 'point' ? circleB = hitObject.hit : circleB = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
-						if (!hitObject.hit) arrObjects.push(circleB)
+						if (hitObject.hitType != 'point') {
+							arrObjects.push(circleB)
+							trackTransientObject(circleB)
+						}
 						circleDrawing = true
 					}
 				} else {
 					circleC
 					hitObject.hitType == 'point' ? circleC = hitObject.hit : circleC = new mPoint(getMousePos(evt).x, getMousePos(evt).y)
-					if (!hitObject.hit) arrObjects.push(circleC)
+					if (hitObject.hitType != 'point') {
+						arrObjects.push(circleC)
+						trackTransientObject(circleC)
+					}
 					let c3 = new mCircle3(circleA, circleB, circleC)
 					arrObjects.push(c3)
 					activeElementID = c3.id
-					commitHistoryState()
+					commitDrawingHistoryState()
 					circleDrawing = false
 					circleA = circleB = circleC = null
 
@@ -5316,21 +5379,30 @@ document.addEventListener('DOMContentLoaded', function () {
 					if (!angleA) {
 						let pointResult = createPointFromHitOrMouse(hitObject, mousePos)
 						angleA = pointResult.point
-						if (pointResult.created) arrObjects.push(angleA)
+						if (pointResult.created) {
+							arrObjects.push(angleA)
+							trackTransientObject(angleA)
+						}
 					} else {
 						let pointResult = createPointFromHitOrMouse(hitObject, mousePos)
 						angleB = pointResult.point
-						if (pointResult.created) arrObjects.push(angleB)
+						if (pointResult.created) {
+							arrObjects.push(angleB)
+							trackTransientObject(angleB)
+						}
 						angleDrawing = true
 					}
 				} else {
 					let pointResult = createPointFromHitOrMouse(hitObject, mousePos)
 					angleC = pointResult.point
-					if (pointResult.created) arrObjects.push(angleC)
+					if (pointResult.created) {
+						arrObjects.push(angleC)
+						trackTransientObject(angleC)
+					}
 					let a = new mAngle(angleA, angleB, angleC)
 					arrObjects.push(a)
 					activeElementID = a.id
-					commitHistoryState()
+					commitDrawingHistoryState()
 					angleDrawing = false
 					angleA = angleB = angleC = null
 
@@ -5394,63 +5466,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 	document.addEventListener("keydown", function (evt) {
 		if (evt.key == 'Escape') {
-			if (lineDrawing == true) {
-				lineDrawing = false
-				lineA = lineB = null
-				arrObjects.pop()
-			}
-			if (lineSegmentDrawing == true) {
-				lineSegmentDrawing = false
-				lineSegmentA = lineSegmentB = null
-				arrObjects.pop()
-			}
-			if (distanceSegmentDrawing == true) {
-				distanceSegmentDrawing = false
-				distanceSegmentA = distanceSegmentB = null
-				arrObjects.pop()
-			}
-			if (reflectPointDrawing == true) {
-				reflectPointDrawing = false
-				if (reflectPointCreatedA) arrObjects.pop()
-				reflectPointA = reflectPointB = null
-				reflectPointCreatedA = false
-			}
-			if (intersectDrawing == true) {
-				intersectDrawing = false
-				intersectLineA = intersectLineB = null
-			}
-			if (arcMeasureDrawing == true) {
-				arcMeasureDrawing = false
-				if (arcMeasureCreatedA) arrObjects = arrObjects.filter(item => item.id != arcMeasureA.id)
-				arcMeasureA = arcMeasureB = arcMeasureCircle = null
-				arcMeasureCreatedA = false
-			}
-			if (circleDrawing == true) {
-				circleDrawing = false
-				circleA = circleB = null
-				arrObjects.pop()
-			}
-
-			if (angleDrawing == true) {
-				angleDrawing = false
-				if (angleA && angleB) {
-					arrObjects.pop()
-					arrObjects.pop()
-				}
-				angleA = angleB = angleC = null
-			} else {
-				if (angleA) {
-					arrObjects.pop()
-				}
-				angleA = null
-			}
-			circleTangentCircle = null
-			activeElementID = null
-
-			activeObject = 'select'
-
-			drawAll()
-			labelsCreator()
+			cancelActiveToolAndReturnSelect()
 		}
 	}, false)
 
