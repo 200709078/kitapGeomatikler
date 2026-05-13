@@ -36,6 +36,8 @@
 
       <file href="res/img/favicon.svg"/>
 
+      <file href="res/js/app.js"/>
+
     </resource>
   </resources>
 </manifest>

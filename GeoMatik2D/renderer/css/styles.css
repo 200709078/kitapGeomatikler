@@ -73,8 +73,8 @@ canvas {
 
 .helpMenuButton {
 	position: fixed;
+	top: 80px;
 	right: 320px;
-	bottom: 8px;
 	z-index: 3;
 	display: flex;
 	align-items: center;
@@ -117,6 +117,10 @@ canvas {
 	background: #eeeeee;
 	pointer-events: auto;
 	transition: right 1s;
+}
+
+.standardMenuButton {
+	top: 44px;
 }
 
 .calcMenuButton:hover {

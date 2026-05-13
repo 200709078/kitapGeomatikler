@@ -32,6 +32,7 @@ const scene = createScene()
 const camera = createCamera()
 const renderer = createRenderer()
 
+if (renderer) {
 createLighting(scene)
 
 const plane = createPlane(scene)
@@ -319,3 +320,4 @@ window.addEventListener("keydown", (event) => {
 
   toolManager.onKeyDown(event)
 })
+}

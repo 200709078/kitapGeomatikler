@@ -17,7 +17,7 @@
     <width>0</width>
     <height>0</height>
     <language>en</language>
-    <referenceImage>yarisma_1.jpg</referenceImage>
+    <referenceImage>hm_yarisma1_mk.png</referenceImage>
   </contentObject>
 
   <organizations default="GEOMATIK">
@@ -35,9 +35,9 @@
 
       <file href="res/css/style.css" />
 
-      <file href="res/img/soruFotolar/bitkiler.png" />
+      <file href="res/img/bitkiler.png" />
       <file href="res/img/favicon.svg" />
-      <file href="yarisma_1.jpg" />
+      <file href="hm_yarisma1_mk.png" />
 
       <file href="res/js/exam.js" />
 

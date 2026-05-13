@@ -3435,6 +3435,7 @@ function toggleCalcIcon(imgEl) {
 
 function updateCalcButtonPosition() {
 	let calcButton = document.getElementById('btnCalc')
+	let standartButton = document.getElementById('btnStandartWiew')
 	let helpMenuButton = document.getElementById('helpMenuButton')
 	let rightWrapper = document.getElementById('rightWrapper')
 	if (!rightWrapper) return
@@ -3442,11 +3443,9 @@ function updateCalcButtonPosition() {
 	let rightValue = rightWrapper.classList.contains('hide') ? '0px' : rightWrapper.getBoundingClientRect().width + 'px'
 
 	if (calcButton) calcButton.style.right = rightValue
+	if (standartButton) standartButton.style.right = rightValue
 	if (helpMenuButton) helpMenuButton.style.right = rightValue
 }
-
-
-
 
 function observeRightWrapperSize() {
 	let rightWrapper = document.getElementById('rightWrapper')
@@ -3461,6 +3460,33 @@ function updateToolWrapperRight() {
 	let rightWrapper = document.getElementById('rightWrapper')
 	if (!rightWrapper) return
 	updateCalcButtonPosition()
+}
+
+function saveStandartView() {
+	standartView = {
+		scaleX,
+		scaleY,
+		minX,
+		minY,
+		tickX,
+		tickY
+	}
+}
+
+function resetStandartView() {
+	scaleX = standartView.scaleX
+	scaleY = standartView.scaleY
+	minX = standartView.minX
+	minY = standartView.minY
+	tickX = standartView.tickX
+	tickY = standartView.tickY
+	unitX = verticalUnits[tickX]
+	unitY = horizontalUnits[tickY]
+
+	panStartMouse = null
+	axisUnitDrag = null
+
+	drawAll()
 }
 
 function closeHelp() {
@@ -4018,6 +4044,16 @@ let tickX = 3
 let unitX = verticalUnits[tickX]
 let tickY = 3
 let unitY = horizontalUnits[tickY]
+
+let standartView = {
+	scaleX,
+	scaleY,
+	minX,
+	minY,
+	tickX,
+	tickY
+}
+
 let firstMousePos, lastMousePos, findPointPos = null
 let arrObjects = []
 let undoStack = []
@@ -4025,7 +4061,7 @@ let redoStack = []
 let lastHistoryKey = null
 let transientObjectIds = []
 let sliderHistoryStartKey = null
-let bigNames = "ABCDEFG"
+let bigNames = "ABCDEFGO"
 let smallNames = "abccdefg"
 let lineNames = "fghpqr"
 let angleNames = "\u03b1\u03b2\u03b8"
@@ -4542,7 +4578,11 @@ document.getElementById('btnCalc').addEventListener('click', function () {
 	drawAll()
 })
 
-
+document.getElementById('btnStandartWiew').addEventListener('click', function () {
+	activeObject = 'select'
+	cancelActiveToolAndReturnSelect()
+	resetStandartView()
+})
 
 function handleCircleTangentMouseDown(evt) {
 	if (!circleTangentCircle) {
@@ -4644,6 +4684,16 @@ function handleArcMeasureMouseDown(evt) {
 document.querySelectorAll('.example').forEach(el => {
 	el.addEventListener('click', () => {
 		const giris = document.getElementById('giris')
+		const rightWrapper = document.getElementById('rightWrapper')
+		const btnimgCalc = document.getElementById('btnimgCalc')
+
+		if (rightWrapper && rightWrapper.classList.contains('hide')) {
+			rightWrapper.classList.remove('hide')
+			btnimgCalc?.classList.remove('panel-hidden')
+			updateToolWrapperRight()
+			drawAll()
+		}
+
 		if (giris) {
 			giris.value = el.textContent.trim()
 			giris.focus()
@@ -5104,6 +5154,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		minY = -3
 		drawAll()
 	}
+	saveStandartView()
 	updateToolWrapperRight()
 	observeRightWrapperSize()
 	commitHistoryState()
@@ -5657,8 +5708,14 @@ document.addEventListener('DOMContentLoaded', function () {
 		let x, w
 		function mouseDownHand(e) {
 			let calcButton = document.getElementById('btnCalc')
+			let standartButton = document.getElementById('btnStandartWiew')
+			let helpMenuButton = document.getElementById('helpMenuButton')
+
 			rightWrapper.style.transition = "all 0s"
 			if (calcButton) calcButton.style.transition = "right 0s"
+			if (standartButton) standartButton.style.transition = "right 0s"
+			if (helpMenuButton) helpMenuButton.style.transition = "right 0s"
+
 			x = e.clientX
 			let sbWidth = window.getComputedStyle(rightWrapper).width
 			w = parseInt(sbWidth, 10)
@@ -5677,8 +5734,14 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 		function mouseUpHand() {
 			let calcButton = document.getElementById('btnCalc')
+			let standartButton = document.getElementById('btnStandartWiew')
+			let helpMenuButton = document.getElementById('helpMenuButton')
+
 			rightWrapper.style.transition = "all 1s"
 			if (calcButton) calcButton.style.transition = ""
+			if (standartButton) standartButton.style.transition = ""
+			if (helpMenuButton) helpMenuButton.style.transition = ""
+
 			document.removeEventListener('mouseup', mouseUpHand)
 			document.removeEventListener('mousemove', mouseMoveHand)
 		}
