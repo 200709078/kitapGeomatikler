@@ -385,14 +385,15 @@ export class SelectTool extends BaseTool {
 
         if (!this.sideSliderContainer || !this.sideSlider || !this.sideValue) return
 
-        this.sideSliderContainer.style.display = "block"
-
         if (!controller) {
             this.sideSlider.disabled = true
+            this.sideSliderContainer.style.display = "none"
             this.sideSliderContainer.classList.remove("active")
             this.sideSliderContainer.classList.add("passive")
             return
         }
+
+        this.sideSliderContainer.style.display = "block"
 
         const value = controller.sideCount.toString()
 
@@ -403,27 +404,39 @@ export class SelectTool extends BaseTool {
         this.sideSliderContainer.classList.add("active")
         this.sideSliderContainer.classList.remove("passive")
     }
+
     private updateUnFoldControl(owner: any) {
         if (!this.unFoldControl || !this.unFoldSlider) return
 
         const controller = this.getUnFoldController(owner)
-        const active = controller !== null
-
         this.selectedUnFoldController = controller
 
-        this.unFoldControl.style.display = "block"
-        this.unFoldControl.classList.toggle("active", active)
-        this.unFoldControl.classList.toggle("passive", !active)
+        if (!controller) {
+            this.unFoldSlider.disabled = true
+            this.unFoldControl.style.display = "none"
+            this.unFoldControl.classList.remove("active")
+            this.unFoldControl.classList.add("passive")
 
-        const value = controller?.unFoldAngle ?? 0
-        this.unFoldSlider.max = (controller?.maxUnFoldAngle ?? 90).toString()
+            if (this.unFoldValue) {
+                this.unFoldValue.textContent = "0"
+            }
+
+            return
+        }
+
+        this.unFoldControl.style.display = "block"
+        this.unFoldControl.classList.add("active")
+        this.unFoldControl.classList.remove("passive")
+
+        const value = controller.unFoldAngle
+        this.unFoldSlider.max = controller.maxUnFoldAngle.toString()
         this.unFoldSlider.value = value.toString()
 
         if (this.unFoldValue) {
             this.unFoldValue.textContent = value.toString()
         }
 
-        this.unFoldSlider.disabled = !active
+        this.unFoldSlider.disabled = false
     }
 
     private beginSideCountChange() {

@@ -1,3 +1,5 @@
+//mobile geçelim yavaş yavaş.
+//sağdaki butonlar da rightToolbar olsun.
 class mPoint {
 	constructor(a, b, temp = false) {
 		this.type = 'point'
