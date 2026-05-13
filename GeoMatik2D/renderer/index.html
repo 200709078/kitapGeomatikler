@@ -27,40 +27,45 @@
 <body>
 	<div id="centerWrapper">
 		<canvas id="canvas"></canvas>
-
-
-
-
-
 		<div id="toolbarStage" class="toolbar-stage">
 			<div id="radialToolbar" class="radial-toolbar" aria-label="GeoMatik2D araç menüsü"></div>
 		</div>
+		<div class="rightToolbar" id="rightToolbar">
+			<button class="calcMenuButton" id="btnCalc" type="button" title="Cebir">
+				<img id="btnimgCalc" src="./img/arrow.svg">
+			</button>
 
-		<div class="historyControls" id="ucrButtons">
-			<button type="button" id="undo" title="Geri Al">
-				<img src="./img/toogle.svg" style="transform:rotateX(180deg) rotate(30deg)">
+			<button class="rightToolbarButton" id="btnAcordeon" type="button" title="Araçları göster"
+				aria-expanded="false">
+				<img id="btnimgAcordeon" src="./img/acordeon.svg">
 			</button>
-			<button type="button" id="redo" title="Yinele">
-				<img src="./img/toogle.svg" style="transform:rotate(210deg)">
-			</button>
+
+			<div class="rightToolbarCollapsible" id="rightToolbarCollapsible">
+				<button class="rightToolbarButton standardMenuButton" id="btnStandartWiew" type="button"
+					title="Standart Görünüm">
+					<img src="./img/default.svg">
+				</button>
+
+				<div class="historyControls" id="ucrButtons">
+					<button type="button" id="undo" title="Geri Al">
+						<img src="./img/toogle.svg" style="transform:rotateX(180deg) rotate(30deg)">
+					</button>
+					<button type="button" id="redo" title="Yinele">
+						<img src="./img/toogle.svg" style="transform:rotate(210deg)">
+					</button>
+				</div>
+
+				<div class="clearControl">
+					<button type="button" id="clear" title="Temizle">
+						<img src="./img/clear.svg">
+					</button>
+				</div>
+
+				<button class="helpMenuButton" id="helpMenuButton" type="button" title="Yardım">
+					<img id="btnimgHelpMenu" src="./img/help.svg">
+				</button>
+			</div>
 		</div>
-		<div class="clearControl">
-			<button type="button" id="clear" title="Temizle">
-				<img src="./img/clear.svg">
-			</button>
-		</div>
-		<button class="calcMenuButton" id="btnCalc" type="button" title="Cebir">
-			<img id="btnimgCalc" src="./img/arrow.svg">
-		</button>
-
-		<button class="calcMenuButton standardMenuButton" id="btnStandartWiew" type="button" title="Standart Görünüm">
-			<img src="./img/default.svg">
-		</button>
-
-		<button class="helpMenuButton" id="helpMenuButton" type="button" title="Yardım">
-			<img id="btnimgHelpMenu" src="./img/help.svg">
-		</button>
-
 		<div class="rightWrapper" id="rightWrapper">
 			<div class="reSizer"></div>
 			<div id="scrollWrapper">

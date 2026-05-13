@@ -71,70 +71,6 @@ canvas {
 	transform: rotate(180deg);
 }
 
-.helpMenuButton {
-	position: fixed;
-	top: 80px;
-	right: 320px;
-	z-index: 3;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	margin: 0;
-	outline: none;
-	border: 1px solid gray;
-	border-radius: 5px 0 0 5px;
-	cursor: pointer;
-	background: #eeeeee;
-	pointer-events: auto;
-	transition: right 1s;
-}
-
-.helpMenuButton:hover {
-	background: #dddddd;
-}
-
-.helpMenuButton img {
-	display: block;
-	margin: 0 auto;
-	width: 26px;
-	max-height: 26px;
-	filter: grayscale(1) brightness(0.45);
-}
-
-.calcMenuButton {
-	position: fixed;
-	top: 8px;
-	right: 320px;
-	z-index: 3;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	margin: 0;
-	outline: none;
-	border: 1px solid gray;
-	border-radius: 5px 0 0 5px;
-	cursor: pointer;
-	background: #eeeeee;
-	pointer-events: auto;
-	transition: right 1s;
-}
-
-.standardMenuButton {
-	top: 44px;
-}
-
-.calcMenuButton:hover {
-	background: #dddddd;
-}
-
-.calcMenuButton img {
-	display: block;
-	margin: 0 auto;
-	width: 26px;
-	max-height: 26px;
-	filter: grayscale(1) brightness(0.45);
-}
-
 #rightWrapper {
 	position: fixed;
 	z-index: 2;
@@ -383,62 +319,125 @@ canvas {
 	margin-top: 5px;
 }
 
-.historyControls {
+/* Right Toolbar */
+.rightToolbar {
 	position: fixed;
-	left: 50%;
-	bottom: 8px;
-	transform: translateX(-50%);
+	top: 8px;
+	right: 320px;
 	z-index: 4;
 	display: flex;
+	flex-direction: column;
+	align-items: stretch;
 	gap: 6px;
-	background: transparent;
-	pointer-events: none;
+	transition: right 1s;
+	pointer-events: auto;
 }
 
-.clearControl {
-	position: fixed;
-	left: 8px;
-	bottom: 8px;
-	z-index: 4;
-	background: transparent;
-	pointer-events: none;
-}
-
-.historyControls button,
-.clearControl button {
+.rightToolbar .calcMenuButton,
+.rightToolbar .rightToolbarButton,
+.rightToolbar .helpMenuButton,
+.rightToolbar .historyControls button,
+.rightToolbar .clearControl button {
+	position: static;
+	top: auto;
+	right: auto;
+	left: auto;
+	bottom: auto;
+	transform: none;
+	z-index: auto;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 44px;
-	height: 44px;
+	width: 34px;
+	height: 34px;
 	margin: 0;
 	padding: 0;
 	outline: none;
-	border: none;
-	border-radius: 5px;
+	border: 1px solid gray;
+	border-radius: 5px 0 0 5px;
 	cursor: pointer;
+	background: #eeeeee;
+	pointer-events: auto;
+	transition: background 0.2s;
+}
+
+.rightToolbar .calcMenuButton:hover,
+.rightToolbar .rightToolbarButton:hover,
+.rightToolbar .helpMenuButton:hover,
+.rightToolbar .historyControls button:hover:not(:disabled),
+.rightToolbar .clearControl button:hover:not(:disabled) {
+	background: #dddddd;
+}
+
+.rightToolbar .historyControls,
+.rightToolbar .clearControl {
+	position: static;
+	left: auto;
+	bottom: auto;
+	transform: none;
+	z-index: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
 	background: transparent;
 	pointer-events: auto;
 }
 
-.historyControls button:hover:not(:disabled),
-.clearControl button:hover:not(:disabled) {
-	background: transparent;
-}
-
-.historyControls button:disabled,
-.clearControl button:disabled {
+.rightToolbar .historyControls button:disabled,
+.rightToolbar .clearControl button:disabled {
 	cursor: default;
 	opacity: 0.35;
 	filter: grayscale(1);
 }
 
-.historyControls button img,
-.clearControl button img {
+.rightToolbar button img,
+.rightToolbar .historyControls button img,
+.rightToolbar .clearControl button img {
 	display: block;
 	margin: 0 auto;
 	width: 26px;
 	max-height: 26px;
+	filter: grayscale(1) brightness(0.45);
+}
+
+#btnimgCalc,
+#btnimgAcordeon {
+	transition: transform 0.25s ease, filter 0.25s ease, opacity 0.25s ease;
+}
+
+.rightToolbar #btnimgCalc:not(.panel-hidden) {
+	filter: grayscale(1) brightness(0.85);
+	opacity: 0.65;
+}
+
+.rightToolbar #btnimgCalc.panel-hidden {
+	filter: grayscale(1) brightness(0.45);
+	opacity: 1;
+}
+
+#btnimgAcordeon {
+	transform: rotate(90deg);
+}
+
+.rightToolbar.is-open #btnimgAcordeon {
+	transform: rotate(180deg);
+}
+
+.rightToolbarCollapsible {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	max-height: 0;
+	opacity: 0;
+	overflow: hidden;
+	pointer-events: none;
+	transition: max-height 0.45s ease, opacity 0.25s ease;
+}
+
+.rightToolbar.is-open .rightToolbarCollapsible {
+	max-height: 260px;
+	opacity: 1;
+	pointer-events: auto;
 }
 
 .set-popup {

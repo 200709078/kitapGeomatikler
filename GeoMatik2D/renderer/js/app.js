@@ -1,5 +1,4 @@
-//mobile geçelim yavaş yavaş.
-//sağdaki butonlar da rightToolbar olsun.
+//Asimptotlardaki atlamalar düzeltilecek.
 class mPoint {
 	constructor(a, b, temp = false) {
 		this.type = 'point'
@@ -3430,23 +3429,18 @@ function labelsCreator() {
 		objectsContainer.prepend(emptyDiv)
 	})
 }
-
 function toggleCalcIcon(imgEl) {
+	if (!imgEl) return
 	imgEl.classList.toggle('panel-hidden')
 }
 
 function updateCalcButtonPosition() {
-	let calcButton = document.getElementById('btnCalc')
-	let standartButton = document.getElementById('btnStandartWiew')
-	let helpMenuButton = document.getElementById('helpMenuButton')
+	let rightToolbar = document.getElementById('rightToolbar')
 	let rightWrapper = document.getElementById('rightWrapper')
-	if (!rightWrapper) return
+	if (!rightToolbar || !rightWrapper) return
 
 	let rightValue = rightWrapper.classList.contains('hide') ? '0px' : rightWrapper.getBoundingClientRect().width + 'px'
-
-	if (calcButton) calcButton.style.right = rightValue
-	if (standartButton) standartButton.style.right = rightValue
-	if (helpMenuButton) helpMenuButton.style.right = rightValue
+	rightToolbar.style.right = rightValue
 }
 
 function observeRightWrapperSize() {
@@ -3729,7 +3723,6 @@ function changeActiveElement(id) {
 	}
 	drawAll()
 }
-
 
 function handleParanthesis(e) {
 	const el = e.target
@@ -4578,6 +4571,23 @@ document.getElementById('btnCalc').addEventListener('click', function () {
 
 	updateToolWrapperRight()
 	drawAll()
+})
+
+function setRightToolbarOpen(isOpen) {
+	const rightToolbar = document.getElementById('rightToolbar')
+	const btnAcordeon = document.getElementById('btnAcordeon')
+	if (!rightToolbar || !btnAcordeon) return
+
+	rightToolbar.classList.toggle('is-open', isOpen)
+	btnAcordeon.setAttribute('aria-expanded', String(isOpen))
+	btnAcordeon.title = isOpen ? 'Araçları gizle' : 'Araçları göster'
+}
+
+document.getElementById('btnAcordeon')?.addEventListener('click', function () {
+	const rightToolbar = document.getElementById('rightToolbar')
+	if (!rightToolbar) return
+
+	setRightToolbarOpen(!rightToolbar.classList.contains('is-open'))
 })
 
 document.getElementById('btnStandartWiew').addEventListener('click', function () {
@@ -5708,15 +5718,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
 	function initResizerFunction(reSizer, rightWrapper) {
 		let x, w
+
 		function mouseDownHand(e) {
-			let calcButton = document.getElementById('btnCalc')
-			let standartButton = document.getElementById('btnStandartWiew')
-			let helpMenuButton = document.getElementById('helpMenuButton')
+			let rightToolbar = document.getElementById('rightToolbar')
 
 			rightWrapper.style.transition = "all 0s"
-			if (calcButton) calcButton.style.transition = "right 0s"
-			if (standartButton) standartButton.style.transition = "right 0s"
-			if (helpMenuButton) helpMenuButton.style.transition = "right 0s"
+			if (rightToolbar) rightToolbar.style.transition = "right 0s"
 
 			x = e.clientX
 			let sbWidth = window.getComputedStyle(rightWrapper).width
@@ -5724,7 +5731,6 @@ document.addEventListener('DOMContentLoaded', function () {
 			document.addEventListener('mousemove', mouseMoveHand)
 			document.addEventListener('mouseup', mouseUpHand)
 		}
-
 		function mouseMoveHand(evt) {
 			let dx = evt.clientX - x
 			let cw = w - dx
@@ -5735,14 +5741,10 @@ document.addEventListener('DOMContentLoaded', function () {
 			updateToolWrapperRight()
 		}
 		function mouseUpHand() {
-			let calcButton = document.getElementById('btnCalc')
-			let standartButton = document.getElementById('btnStandartWiew')
-			let helpMenuButton = document.getElementById('helpMenuButton')
+			let rightToolbar = document.getElementById('rightToolbar')
 
 			rightWrapper.style.transition = "all 1s"
-			if (calcButton) calcButton.style.transition = ""
-			if (standartButton) standartButton.style.transition = ""
-			if (helpMenuButton) helpMenuButton.style.transition = ""
+			if (rightToolbar) rightToolbar.style.transition = ""
 
 			document.removeEventListener('mouseup', mouseUpHand)
 			document.removeEventListener('mousemove', mouseMoveHand)
