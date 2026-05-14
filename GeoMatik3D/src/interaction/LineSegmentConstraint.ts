@@ -796,9 +796,22 @@ function getPrismFaceConstraintFromPosition(
     }
   }
 
-  const local = new THREE.Vector3().subVectors(point, basis.origin)
-  const rawU = local.dot(basis.uDirection) / basis.uLength
-  const rawV = local.dot(basis.vDirection) / basis.vLength
+  let local = new THREE.Vector3().subVectors(point, basis.origin)
+  let rawU = local.dot(basis.uDirection) / basis.uLength
+  let rawV = local.dot(basis.vDirection) / basis.vLength
+
+  if (basis.polygon) {
+    const clampedPosition = clampPointToConvexPolygon(
+      getPrismFacePosition(basis, rawU, rawV),
+      basis.vertices,
+      basis.normal
+    )
+
+    local = new THREE.Vector3().subVectors(clampedPosition, basis.origin)
+    rawU = local.dot(basis.uDirection) / basis.uLength
+    rawV = local.dot(basis.vDirection) / basis.vLength
+  }
+
   const u = THREE.MathUtils.clamp(rawU, 0, 1)
   const v = THREE.MathUtils.clamp(rawV, 0, 1)
   const position = getPrismFacePosition(basis, u, v)
@@ -871,7 +884,7 @@ function getPyramidFaceConstraintFromPosition(
     }
   }
 
-  const local = new THREE.Vector3().subVectors(point, basis.origin)
+  let local = new THREE.Vector3().subVectors(point, basis.origin)
   let u = local.dot(basis.uDirection) / basis.uLength
   let v = local.dot(basis.vDirection) / basis.vLength
 
@@ -884,6 +897,16 @@ function getPyramidFaceConstraintFromPosition(
       u /= sum
       v /= sum
     }
+  } else if (basis.polygon) {
+    const clampedPosition = clampPointToConvexPolygon(
+      getPyramidFacePosition(basis, u, v),
+      basis.vertices,
+      basis.normal
+    )
+
+    local = new THREE.Vector3().subVectors(clampedPosition, basis.origin)
+    u = THREE.MathUtils.clamp(local.dot(basis.uDirection) / basis.uLength, 0, 1)
+    v = THREE.MathUtils.clamp(local.dot(basis.vDirection) / basis.vLength, 0, 1)
   } else {
     u = THREE.MathUtils.clamp(u, 0, 1)
     v = THREE.MathUtils.clamp(v, 0, 1)
@@ -1210,8 +1233,10 @@ function getPrismFaceBasis(owner: Prism, faceIndex: number) {
       normal,
       origin,
       plane: new THREE.Plane().setFromNormalAndCoplanarPoint(normal, origin),
+      polygon: false,
       uDirection: uVector.clone().normalize(),
       uLength: uVector.length(),
+      vertices,
       vDirection: vVector.clone().normalize(),
       vLength: vVector.length(),
     }
@@ -1252,8 +1277,10 @@ function getPrismFaceBasis(owner: Prism, faceIndex: number) {
       .add(uVector.clone().normalize().multiplyScalar(-radius))
       .add(vDirection.clone().multiplyScalar(-radius)),
     plane: new THREE.Plane().setFromNormalAndCoplanarPoint(normal, center),
+    polygon: true,
     uDirection: uVector.clone().normalize(),
     uLength: radius * 2,
+    vertices,
     vDirection,
     vLength: radius * 2,
   }
@@ -1264,10 +1291,14 @@ function getPrismFacePosition(
   u: number,
   v: number
 ) {
-  return basis.origin
+  const position = basis.origin
     .clone()
     .add(basis.uDirection.clone().multiplyScalar(basis.uLength * THREE.MathUtils.clamp(u, 0, 1)))
     .add(basis.vDirection.clone().multiplyScalar(basis.vLength * THREE.MathUtils.clamp(v, 0, 1)))
+
+  return basis.polygon
+    ? clampPointToConvexPolygon(position, basis.vertices, basis.normal)
+    : position
 }
 
 function getPyramidFaceIndex(owner: Pyramid, triangleIndex: number) {
@@ -1304,9 +1335,11 @@ function getPyramidFaceBasis(owner: Pyramid, faceIndex: number) {
       normal,
       origin,
       plane: new THREE.Plane().setFromNormalAndCoplanarPoint(normal, origin),
+      polygon: false,
       triangle: true,
       uDirection: uVector.clone().normalize(),
       uLength: uVector.length(),
+      vertices,
       vDirection: vVector.clone().normalize(),
       vLength: vVector.length(),
     }
@@ -1342,9 +1375,11 @@ function getPyramidFaceBasis(owner: Pyramid, faceIndex: number) {
       .add(uVector.clone().normalize().multiplyScalar(-radius))
       .add(vDirection.clone().multiplyScalar(-radius)),
     plane: new THREE.Plane().setFromNormalAndCoplanarPoint(normal, center),
+    polygon: true,
     triangle: false,
     uDirection: uVector.clone().normalize(),
     uLength: radius * 2,
+    vertices,
     vDirection,
     vLength: radius * 2,
   }
@@ -1355,10 +1390,14 @@ function getPyramidFacePosition(
   u: number,
   v: number
 ) {
-  return basis.origin
+  const position = basis.origin
     .clone()
     .add(basis.uDirection.clone().multiplyScalar(basis.uLength * THREE.MathUtils.clamp(u, 0, 1)))
     .add(basis.vDirection.clone().multiplyScalar(basis.vLength * THREE.MathUtils.clamp(v, 0, 1)))
+
+  return basis.polygon
+    ? clampPointToConvexPolygon(position, basis.vertices, basis.normal)
+    : position
 }
 
 function getCylinderPointerConstraint(
@@ -1700,6 +1739,59 @@ function projectToSegment(start: THREE.Vector3, end: THREE.Vector3, point: THREE
 
 function interpolateLinear(start: THREE.Vector3, end: THREE.Vector3, t: number) {
   return start.clone().lerp(end, THREE.MathUtils.clamp(t, 0, 1))
+}
+
+function clampPointToConvexPolygon(
+  point: THREE.Vector3,
+  vertices: THREE.Vector3[],
+  normal: THREE.Vector3
+) {
+  if (vertices.length < 3) return point.clone()
+
+  if (isPointInsideConvexPolygon(point, vertices, normal)) {
+    return point.clone()
+  }
+
+  let closest = vertices[0].clone()
+  let closestDistanceSq = Infinity
+
+  for (let i = 0; i < vertices.length; i++) {
+    const start = vertices[i]
+    const end = vertices[(i + 1) % vertices.length]
+    const candidate = projectToSegment(start, end, point).position
+    const distanceSq = candidate.distanceToSquared(point)
+
+    if (distanceSq < closestDistanceSq) {
+      closest = candidate
+      closestDistanceSq = distanceSq
+    }
+  }
+
+  return closest
+}
+
+function isPointInsideConvexPolygon(
+  point: THREE.Vector3,
+  vertices: THREE.Vector3[],
+  normal: THREE.Vector3
+) {
+  const epsilon = 0.0001
+  let positive = false
+  let negative = false
+
+  for (let i = 0; i < vertices.length; i++) {
+    const start = vertices[i]
+    const end = vertices[(i + 1) % vertices.length]
+    const edge = new THREE.Vector3().subVectors(end, start)
+    const toPoint = new THREE.Vector3().subVectors(point, start)
+    const side = new THREE.Vector3().crossVectors(edge, toPoint).dot(normal)
+
+    if (side > epsilon) positive = true
+    if (side < -epsilon) negative = true
+    if (positive && negative) return false
+  }
+
+  return true
 }
 
 function fallbackHit(constraint: ObjectPointConstraint): ObjectPointHit {

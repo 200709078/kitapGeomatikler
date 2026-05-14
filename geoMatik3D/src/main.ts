@@ -30,6 +30,7 @@ import { HistoryManager } from './history/HistoryManager'
 import type { ToolCompleteOptions } from './tools/BaseTool'
 import planeIcon from './assets/plane.svg'
 import gridIcon from './assets/grid.svg'
+import blankIcon from './assets/blank.svg'
 
 const scene = createScene()
 const camera = createCamera()
@@ -78,7 +79,51 @@ if (renderer) {
   const unFoldControl = document.getElementById("unFoldControl")
   const unFoldSlider = document.getElementById("unFoldSlider") as HTMLInputElement | null
   const unFoldValue = document.getElementById("unFoldValue")
+  type PlaneToggleMode = "showBoth" | "hidePlane" | "hideBoth"
+  let planeToggleMode: PlaneToggleMode = "showBoth"
+
   const updatePlaneToggleIcon = () => {
+    const icon = document.getElementById("planeToggleIcon") as HTMLImageElement | null
+    const button = icon?.closest("button")
+
+    if (!icon) return
+
+    const states: Record<PlaneToggleMode, { icon: string, title: string }> = {
+      showBoth: {
+        icon: gridIcon,
+        title: "Düzlem Gizle",
+      },
+      hidePlane: {
+        icon: blankIcon,
+        title: "Grid Gizle",
+      },
+      hideBoth: {
+        icon: planeIcon,
+        title: "Düzlem/Grid Göster",
+      },
+    }
+    const state = states[planeToggleMode]
+
+    icon.src = state.icon
+    icon.alt = state.title
+    button?.setAttribute("title", state.title)
+  }
+
+  const applyPlaneToggleMode = () => {
+    if (planeToggleMode === "showBoth") {
+      plane.visible = true
+      grid.visible = true
+    } else if (planeToggleMode === "hidePlane") {
+      plane.visible = false
+      grid.visible = true
+    } else {
+      plane.visible = false
+      grid.visible = false
+    }
+
+    updatePlaneToggleIcon()
+  }
+  const updateLegacyPlaneToggleIcon = () => {
     const icon = document.getElementById("planeToggleIcon") as HTMLImageElement | null
     const button = icon?.closest("button")
 
@@ -90,6 +135,8 @@ if (renderer) {
     icon.alt = title
     button?.setAttribute("title", title)
   }
+
+  void updateLegacyPlaneToggleIcon
 
   const setSideControlActive = (active: boolean) => {
     if (sideControl) {
@@ -236,13 +283,18 @@ if (renderer) {
 
   createRightToolbar((actionName) => {
     if (actionName === "togglePlane") {
-      plane.visible = !plane.visible
-      grid.visible = true
-      updatePlaneToggleIcon()
+      planeToggleMode =
+        planeToggleMode === "showBoth"
+          ? "hidePlane"
+          : planeToggleMode === "hidePlane"
+            ? "hideBoth"
+            : "showBoth"
+
+      applyPlaneToggleMode()
     }
   })
 
-  updatePlaneToggleIcon()
+  applyPlaneToggleMode()
 
   const undoButton = document.getElementById("undoButton") as HTMLButtonElement | null
   const redoButton = document.getElementById("redoButton") as HTMLButtonElement | null

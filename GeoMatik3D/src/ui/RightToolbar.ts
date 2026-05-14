@@ -1,7 +1,7 @@
 import "./RightToolbar.css"
 
 import accordionIcon from "../assets/acordeon.svg"
-import planeIcon from "../assets/plane.svg"
+import gridIcon from "../assets/grid.svg"
 import deleteIcon from "../assets/delete.svg"
 import visibilityIcon from "../assets/visibility.svg"
 import undoIcon from "../assets/undo.svg"
@@ -39,9 +39,9 @@ export function createRightToolbar(
       class="right-toolbar-action"
       data-action="togglePlane"
       type="button"
-      title="Düzlemi Göster/Gizle"
+      title="Düzlem Gizle"
     >
-      <img id="planeToggleIcon" src="${planeIcon}" alt="Düzlemi Göster/Gizle" class="toolbar-icon" />
+      <img id="planeToggleIcon" src="${gridIcon}" alt="Düzlem Gizle" class="toolbar-icon" />
     </button>
 
     <button id="undoButton" class="right-toolbar-action" type="button" title="Geri Al" disabled>
