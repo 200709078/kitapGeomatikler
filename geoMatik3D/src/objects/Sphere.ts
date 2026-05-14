@@ -1,5 +1,6 @@
 import * as THREE from "three"
 import { LineSegment } from "./LineSegment"
+import { updateConstrainedPoints } from "../interaction/LineSegmentConstraint"
 import { getRandomColor } from "../utils/color"
 
 export class SphereObject {
@@ -7,6 +8,7 @@ export class SphereObject {
   surfacePoint: THREE.Mesh
   mesh: THREE.Mesh
   ownedPoints: THREE.Mesh[]
+  constrainedPoints: THREE.Mesh[] = []
   radiusSegmentObject: LineSegment | null = null
   radiusSegment: THREE.Mesh | null = null
   originalRadiusColor: THREE.Color | null = null
@@ -61,6 +63,7 @@ export class SphereObject {
       this.mesh,
       this.radiusSegment,
       ...this.ownedPoints,
+      ...this.constrainedPoints,
     ]
 
     return objects.filter((object): object is THREE.Object3D => object instanceof THREE.Object3D)
@@ -103,6 +106,7 @@ export class SphereObject {
 
     this.mesh.position.copy(center)
     this.mesh.scale.set(radius, radius, radius)
+    updateConstrainedPoints(this)
   }
 
   private removeDependent(point: THREE.Object3D, dependent: unknown) {

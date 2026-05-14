@@ -1,4 +1,5 @@
 import * as THREE from "three"
+import { updateConstrainedPoints } from "../interaction/LineSegmentConstraint"
 import { getRandomColor } from "../utils/color"
 
 export class Plane {
@@ -6,6 +7,7 @@ export class Plane {
     pointB: THREE.Mesh
     pointC: THREE.Mesh
     mesh: THREE.Mesh
+    constrainedPoints: THREE.Mesh[] = []
 
     size = 30
 
@@ -72,5 +74,6 @@ export class Plane {
         )
 
         this.mesh.quaternion.copy(quaternion)
+        updateConstrainedPoints(this)
     }
 }

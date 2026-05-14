@@ -1,4 +1,5 @@
 import * as THREE from "three"
+import { updateConstraintFromPointPosition } from "../interaction/LineSegmentConstraint"
 
 export type HistoryAction = {
   name: string
@@ -130,6 +131,7 @@ export class HistoryManager {
   ) {
     positions.forEach(({ object, before, after }) => {
       object.position.copy(key === "before" ? before : after)
+      updateConstraintFromPointPosition(object)
       object.userData.dependents?.forEach((dependent: any) => dependent.update?.())
     })
   }

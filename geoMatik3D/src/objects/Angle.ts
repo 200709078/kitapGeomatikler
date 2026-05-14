@@ -1,4 +1,5 @@
 import * as THREE from "three"
+import { updateConstrainedPoints } from "../interaction/LineSegmentConstraint"
 import { getRandomColor } from "../utils/color"
 
 export class AngleObject {
@@ -16,6 +17,7 @@ export class AngleObject {
   armRadius = 0.05
   color: string
   originalPartColors = new Map<THREE.Mesh, THREE.Color>()
+  constrainedPoints: THREE.Mesh[] = []
 
   constructor(
     pointA: THREE.Mesh,
@@ -163,6 +165,7 @@ export class AngleObject {
       .add(middleDir.multiplyScalar(this.arcRadius + 1))
 
     this.updateArms(a, b, c)
+    updateConstrainedPoints(this)
   }
 
   private createCylinderArm(material: THREE.Material) {

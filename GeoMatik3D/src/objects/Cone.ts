@@ -1,6 +1,7 @@
 import * as THREE from "three"
 import { LineSegment } from "./LineSegment"
 import { HEIGHT_POINT_SIZE } from "../interaction/Pointer"
+import { updateConstrainedPoints } from "../interaction/LineSegmentConstraint"
 import { getRandomColor } from "../utils/color"
 import { ConeUnfolder } from "../unfold/ConeUnfolder"
 
@@ -15,6 +16,7 @@ export class Cone {
   baseLine: THREE.LineLoop
   heightLine: THREE.Line
   slantLine: THREE.Line
+  constrainedPoints: THREE.Mesh[] = []
 
   height: number
   unFoldAngle = 0
@@ -120,6 +122,7 @@ export class Cone {
       this.heightLine,
       this.slantLine,
       this.unFoldGroup,
+      ...this.constrainedPoints,
     ]
 
     return objects.filter((object): object is THREE.Object3D => object instanceof THREE.Object3D)
@@ -175,6 +178,34 @@ export class Cone {
     this.updateHeightLine(baseCenter, apex)
     this.updateSlantLine(apex)
     this.updateUnFold(baseCenter, radius, heightDirection, apex)
+    updateConstrainedPoints(this)
+  }
+
+  getSurfaceFrame() {
+    const radius = this.getRadius()
+    const baseCenter = this.baseCenterPoint.position.clone()
+    const heightDirection = this.getHeightDirection()
+    const apex = baseCenter.clone().add(heightDirection.clone().multiplyScalar(this.height))
+    const radiusDirection = new THREE.Vector3()
+      .subVectors(this.radiusPoint.position, this.baseCenterPoint.position)
+
+    if (radius < 0.0001 || radiusDirection.lengthSq() < 0.000001) return null
+
+    radiusDirection.normalize()
+
+    const tangentDirection = new THREE.Vector3()
+      .crossVectors(heightDirection, radiusDirection)
+      .normalize()
+
+    return {
+      apex,
+      baseCenter,
+      height: this.height,
+      heightDirection,
+      radius,
+      radiusDirection,
+      tangentDirection,
+    }
   }
 
   updateUnFold(

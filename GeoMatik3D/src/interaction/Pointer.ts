@@ -14,6 +14,7 @@ export const POINT_SIZE = MOUSE_POINT_SIZE
 export const PREVIEW_POINT_SIZE = POINT_SIZE
 export const LOCKED_POINT_SIZE = POINT_SIZE
 export const HEIGHT_POINT_SIZE = POINT_SIZE
+export const CONSTRAINED_POINT_SIZE = POINT_SIZE * 1.35
 export const SELECTED_POINT_DRAG_RADIUS_PX = 70
 
 const raycaster = new THREE.Raycaster()
@@ -94,7 +95,17 @@ export function getNearestSelectablePoint(
     const y = (-projected.y * 0.5 + 0.5) * window.innerHeight
     const distance = Math.hypot(event.clientX - x, event.clientY - y)
 
-    if (distance <= tolerancePx && distance < nearestDistance) {
+    if (
+      distance <= tolerancePx &&
+      (
+        distance < nearestDistance ||
+        (
+          Math.abs(distance - nearestDistance) < 0.001 &&
+          object.userData.pointRole === "constrained" &&
+          nearest?.userData.pointRole !== "constrained"
+        )
+      )
+    ) {
       nearest = object
       nearestDistance = distance
     }

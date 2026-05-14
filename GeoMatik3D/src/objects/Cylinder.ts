@@ -1,6 +1,7 @@
 import * as THREE from "three"
 import { LineSegment } from "./LineSegment"
 import { HEIGHT_POINT_SIZE, LOCKED_POINT_SIZE } from "../interaction/Pointer"
+import { updateConstrainedPoints } from "../interaction/LineSegmentConstraint"
 import { getRandomColor } from "../utils/color"
 import { CylinderUnfolder } from "../unfold/CylinderUnfolder"
 
@@ -17,6 +18,7 @@ export class Cylinder {
   topLine: THREE.LineLoop
   heightLine: THREE.Line
   slantLine: THREE.Line
+  constrainedPoints: THREE.Mesh[] = []
 
   height: number
   unFoldAngle = 0
@@ -136,6 +138,7 @@ export class Cylinder {
       this.heightLine,
       this.slantLine,
       this.unFoldGroup,
+      ...this.constrainedPoints,
     ]
 
     return objects.filter((object): object is THREE.Object3D => object instanceof THREE.Object3D)
@@ -178,6 +181,34 @@ export class Cylinder {
     this.updateHeightLine(baseCenter, topCenter)
     this.updateSlantLine(heightDirection)
     this.updateUnFold(radius, heightDirection, topCenter)
+    updateConstrainedPoints(this)
+  }
+
+  getSurfaceFrame() {
+    const radius = this.getRadius()
+    const baseCenter = this.baseCenterPoint.position.clone()
+    const heightDirection = this.getHeightDirection()
+    const topCenter = baseCenter.clone().add(heightDirection.clone().multiplyScalar(this.height))
+    const radiusDirection = new THREE.Vector3()
+      .subVectors(this.radiusPoint.position, this.baseCenterPoint.position)
+
+    if (radius < 0.0001 || radiusDirection.lengthSq() < 0.000001) return null
+
+    radiusDirection.normalize()
+
+    const tangentDirection = new THREE.Vector3()
+      .crossVectors(heightDirection, radiusDirection)
+      .normalize()
+
+    return {
+      baseCenter,
+      height: this.height,
+      heightDirection,
+      radius,
+      radiusDirection,
+      tangentDirection,
+      topCenter,
+    }
   }
 
   getHeightDirection() {

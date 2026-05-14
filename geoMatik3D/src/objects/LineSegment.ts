@@ -1,10 +1,16 @@
 import * as THREE from "three"
+import {
+  removeObjectPointConstraint,
+  setObjectPointConstraint,
+  updateConstrainedPoints,
+} from "../interaction/LineSegmentConstraint"
 import { getRandomColor } from "../utils/color"
 
 export class LineSegment {
   startPoint: THREE.Mesh
   endPoint: THREE.Mesh
   mesh: THREE.Mesh
+  constrainedPoints: THREE.Mesh[] = []
 
   constructor(
     startPoint: THREE.Mesh,
@@ -35,6 +41,18 @@ export class LineSegment {
     this.update()
   }
 
+  addConstrainedPoint(point: THREE.Mesh, t: number) {
+    setObjectPointConstraint(point, {
+      type: "lineSegment",
+      owner: this,
+      t,
+    })
+  }
+
+  removeConstrainedPoint(point: THREE.Mesh) {
+    removeObjectPointConstraint(point)
+  }
+
   update() {
     const start = this.startPoint.position
     const end = this.endPoint.position
@@ -63,5 +81,7 @@ export class LineSegment {
     // SCALE (önce sıfırla sonra ver → önemli)
     this.mesh.scale.set(1, 1, 1)
     this.mesh.scale.set(1, length, 1)
+
+    updateConstrainedPoints(this)
   }
 }

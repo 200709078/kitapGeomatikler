@@ -2,6 +2,7 @@ import * as THREE from "three"
 import { createPoint } from "./Point"
 import { LineSegment } from "./LineSegment"
 import { HEIGHT_POINT_SIZE, LOCKED_POINT_SIZE } from "../interaction/Pointer"
+import { updateConstrainedPoints } from "../interaction/LineSegmentConstraint"
 import { getRandomColor } from "../utils/color"
 import { PrismUnfolder } from "../unfold/PrismUnfolder"
 
@@ -20,6 +21,7 @@ export class Prism {
   sideLines: THREE.LineSegments
   cornerPoints: THREE.Mesh[] = []
   ownedPoints: THREE.Mesh[] = []
+  constrainedPoints: THREE.Mesh[] = []
 
   selectableObjects: THREE.Object3D[]
 
@@ -150,6 +152,7 @@ export class Prism {
       this.sideLines,
       this.unFoldGroup,
       ...this.cornerPoints,
+      ...this.constrainedPoints,
     ]
 
     return objects.filter((object): object is THREE.Object3D => object instanceof THREE.Object3D)
@@ -198,6 +201,91 @@ export class Prism {
     this.updateMesh(baseVertices, topVertices)
     this.updateHeightLine()
     this.updateUnFold(baseVertices, topVertices)
+    updateConstrainedPoints(this)
+  }
+
+  getEdgeEndpoints(edgeIndex: number) {
+    const baseVertices = this.createPolygonVertices()
+    if (baseVertices.length < 3) return null
+
+    const normal = this.getBaseNormal()
+    if (!normal) return null
+
+    normal.multiplyScalar(-1)
+
+    const topVertices = baseVertices.map((p) =>
+      p.clone().add(normal.clone().multiplyScalar(this.height))
+    )
+
+    const n = baseVertices.length
+    const normalizedIndex = THREE.MathUtils.clamp(Math.floor(edgeIndex), 0, n * 3 - 1)
+
+    if (normalizedIndex < n) {
+      return {
+        start: baseVertices[normalizedIndex].clone(),
+        end: baseVertices[(normalizedIndex + 1) % n].clone(),
+      }
+    }
+
+    if (normalizedIndex < n * 2) {
+      const topIndex = normalizedIndex - n
+
+      return {
+        start: topVertices[topIndex].clone(),
+        end: topVertices[(topIndex + 1) % n].clone(),
+      }
+    }
+
+    const sideIndex = normalizedIndex - n * 2
+
+    return {
+      start: baseVertices[sideIndex].clone(),
+      end: topVertices[sideIndex].clone(),
+    }
+  }
+
+  getEdgeCount() {
+    const baseVertices = this.createPolygonVertices()
+    return baseVertices.length >= 3 ? baseVertices.length * 3 : 0
+  }
+
+  getFaceCount() {
+    const baseVertices = this.createPolygonVertices()
+    return baseVertices.length >= 3 ? baseVertices.length + 2 : 0
+  }
+
+  getFaceVertices(faceIndex: number) {
+    const baseVertices = this.createPolygonVertices()
+    if (baseVertices.length < 3) return null
+
+    const normal = this.getBaseNormal()
+    if (!normal) return null
+
+    normal.multiplyScalar(-1)
+
+    const topVertices = baseVertices.map((p) =>
+      p.clone().add(normal.clone().multiplyScalar(this.height))
+    )
+
+    if (faceIndex === 0) {
+      return baseVertices.map((vertex) => vertex.clone())
+    }
+
+    if (faceIndex === 1) {
+      return topVertices.map((vertex) => vertex.clone())
+    }
+
+    const sideIndex = faceIndex - 2
+    if (sideIndex < 0 || sideIndex >= baseVertices.length) return null
+
+    const next = (sideIndex + 1) % baseVertices.length
+
+    return [
+      baseVertices[sideIndex].clone(),
+      baseVertices[next].clone(),
+      topVertices[next].clone(),
+      topVertices[sideIndex].clone(),
+    ]
   }
 
   updateUnFold(

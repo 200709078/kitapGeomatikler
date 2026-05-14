@@ -2,6 +2,7 @@ import * as THREE from "three"
 import { createPoint } from "./Point"
 import { LineSegment } from "./LineSegment"
 import { HEIGHT_POINT_SIZE, LOCKED_POINT_SIZE } from "../interaction/Pointer"
+import { updateConstrainedPoints } from "../interaction/LineSegmentConstraint"
 import { getRandomColor } from "../utils/color"
 import { PyramidUnfolder } from "../unfold/PyramidUnfolder"
 
@@ -20,6 +21,7 @@ export class Pyramid {
     heightLine: THREE.Line
     sideLines: THREE.LineSegments
     ownedPoints: THREE.Mesh[] = []
+    constrainedPoints: THREE.Mesh[] = []
 
     selectableObjects: THREE.Object3D[]
 
@@ -150,6 +152,7 @@ export class Pyramid {
             this.sideLines,
             this.unFoldGroup,
             ...this.cornerPoints,
+            ...this.constrainedPoints,
         ]
 
         return objects.filter((object): object is THREE.Object3D => object instanceof THREE.Object3D)
@@ -230,6 +233,72 @@ export class Pyramid {
         this.updateMesh(baseVertices, apex)
         this.unFoldAngle = THREE.MathUtils.clamp(this.unFoldAngle, 0, this.getMaxUnFoldAngle())
         this.updateUnFold(baseVertices, apex)
+        updateConstrainedPoints(this)
+    }
+
+    getEdgeCount() {
+        const baseVertices = this.createPolygonVertices()
+        return baseVertices.length >= 3 ? baseVertices.length * 2 : 0
+    }
+
+    getEdgeEndpoints(edgeIndex: number) {
+        const geometry = this.getCurrentGeometry()
+        if (!geometry) return null
+
+        const n = geometry.baseVertices.length
+        const normalizedIndex = THREE.MathUtils.clamp(Math.floor(edgeIndex), 0, n * 2 - 1)
+
+        if (normalizedIndex < n) {
+            return {
+                start: geometry.baseVertices[normalizedIndex].clone(),
+                end: geometry.baseVertices[(normalizedIndex + 1) % n].clone(),
+            }
+        }
+
+        const sideIndex = normalizedIndex - n
+
+        return {
+            start: geometry.baseVertices[sideIndex].clone(),
+            end: geometry.apex.clone(),
+        }
+    }
+
+    getFaceCount() {
+        const baseVertices = this.createPolygonVertices()
+        return baseVertices.length >= 3 ? baseVertices.length + 1 : 0
+    }
+
+    getFaceVertices(faceIndex: number) {
+        const geometry = this.getCurrentGeometry()
+        if (!geometry) return null
+
+        if (faceIndex === 0) {
+            return geometry.baseVertices.map((vertex) => vertex.clone())
+        }
+
+        const sideIndex = faceIndex - 1
+        if (sideIndex < 0 || sideIndex >= geometry.baseVertices.length) return null
+
+        return [
+            geometry.baseVertices[sideIndex].clone(),
+            geometry.baseVertices[(sideIndex + 1) % geometry.baseVertices.length].clone(),
+            geometry.apex.clone(),
+        ]
+    }
+
+    private getCurrentGeometry() {
+        const baseVertices = this.createPolygonVertices()
+        if (baseVertices.length < 3) return null
+
+        const normal = this.getBaseNormal()
+        if (!normal) return null
+
+        normal.multiplyScalar(-1)
+
+        const center = this.getPolygonCenter(baseVertices)
+        const apex = center.clone().add(normal.clone().multiplyScalar(this.height))
+
+        return { apex, baseVertices }
     }
 
     updateUnFold(

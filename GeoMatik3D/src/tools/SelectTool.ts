@@ -5,9 +5,13 @@ import { Pyramid } from "../objects/Pyramid"
 import { Cone } from "../objects/Cone"
 import { Cylinder } from "../objects/Cylinder"
 import { getNearestSelectablePoint, getPointerIntersection, SELECTED_POINT_DRAG_RADIUS_PX } from "../interaction/Pointer"
+import {
+    getConstrainedPointDirection,
+    movePointAlongLineSegmentFromPointer,
+} from "../interaction/LineSegmentConstraint"
 
 
-type SelectionRole = "free" | "locked" | "height" | "solid"
+type SelectionRole = "free" | "locked" | "height" | "solid" | "constrained"
 const HELPERS_ENABLED = true
 type SideCountController = {
     sideCount: number
@@ -222,6 +226,13 @@ export class SelectTool extends BaseTool {
             return
         }
 
+        if (role === "constrained") {
+            movePointAlongLineSegmentFromPointer(this.selectedObject, event, this.camera)
+            this.updateDependents(this.selectedObject)
+            this.updateHelperArrows()
+            return
+        }
+
         if (role === "free") {
             if (this.verticalMove) {
                 const dy = event.clientY - this.lastMouseY
@@ -267,7 +278,7 @@ export class SelectTool extends BaseTool {
         this.controls.enabled = true
         this.updateHelperArrowScale()
 
-        if (this.hasMoved && movedObject && movedRole === "free") {
+        if (this.hasMoved && movedObject && (movedRole === "free" || movedRole === "constrained")) {
             this.recordMoveAction()
         }
 
@@ -582,6 +593,10 @@ export class SelectTool extends BaseTool {
         }
 
         if (!this.selectedObject.userData.pointRole) {
+            return false
+        }
+
+        if (this.selectedObject.userData.pointRole === "constrained") {
             return false
         }
 
@@ -1004,6 +1019,18 @@ export class SelectTool extends BaseTool {
             }
 
             this.addDoubleHelperArrow(direction, 0x800080)
+            this.updateHelperArrowScale()
+            return
+        }
+
+        if (role === "constrained") {
+            const directions = getConstrainedPointDirection(this.selectedObject)
+
+            if (!directions) return
+
+            directions.forEach((direction) => {
+                this.addDoubleHelperArrow(direction, 0x0b6b3a)
+            })
             this.updateHelperArrowScale()
             return
         }

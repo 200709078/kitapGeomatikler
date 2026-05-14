@@ -1,4 +1,5 @@
 import * as THREE from "three"
+import { updateConstrainedPoints } from "../interaction/LineSegmentConstraint"
 import { getRandomColor } from "../utils/color"
 
 export class LineObject {
@@ -6,6 +7,7 @@ export class LineObject {
   pointB: THREE.Mesh
   mesh: THREE.Mesh
   length: number
+  constrainedPoints: THREE.Mesh[] = []
 
   constructor(
     pointA: THREE.Mesh,
@@ -60,5 +62,6 @@ export class LineObject {
     )
 
     this.mesh.quaternion.copy(quaternion)
+    updateConstrainedPoints(this)
   }
 }
