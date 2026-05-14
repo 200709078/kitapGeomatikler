@@ -1,4 +1,5 @@
-//Asimptotlardaki atlamalar düzeltilecek.
+// Asimptotlardaki atlamalar düzeltilecek.
+// Mobil versiyona geçilecek.
 class mPoint {
 	constructor(a, b, temp = false) {
 		this.type = 'point'
@@ -3429,9 +3430,18 @@ function labelsCreator() {
 		objectsContainer.prepend(emptyDiv)
 	})
 }
+
 function toggleCalcIcon(imgEl) {
 	if (!imgEl) return
+
 	imgEl.classList.toggle('panel-hidden')
+
+	const btnCalc = document.getElementById('btnCalc')
+	const isPanelHidden = imgEl.classList.contains('panel-hidden')
+
+	if (btnCalc) {
+		btnCalc.title = isPanelHidden ? 'Paneli Göster' : 'Paneli Gizle'
+	}
 }
 
 function updateCalcButtonPosition() {

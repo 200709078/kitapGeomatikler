@@ -81,8 +81,11 @@ body.webgl-error-page {
   display: block;
 }
 
-#unFoldControl input {
-  width: 140px;
+#sideSlider,
+#unFoldSlider {
+  width: 120px;
+  min-width: 120px;
+  max-width: 120px;
 }
 
 #unFoldControl.active {
@@ -100,15 +103,14 @@ body.webgl-error-page {
 #unFoldControl.active input {
   cursor: pointer;
 }
+
 #rightControls {
   position: fixed;
   top: 12px;
   right: 76px;
   z-index: 10;
-
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 8px;
 }
-
