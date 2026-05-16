@@ -2,6 +2,10 @@ import * as THREE from "three"
 import { updateConstrainedPoints } from "../interaction/LineSegmentConstraint"
 import { getRandomColor } from "../utils/color"
 
+const ANGLE_ARC_TUBULAR_SEGMENTS = 64
+const ANGLE_ARC_RADIAL_SEGMENTS = 16
+const ANGLE_ARM_RADIAL_SEGMENTS = 32
+
 export class AngleObject {
   pointA: THREE.Mesh
   vertexB: THREE.Mesh
@@ -146,9 +150,9 @@ export class AngleObject {
 
     this.arc.geometry = new THREE.TubeGeometry(
       curve,
-      32,
+      ANGLE_ARC_TUBULAR_SEGMENTS,
       0.1,
-      8,
+      ANGLE_ARC_RADIAL_SEGMENTS,
       false
     )
 
@@ -173,7 +177,7 @@ export class AngleObject {
       this.armRadius,
       this.armRadius,
       1,
-      16
+      ANGLE_ARM_RADIAL_SEGMENTS
     )
 
     const mesh = new THREE.Mesh(geometry, material)
@@ -263,7 +267,7 @@ export class AngleObject {
       this.armRadius,
       this.armRadius,
       length,
-      16
+      ANGLE_ARM_RADIAL_SEGMENTS
     )
 
     const yAxis = new THREE.Vector3(0, 1, 0)

@@ -155,6 +155,7 @@ export function updateLineSegmentConstrainedPoint(point: THREE.Mesh) {
   if (!constraint) return
 
   point.position.copy(getPositionFromConstraint(constraint))
+  updatePointDependents(point)
 }
 
 export function updateConstrainedPoints(owner: SupportedOwner) {
@@ -1844,6 +1845,18 @@ function getConstrainedPoints(owner: SupportedOwner) {
   const target = owner as SupportedOwner & { constrainedPoints?: THREE.Mesh[] }
 
   return target.constrainedPoints ?? []
+}
+
+function updatePointDependents(point: THREE.Object3D) {
+  const dependents = point.userData.dependents
+
+  if (!Array.isArray(dependents)) return
+
+  dependents.forEach((dependent) => {
+    if (dependent && typeof dependent.update === "function") {
+      dependent.update()
+    }
+  })
 }
 
 function isObjectPointConstraint(value: unknown): value is ObjectPointConstraint {

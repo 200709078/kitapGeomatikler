@@ -2,6 +2,9 @@ import * as THREE from "three"
 import { updateConstrainedPoints } from "../interaction/LineSegmentConstraint"
 import { getRandomColor } from "../utils/color"
 
+const LINE_RADIUS = 0.1
+const LINE_RADIAL_SEGMENTS = 32
+
 export class LineObject {
   pointA: THREE.Mesh
   pointB: THREE.Mesh
@@ -19,7 +22,12 @@ export class LineObject {
     this.pointB = pointB
     this.length = length
 
-    const geometry = new THREE.CylinderGeometry(0.1, 0.1, 1, 16)
+    const geometry = new THREE.CylinderGeometry(
+      LINE_RADIUS,
+      LINE_RADIUS,
+      1,
+      LINE_RADIAL_SEGMENTS
+    )
     const material = new THREE.MeshStandardMaterial({ color: getRandomColor() })
 
     this.mesh = new THREE.Mesh(geometry, material)

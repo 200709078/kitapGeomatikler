@@ -2,6 +2,9 @@ import * as THREE from "three"
 import { updateConstrainedPoints } from "../interaction/LineSegmentConstraint"
 import { getRandomColor } from "../utils/color"
 
+const RAY_RADIUS = 0.1
+const RAY_RADIAL_SEGMENTS = 32
+
 export class RayObject {
     startPoint: THREE.Mesh
     directionPoint: THREE.Mesh
@@ -19,7 +22,12 @@ export class RayObject {
         this.directionPoint = directionPoint
         this.length = length
 
-        const geometry = new THREE.CylinderGeometry(0.1, 0.1, 1, 16)
+        const geometry = new THREE.CylinderGeometry(
+            RAY_RADIUS,
+            RAY_RADIUS,
+            1,
+            RAY_RADIAL_SEGMENTS
+        )
         const material = new THREE.MeshStandardMaterial({ color: getRandomColor() })
 
         this.mesh = new THREE.Mesh(geometry, material)
