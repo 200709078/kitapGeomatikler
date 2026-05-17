@@ -13,6 +13,7 @@ import {
 
 type SelectionRole = "free" | "locked" | "height" | "solid" | "constrained"
 const HELPERS_ENABLED = true
+const SELECTION_VISUALS_ENABLED = true
 type SideCountController = {
     sideCount: number
     setSideCount: (n: number) => void
@@ -37,6 +38,7 @@ export class SelectTool extends BaseTool {
 
     selectedObject: THREE.Mesh | null = null
     originalMaterial: THREE.Material | THREE.Material[] | null = null
+    originalMaterialColor: THREE.Color | null = null
     selectionOutline: THREE.LineSegments | null = null
     selectedOwner: any = null
     selectedSideCountController: SideCountController | null = null
@@ -73,6 +75,21 @@ export class SelectTool extends BaseTool {
     lastTapTime = 0
 
     helperArrows: THREE.Group[] = []
+    private readonly fallbackSelectedPointMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffaa00,
+    })
+    private readonly helperShaftGeometry = new THREE.CylinderGeometry(
+        0.105,
+        0.105,
+        0.66,
+        12
+    )
+    private readonly helperHeadGeometry = new THREE.ConeGeometry(0.14, 0.36, 16)
+    private readonly helperArrowMaterials = new Map<number, THREE.MeshStandardMaterial>()
+    private readonly selectionOutlineMaterial = new THREE.LineBasicMaterial({
+        color: 0xffaa00,
+        depthTest: false,
+    })
 
     controls: any
 
@@ -321,17 +338,22 @@ export class SelectTool extends BaseTool {
         this.selectedOwner = this.getSelectionOwner(object)
 
         if (this.getSelectionRole(this.selectedObject) === "solid") {
-            this.selectedOwner?.onSelect?.(this.selectedObject)
-            this.addSelectionOutline(this.selectedObject)
+            if (SELECTION_VISUALS_ENABLED) {
+                this.selectedOwner?.onSelect?.(this.selectedObject)
+                this.addSelectionOutline(this.selectedObject)
+            }
             this.updateSideCountControl(this.selectedOwner)
             this.updateUnFoldControl(this.selectedOwner)
             this.updateActionControls()
         } else if (this.selectedObject instanceof THREE.Mesh) {
-            this.originalMaterial = this.selectedObject.material
+            if (SELECTION_VISUALS_ENABLED) {
+                this.originalMaterial = this.selectedObject.material
+                this.originalMaterialColor = this.captureMaterialColor(this.selectedObject.material)
 
-            this.selectedObject.material = new THREE.MeshStandardMaterial({
-                color: 0xffaa00,
-            })
+                if (!this.applyMaterialColor(this.selectedObject.material, 0xffaa00)) {
+                    this.selectedObject.material = this.fallbackSelectedPointMaterial
+                }
+            }
             this.updateSideCountControl(null)
             this.updateUnFoldControl(null)
             this.updateActionControls()
@@ -358,9 +380,32 @@ export class SelectTool extends BaseTool {
 
     private restoreOriginalMaterial() {
         if (this.selectedObject instanceof THREE.Mesh && this.originalMaterial) {
+            if (this.originalMaterialColor) {
+                this.applyMaterialColor(this.selectedObject.material, this.originalMaterialColor)
+            }
+
             this.selectedObject.material = this.originalMaterial
             this.originalMaterial = null
+            this.originalMaterialColor = null
         }
+    }
+
+    private captureMaterialColor(material: THREE.Material | THREE.Material[]) {
+        if (Array.isArray(material)) return null
+        if (!("color" in material)) return null
+
+        return (material as THREE.Material & { color: THREE.Color }).color.clone()
+    }
+
+    private applyMaterialColor(
+        material: THREE.Material | THREE.Material[],
+        color: THREE.ColorRepresentation
+    ) {
+        if (Array.isArray(material) || !("color" in material)) return false
+
+        const colorMaterial = material as THREE.Material & { color: THREE.Color }
+        colorMaterial.color.set(color)
+        return true
     }
 
     private getSelectionRole(object: THREE.Object3D): SelectionRole {
@@ -874,12 +919,7 @@ export class SelectTool extends BaseTool {
         }
 
         const geometry = new THREE.EdgesGeometry(object.geometry, 15)
-        const material = new THREE.LineBasicMaterial({
-            color: 0xffaa00,
-            depthTest: false,
-        })
-
-        this.selectionOutline = new THREE.LineSegments(geometry, material)
+        this.selectionOutline = new THREE.LineSegments(geometry, this.selectionOutlineMaterial)
         this.selectionOutline.renderOrder = 999
         object.add(this.selectionOutline)
     }
@@ -893,10 +933,16 @@ export class SelectTool extends BaseTool {
 
         this.selectionOutline.geometry.dispose()
 
-        if (Array.isArray(this.selectionOutline.material)) {
-            this.selectionOutline.material.forEach((material) => material.dispose())
-        } else {
-            this.selectionOutline.material.dispose()
+        const material = this.selectionOutline.material
+
+        if (Array.isArray(material)) {
+            material.forEach((item) => {
+                if (item !== this.selectionOutlineMaterial) {
+                    item.dispose()
+                }
+            })
+        } else if (material !== this.selectionOutlineMaterial) {
+            material.dispose()
         }
 
         this.selectionOutline = null
@@ -1071,29 +1117,9 @@ export class SelectTool extends BaseTool {
         const shaftLength = 0.66
         const headLength = 0.36
 
-        const shaftRadius = 0.105
-        const headRadius = 0.14
-
-        const material = new THREE.MeshStandardMaterial({
-            color,
-        })
-
-        const shaftGeometry = new THREE.CylinderGeometry(
-            shaftRadius,
-            shaftRadius,
-            shaftLength,
-            12
-        )
-
-        const shaft = new THREE.Mesh(shaftGeometry, material)
-
-        const headGeometry = new THREE.ConeGeometry(
-            headRadius,
-            headLength,
-            16
-        )
-
-        const head = new THREE.Mesh(headGeometry, material)
+        const material = this.getHelperArrowMaterial(color)
+        const shaft = new THREE.Mesh(this.helperShaftGeometry, material)
+        const head = new THREE.Mesh(this.helperHeadGeometry, material)
 
         const quaternion = new THREE.Quaternion().setFromUnitVectors(
             new THREE.Vector3(0, 1, 0),
@@ -1117,6 +1143,17 @@ export class SelectTool extends BaseTool {
         return group
     }
 
+    private getHelperArrowMaterial(color: number) {
+        let material = this.helperArrowMaterials.get(color)
+
+        if (!material) {
+            material = new THREE.MeshStandardMaterial({ color })
+            this.helperArrowMaterials.set(color, material)
+        }
+
+        return material
+    }
+
     private updateHelperArrowScale() {
         this.helperArrows.forEach((arrow) => {
             arrow.scale.setScalar(1)
@@ -1128,18 +1165,6 @@ export class SelectTool extends BaseTool {
             if (arrow.parent) {
                 arrow.parent.remove(arrow)
             }
-
-            arrow.traverse((child) => {
-                if (child instanceof THREE.Mesh) {
-                    child.geometry.dispose()
-
-                    if (Array.isArray(child.material)) {
-                        child.material.forEach((m) => m.dispose())
-                    } else {
-                        child.material.dispose()
-                    }
-                }
-            })
         })
 
         this.helperArrows = []

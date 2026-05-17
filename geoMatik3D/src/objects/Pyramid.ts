@@ -50,7 +50,8 @@ export class Pyramid {
         this.height = pointA.position.distanceTo(pointB.position)
 
         const pointCObject = createPoint(
-            this.createInitialC(pointA.position, pointB.position)
+            this.createInitialC(pointA.position, pointB.position),
+            this.getPointRadius(pointA)
         )
 
         this.pointC = pointCObject
@@ -617,5 +618,13 @@ export class Pyramid {
         if (!Array.isArray(dependents)) return
 
         point.userData.dependents = dependents.filter((item: unknown) => item !== dependent)
+    }
+
+    private getPointRadius(point: THREE.Mesh) {
+        const geometry = point.geometry as THREE.BufferGeometry & {
+            parameters?: { radius?: number }
+        }
+
+        return geometry.parameters?.radius
     }
 }
