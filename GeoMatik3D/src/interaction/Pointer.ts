@@ -4,17 +4,18 @@ export const TOUCH_POINT_HIT_TOLERANCE_PX = 22
 export const PEN_POINT_HIT_TOLERANCE_PX = 14
 export const MOUSE_POINT_HIT_TOLERANCE_PX = 10
 
-export const TOUCH_POINT_SIZE = 0.50
+export const TOUCH_POINT_SIZE = 0.30
 export const PEN_POINT_SIZE = 0.50
 export const MOUSE_POINT_SIZE = 0.2
+const HAS_COARSE_POINTER = window.matchMedia("(pointer: coarse)").matches
 
 export const POINT_HIT_TOLERANCE_PX = MOUSE_POINT_HIT_TOLERANCE_PX
 export const POINT_SIZE = MOUSE_POINT_SIZE
 
 export const PREVIEW_POINT_SIZE = POINT_SIZE
-export const LOCKED_POINT_SIZE = POINT_SIZE
-export const HEIGHT_POINT_SIZE = POINT_SIZE
-export const CONSTRAINED_POINT_SIZE = POINT_SIZE * 1.35
+export const LOCKED_POINT_SIZE = HAS_COARSE_POINTER ? 0.30 : POINT_SIZE
+export const HEIGHT_POINT_SIZE = HAS_COARSE_POINTER ? 0.30 : POINT_SIZE
+export const CONSTRAINED_POINT_SIZE = HAS_COARSE_POINTER ? 0.33 : POINT_SIZE * 1.1
 export const SELECTED_POINT_DRAG_RADIUS_PX = 70
 
 const raycaster = new THREE.Raycaster()
