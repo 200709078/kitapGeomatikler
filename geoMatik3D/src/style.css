@@ -130,3 +130,53 @@ body.webgl-error-page {
   align-items: stretch;
   gap: 8px;
 }
+
+.tool-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  z-index: 30;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: rgba(17, 24, 39, 0.92);
+  color: #ffffff;
+  font: 600 15px/1.35 Arial, Helvetica, sans-serif;
+  text-align: left;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.22);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 12px);
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.tool-toast-title,
+.tool-toast-message {
+  display: block;
+}
+
+.tool-toast-title {
+  margin-bottom: 4px;
+  font-size: 13px;
+  letter-spacing: 0;
+}
+
+.tool-toast-message {
+  font-weight: 500;
+}
+
+.tool-toast.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+@media (max-width: 640px) {
+  .tool-toast {
+    width: calc(100% - 24px);
+    max-width: calc(100% - 24px);
+    bottom: 12px;
+    border-radius: 8px;
+  }
+}

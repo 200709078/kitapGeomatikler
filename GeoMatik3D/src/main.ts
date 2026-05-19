@@ -32,6 +32,91 @@ import planeIcon from './assets/plane.svg'
 import gridIcon from './assets/grid.svg'
 import blankIcon from './assets/blank.svg'
 
+let toastTimeoutId: number | undefined
+
+const showToastMessage = (title: string, message: string) => {
+  let toast = document.getElementById("toolToast")
+
+  if (!toast) {
+    toast = document.createElement("div")
+    toast.id = "toolToast"
+    toast.className = "tool-toast"
+    toast.setAttribute("role", "status")
+    toast.setAttribute("aria-live", "polite")
+    document.body.appendChild(toast)
+  }
+
+  toast.innerHTML = `
+    <strong class="tool-toast-title">${title}</strong>
+    <span class="tool-toast-message">${message}</span>
+  `
+  toast.classList.add("is-visible")
+
+  if (toastTimeoutId) {
+    window.clearTimeout(toastTimeoutId)
+  }
+
+  toastTimeoutId = window.setTimeout(() => {
+    toast?.classList.remove("is-visible")
+  }, 2800)
+}
+
+type ToolToastMessage = {
+  title: string
+  message: string
+}
+
+const TOOL_TOAST_MESSAGES: Record<CloseToolbarToolName, ToolToastMessage> = {
+  select: {
+    title: "Seçim",
+    message: "Bir nesneyi seç veya taşı",
+  },
+  point: {
+    title: "Nokta",
+    message: "Konum veya bir nesne seçin",
+  },
+  lineSegment: {
+    title: "Doğru Parçası",
+    message: "Farklı iki nokta seçin",
+  },
+  line: {
+    title: "Doğru",
+    message: "Farklı iki nokta seçin",
+  },
+  ray: {
+    title: "Işın",
+    message: "Farklı iki nokta seçin",
+  },
+  angle: {
+    title: "Açı",
+    message: "Farklı üç nokta seçin",
+  },
+  plane: {
+    title: "Düzlem",
+    message: "Doğrusal olmayan üç nokta seçin",
+  },
+  sphere: {
+    title: "Küre",
+    message: "Farklı iki nokta seçin",
+  },
+  prism: {
+    title: "Prizma",
+    message: "Farklı iki nokta seçin",
+  },
+  pyramid: {
+    title: "Piramit",
+    message: "Farklı iki nokta seçin",
+  },
+  cylinder: {
+    title: "Silindir",
+    message: "Farklı iki nokta seçin",
+  },
+  cone: {
+    title: "Koni",
+    message: "Farklı iki nokta seçin",
+  },
+}
+
 const scene = createScene()
 const camera = createCamera()
 const renderer = createRenderer()
@@ -275,6 +360,9 @@ if (renderer) {
     }
 
     setSideControlActive(toolName === "prism" || toolName === "pyramid")
+
+    const toastMessage = TOOL_TOAST_MESSAGES[toolName]
+    showToastMessage(toastMessage.title, toastMessage.message)
   }
 
   closeToolbar = createCloseToolbar((toolName) => {

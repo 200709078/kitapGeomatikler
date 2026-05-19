@@ -4507,6 +4507,45 @@ function finishToolAndReturnSelect() {
 }
 
 let toastTimer = null
+
+function isMobileToastLayout() {
+	const viewportWidth = window.visualViewport?.width || window.innerWidth
+	const viewportHeight = window.visualViewport?.height || window.innerHeight
+	const isCompactViewport = Math.min(viewportWidth, viewportHeight) <= 960 && Math.max(viewportWidth, viewportHeight) <= 1280
+
+	return isCompactViewport
+}
+
+function updateToastLayout() {
+	const snackbar = document.getElementById('snackbar')
+
+	if (!snackbar) return
+
+	const useMobileLayout = isMobileToastLayout()
+	snackbar.classList.toggle('mobile-full-width', useMobileLayout)
+
+	if (useMobileLayout) {
+		snackbar.style.left = '0'
+		snackbar.style.right = '0'
+		snackbar.style.width = 'auto'
+		snackbar.style.minWidth = '100vw'
+		snackbar.style.maxWidth = '100vw'
+		snackbar.style.boxSizing = 'border-box'
+		snackbar.style.borderRadius = '0'
+		snackbar.style.transform = 'none'
+		return
+	}
+
+	snackbar.style.removeProperty('left')
+	snackbar.style.removeProperty('right')
+	snackbar.style.removeProperty('width')
+	snackbar.style.removeProperty('min-width')
+	snackbar.style.removeProperty('max-width')
+	snackbar.style.removeProperty('box-sizing')
+	snackbar.style.removeProperty('border-radius')
+	snackbar.style.removeProperty('transform')
+}
+
 function showToast(titleOrToast, msg = '') {
 	if (!titleOrToast && !msg) return
 
@@ -4528,6 +4567,7 @@ function showToast(titleOrToast, msg = '') {
 	snackTitle.textContent = title
 	snackContent.textContent = message
 
+	updateToastLayout()
 	x.classList.remove('show')
 	void x.offsetWidth
 	x.classList.add('show')
@@ -4538,6 +4578,9 @@ function showToast(titleOrToast, msg = '') {
 		x.classList.remove('show')
 	}, 3000)
 }
+
+window.addEventListener('resize', updateToastLayout)
+window.addEventListener('orientationchange', updateToastLayout)
 
 
 
