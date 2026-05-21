@@ -1,0 +1,198 @@
+body {
+  font-family: Arial, sans-serif;
+  padding: 0 px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #f9f9f9;
+}
+
+#control-panel {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+#data-table {
+  border-collapse: collapse;
+  user-select: none;
+}
+
+th {
+  background-color: #f2f2f2;
+  text-align: center;
+  border: 1px solid #bfbfbf;
+  padding: 4px 6px;
+}
+
+th:first-child {
+  min-width: 40px;
+}
+
+td {
+  border: 1px solid #d0d0d0;
+  padding: 4px 6px;
+  background-color: #ffffff;
+  min-width: 60px;
+}
+
+td.selected {
+  outline: 2px solid #0078d7;
+}
+
+td.range-selected {
+  background-color: #d9ebff;
+}
+
+td.chart-range {
+  background-color: #d6f5d6;
+  /* açık yeşil */
+}
+
+
+#chart-area {
+  max-width: 600px;
+}
+
+td.selected {
+  outline: 2px solid #2563eb;
+  background-color: #eff6ff;
+}
+
+td.editing {
+  outline: 2px solid #2563eb;
+  background-color: #eef2ff;
+}
+
+#chart-type {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 15px;
+}
+
+#chart-type label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+#chart-type[hidden] {
+  display: none !important;
+}
+
+#clear-chart-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  background: none;
+  border: 1px solid #ccc;
+  padding: 6px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+#clear-chart-btn:hover {
+  background-color: #f0f0f0;
+}
+
+#clear-chart-btn:active {
+  background-color: #e0e0e0;
+}
+
+#clear-chart-btn img {
+  display: block;
+  width: 20px;
+  height: 20px;
+  stroke: #333;
+  stroke-width: 2;
+  fill: none;
+}
+#draw-chart-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  background: none;
+  border: 1px solid #ccc;
+  padding: 6px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+#draw-chart-btn:hover {
+  background-color: #f0f0f0;
+}
+
+#draw-chart-btn:active {
+  background-color: #e0e0e0;
+}
+
+#draw-chart-btn img {
+  display: block;
+  width: 20px;
+  height: 20px;
+  stroke: #333;
+  stroke-width: 2;
+  fill: none;
+}
+
+.icon-btn {
+  background: none;
+  border: 1px solid #ccc;
+  padding: 6px;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-btn img {
+  width: 40px;
+  height: 40px;
+  stroke: #333;
+  stroke-width: 2;
+  fill: none;
+}
+
+.icon-btn:hover {
+  background-color: #f0f0f0;
+}
+
+.icon-btn:active {
+  background-color: #e0e0e0;
+}
+
+.range-selected {
+  background-color: #dbeafe;
+}
+
+td.editing {
+  user-select: text;
+}
+
+td.chart-range {
+  background-color: #d4f7d4;
+}
+
+td.chart-x {
+  background-color: #d9fdd3;
+}
+
+td.chart-y {
+  background-color: #caf8c5;
+}
+
+#chart-inputs {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+#chart-inputs input {
+  width: 160px;
+}

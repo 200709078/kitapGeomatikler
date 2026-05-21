@@ -28,13 +28,13 @@
   <line x1="18" y1="46" x2="46" y2="18" stroke="#111827" stroke-width="3.2" stroke-linecap="round" />
 
   <g filter="url(#segmentPointShadow)">
-    <circle cx="18" cy="46" r="6.4" fill="url(#segmentPointBody)" />
-    <circle cx="18" cy="46" r="6" fill="none" stroke="#004ebf" stroke-width="0.65" opacity="0.55" />
+    <circle cx="18" cy="46" r="4.4" fill="url(#segmentPointBody)" />
+    <circle cx="18" cy="46" r="4" fill="none" stroke="#004ebf" stroke-width="0.65" opacity="0.55" />
     <ellipse cx="15.8" cy="43.5" rx="2.5" ry="1.9" fill="url(#segmentPointLight)" transform="rotate(-22 15.8 43.5)" />
   </g>
   <g filter="url(#segmentPointShadow)">
-    <circle cx="46" cy="18" r="6.4" fill="url(#segmentPointBody)" />
-    <circle cx="46" cy="18" r="6" fill="none" stroke="#004ebf" stroke-width="0.65" opacity="0.55" />
+    <circle cx="46" cy="18" r="4.4" fill="url(#segmentPointBody)" />
+    <circle cx="46" cy="18" r="4" fill="none" stroke="#004ebf" stroke-width="0.65" opacity="0.55" />
     <ellipse cx="43.8" cy="15.5" rx="2.5" ry="1.9" fill="url(#segmentPointLight)" transform="rotate(-22 43.8 15.5)" />
   </g>
 </svg>

@@ -114,8 +114,8 @@ const toolsArr = [
         icon: "reflect.svg",
         action: "reflectpoint",
         buttonId: "btnReflectPoint",
-        toast: "Yansıt Nokta|Yansıtılacak noktayı ve ardından yansıtma merkezini seçiniz.",
-        title: "Yansıt Nokta|Yansıtılacak noktayı ve ardından yansıtma merkezini seçiniz."
+        toast: "Yansıt Nokta|Yansıtılacak noktayı ve yansıtma merkezini seçiniz.",
+        title: "Yansıt Nokta|Yansıtılacak noktayı ve yansıtma merkezini seçiniz."
     },
     {
         id: "intersect",
@@ -131,8 +131,8 @@ const toolsArr = [
         label: "Çember 2",
         icon: "circle2.svg",
         action: "circle2",
-        toast: "Çember|Merkez nokta ve ardından çember üzerinde bir nokta seçiniz.",
-        title: "Çember|Merkez nokta ve ardından çember üzerinde bir nokta seçiniz."
+        toast: "Çember|Merkez nokta ve çember üzerinde bir nokta seçiniz.",
+        title: "Çember|Merkez nokta ve çember üzerinde bir nokta seçiniz."
     },
     {
         id: "circle3",

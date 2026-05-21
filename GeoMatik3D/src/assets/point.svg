@@ -20,7 +20,7 @@
     </filter>
   </defs>
 
-  <circle cx="32" cy="32" r="14" fill="url(#pointBody)" filter="url(#softShadow)" />
-  <circle cx="32" cy="32" r="13.4" fill="none" stroke="#004ebf" stroke-width="1.4" opacity="0.55" />
+  <circle cx="32" cy="32" r="11" fill="url(#pointBody)" filter="url(#softShadow)" />
+  <circle cx="32" cy="32" r="11.4" fill="none" stroke="#004ebf" stroke-width="1.4" opacity="0.55" />
   <ellipse cx="24.6" cy="23" rx="5.8" ry="4" fill="url(#pointLight)" transform="rotate(-22 24.6 23)" />
 </svg>

@@ -4508,42 +4508,8 @@ function finishToolAndReturnSelect() {
 
 let toastTimer = null
 
-function isMobileToastLayout() {
-	const viewportWidth = window.visualViewport?.width || window.innerWidth
-	const viewportHeight = window.visualViewport?.height || window.innerHeight
-	const isCompactViewport = Math.min(viewportWidth, viewportHeight) <= 960 && Math.max(viewportWidth, viewportHeight) <= 1280
-
-	return isCompactViewport
-}
-
 function updateToastLayout() {
-	const snackbar = document.getElementById('snackbar')
-
-	if (!snackbar) return
-
-	const useMobileLayout = isMobileToastLayout()
-	snackbar.classList.toggle('mobile-full-width', useMobileLayout)
-
-	if (useMobileLayout) {
-		snackbar.style.left = '0'
-		snackbar.style.right = '0'
-		snackbar.style.width = 'auto'
-		snackbar.style.minWidth = '100vw'
-		snackbar.style.maxWidth = '100vw'
-		snackbar.style.boxSizing = 'border-box'
-		snackbar.style.borderRadius = '0'
-		snackbar.style.transform = 'none'
-		return
-	}
-
-	snackbar.style.removeProperty('left')
-	snackbar.style.removeProperty('right')
-	snackbar.style.removeProperty('width')
-	snackbar.style.removeProperty('min-width')
-	snackbar.style.removeProperty('max-width')
-	snackbar.style.removeProperty('box-sizing')
-	snackbar.style.removeProperty('border-radius')
-	snackbar.style.removeProperty('transform')
+	// Toast layout is handled by CSS media queries.
 }
 
 function showToast(titleOrToast, msg = '') {
@@ -4564,19 +4530,17 @@ function showToast(titleOrToast, msg = '') {
 
 	if (!x || !snackTitle || !snackContent) return
 
-	snackTitle.textContent = title
+	snackTitle.textContent = title.toLocaleUpperCase('tr-TR')
 	snackContent.textContent = message
 
 	updateToastLayout()
-	x.classList.remove('show')
-	void x.offsetWidth
-	x.classList.add('show')
+	x.classList.add('show', 'is-visible')
 
 	clearTimeout(toastTimer)
 
 	toastTimer = setTimeout(function () {
-		x.classList.remove('show')
-	}, 3000)
+		x.classList.remove('show', 'is-visible')
+	}, 2800)
 }
 
 window.addEventListener('resize', updateToastLayout)
