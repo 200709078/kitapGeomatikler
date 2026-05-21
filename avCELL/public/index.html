@@ -14,41 +14,84 @@
 </head>
 
 <body>
-    <!-- CONTROL PANEL -->
-    <section id="control-panel">
-        <h2>avCELL</h2>
-        <button id="add-row-btn" class="icon-btn" title="Satır Ekle">
-            <img src="icons/addrowend.svg" />
-        </button>
-        <button id="remove-row-btn" class="icon-btn" title="Satır Sil">
-            <img src="icons/delrowend.svg" />
-        </button>
-        <button id="add-col-btn" class="icon-btn" title="Sütun Ekle">
-            <img src="icons/addcolend.svg" />
-        </button>
-        <button id="remove-col-btn" class="icon-btn" title="Sütun Sil">
-            <img src="icons/delcolend.svg" />
-        </button>
-    </section>
-    <!-- TABLE AREA -->
-    <section id="table-area">
-        <table id="data-table"></table>
-    </section>
+    <main id="app-shell">
+        <header id="top-bar">
+            <h2>avCELL</h2>
+            <section id="menu-bar" aria-label="Ana menü">
+                <nav class="text-menu">
+                    <button type="button">Dosya</button>
+                    <button type="button">Düzenle</button>
+                    <button type="button">Görünüm</button>
+                    <button type="button">Ekle</button>
+                    <button type="button">Biçim</button>
+                    <button type="button">Veri</button>
+                    <button type="button">Araçlar</button>
+                    <button type="button">Yardım</button>
+                </nav>
+            </section>
 
-    <!-- CHART INPUT PANEL -->
-    <section id="chart-inputs" hidden>
+            <section id="control-panel" aria-label="Araç çubuğu">
+                <div class="toolbar-group">
+                    <div class="toolbar-cluster">
+                        <button id="undo-btn" class="icon-btn" title="Geri Al (Ctrl+Z)">
+                            <img src="icons/undo.svg" alt="" />
+                        </button>
+                        <button id="redo-btn" class="icon-btn" title="Yinele (Ctrl+Y)">
+                            <img src="icons/redo.svg" alt="" />
+                        </button>
+                    </div>as
+                    <div class="toolbar-cluster">
+                        <button id="add-row-btn" class="icon-btn" title="Satır Ekle">
+                            <img src="icons/addrowend.svg" alt="" />
+                        </button>
+                        <button id="remove-row-btn" class="icon-btn" title="Satır Sil">
+                            <img src="icons/delrowend.svg" alt="" />
+                        </button>
+                    </div>
+                    <div class="toolbar-cluster">
+                        <button id="add-col-btn" class="icon-btn" title="Sütun Ekle">
+                            <img src="icons/addcolend.svg" alt="" />
+                        </button>
+                        <button id="remove-col-btn" class="icon-btn" title="Sütun Sil">
+                            <img src="icons/delcolend.svg" alt="" />
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </header>
+
+        <section id="formula-bar">
+            <input id="cell-name" aria-label="Hücre adı" value="A1" autocomplete="off" spellcheck="false" />
+            <div id="formula-box">
+                <span id="formula-mark">fx</span>
+                <input id="formula-input" aria-label="Formül çubuğu" autocomplete="off" />
+            </div>
+        </section>
+
+        <!-- TABLE AREA -->
+        <section id="table-area">
+            <table id="data-table"></table>
+        </section>
+
+        <section id="sheet-tabs">
+            <button class="sheet-tab active" type="button">Sayfa1</button>
+        </section>
+    </main>
+
+    <!-- CHART INPUT PANEL: hidden for now, kept for later -->
+    <section id="chart-inputs" class="future-chart-panel" hidden>
         <input id="chart-x-range" placeholder="Başlıklar (X): A1:A5" />
         <input id="chart-y-range" placeholder="Veriler (Y): B1:B5" />
         <button id="draw-chart-btn" type="button" title="Grafik Çiz">
-            <img src="icons/addgraph.svg" />
+            <img src="icons/addgraph.svg" alt="" />
         </button>
         <button id="clear-chart-btn" type="button" title="Temizle">
-            <img src="icons/clear.svg" />
+            <img src="icons/clear.svg" alt="" />
         </button>
     </section>
 
-    <!-- CHART TYPE SELECTION -->
-    <section id="chart-type" hidden>
+    <!-- CHART TYPE SELECTION: hidden for now, kept for later -->
+    <section id="chart-type" class="future-chart-panel" hidden>
         <label>
             <input type="radio" name="chartType" value="bar" checked />Sütun
         </label>
@@ -60,8 +103,8 @@
         </label>
     </section>
 
-    <!-- CHART AREA -->
-    <section id="chart-area" hidden>
+    <!-- CHART AREA: hidden for now, kept for later -->
+    <section id="chart-area" class="future-chart-panel" hidden>
         <canvas id="chartCanvas"></canvas>
     </section>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

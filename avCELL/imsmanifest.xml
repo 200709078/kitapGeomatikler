@@ -40,6 +40,8 @@
       <file href="public/icons/delcolend.svg" />
       <file href="public/icons/delrowend.svg" />
       <file href="public/icons/favicon.svg" />
+      <file href="public/icons/redo-letter.svg" />
+      <file href="public/icons/undo-letter.svg" />
     </resource>
   </resources>
 </manifest>
