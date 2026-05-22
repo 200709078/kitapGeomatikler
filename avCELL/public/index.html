@@ -24,11 +24,47 @@
                     <div class="menu-shell">
                         <button id="file-menu-btn" type="button">Dosya</button>
                         <div id="file-menu" class="text-menu-popover" hidden>
-                            <button id="save-file-btn" type="button">Kaydet</button>
-                            <button id="save-as-file-btn" type="button">Farklı kaydet</button>
+                            <button id="open-file-btn" type="button">
+                                <img src="icons/open.svg" alt="" />
+                                <span>Aç</span>
+                            </button>
+                            <hr>
+                            <button id="save-file-btn" type="button">
+                                <img src="icons/save.svg" alt="" />
+                                <span>Kaydet</span>
+                            </button>
+                            <button id="save-as-file-btn" type="button">
+                                <img src="icons/save-as.svg" alt="" />
+                                <span>Farklı kaydet</span>
+                            </button>
                         </div>
                     </div>
-                    <button type="button">Düzenle</button>
+                    <div class="menu-shell">
+                        <button id="edit-menu-btn" type="button">Düzenle</button>
+                        <div id="edit-menu" class="text-menu-popover" hidden>
+                            <button id="menu-undo-btn" type="button">
+                                <img src="icons/undo.svg" alt="" />
+                                <span>Geri Al</span>
+                            </button>
+                            <button id="menu-redo-btn" type="button">
+                                <img src="icons/redo.svg" alt="" />
+                                <span>Yinele</span>
+                            </button>
+                            <hr>
+                            <button id="menu-cut-btn" type="button">
+                                <img src="icons/cut.svg" alt="" />
+                                <span>Kes</span>
+                            </button>
+                            <button id="menu-copy-btn" type="button">
+                                <img src="icons/copy.svg" alt="" />
+                                <span>Kopyala</span>
+                            </button>
+                            <button id="menu-paste-btn" type="button">
+                                <img src="icons/paste.svg" alt="" />
+                                <span>Yapıştır</span>
+                            </button>
+                        </div>
+                    </div>
                     <button type="button">Görünüm</button>
                     <button type="button">Ekle</button>
                     <button type="button">Biçim</button>
@@ -61,7 +97,7 @@
                             <img src="icons/addcolleft.svg" alt="" />
                         </button>
                         <button id="remove-col-btn" class="icon-btn" title="Sütun Sil">
-                            <img src="icons/delcolend.svg" alt="" />
+                            <img src="icons/delcol.svg" alt="" />
                         </button>
                     </div>
                     <div class="toolbar-cluster">
@@ -97,6 +133,28 @@
                         <input id="text-color-input" class="hidden-color-input" type="color" value="#202124" aria-label="Yazı rengi" />
                         <input id="fill-color-input" class="hidden-color-input" type="color" value="#fff2cc" aria-label="Dolgu rengi" />
                     </div>
+                    <div class="toolbar-cluster">
+                        <button id="align-left-btn" class="icon-btn" title="Sola hizala">
+                            <img src="icons/align-left.svg" alt="" />
+                        </button>
+                        <button id="align-center-btn" class="icon-btn" title="Ortaya hizala">
+                            <img src="icons/align-center.svg" alt="" />
+                        </button>
+                        <button id="align-right-btn" class="icon-btn" title="Sağa hizala">
+                            <img src="icons/align-right.svg" alt="" />
+                        </button>
+                    </div>
+                    <div class="toolbar-cluster">
+                        <button id="align-top-btn" class="icon-btn" title="Üste hizala">
+                            <img src="icons/align-top.svg" alt="" />
+                        </button>
+                        <button id="align-middle-btn" class="icon-btn" title="Dikey ortala">
+                            <img src="icons/align-middle.svg" alt="" />
+                        </button>
+                        <button id="align-bottom-btn" class="icon-btn" title="Alta hizala">
+                            <img src="icons/align-bottom.svg" alt="" />
+                        </button>
+                    </div>
                 </div>
             </section>
         </header>
@@ -106,6 +164,19 @@
             <div id="formula-box">
                 <span id="formula-mark">fx</span>
                 <input id="formula-input" aria-label="Formül çubuğu" autocomplete="off" />
+            </div>
+            <div id="find-panel" hidden>
+                <input id="find-input" type="search" aria-label="Bul" placeholder="Bul" autocomplete="off" />
+                <span id="find-count">0/0</span>
+                <button id="find-prev-btn" class="icon-btn" type="button" title="Önceki">
+                    <span>‹</span>
+                </button>
+                <button id="find-next-btn" class="icon-btn" type="button" title="Sonraki">
+                    <span>›</span>
+                </button>
+                <button id="find-close-btn" class="icon-btn" type="button" title="Kapat">
+                    <span>×</span>
+                </button>
             </div>
         </section>
 
@@ -118,6 +189,8 @@
             <button class="sheet-tab active" type="button">Sayfa1</button>
         </section>
     </main>
+
+    <input id="open-file-input" class="hidden-file-input" type="file" accept=".avc,application/json" />
 
     <!-- CHART INPUT PANEL: hidden for now, kept for later -->
     <section id="chart-inputs" class="future-chart-panel" hidden>
@@ -150,21 +223,61 @@
     </section>
 
     <div id="context-menu" hidden>
-        <button type="button" data-action="cut">Kes</button>
-        <button type="button" data-action="copy">Kopyala</button>
-        <button type="button" data-action="paste">Yapıştır</button>
+        <button type="button" data-action="cut">
+            <img src="icons/cut.svg" alt="" />
+            <span>Kes</span>
+        </button>
+        <button type="button" data-action="copy">
+            <img src="icons/copy.svg" alt="" />
+            <span>Kopyala</span>
+        </button>
+        <button type="button" data-action="paste">
+            <img src="icons/paste.svg" alt="" />
+            <span>Yapıştır</span>
+        </button>
         <hr>
-        <button type="button" data-action="insert-row-above">Üste satır ekle</button>
-        <button type="button" data-action="delete-row">Satır sil</button>
-        <button type="button" data-action="insert-col-left">Sola sütun ekle</button>
-        <button type="button" data-action="delete-col">Sütun sil</button>
+        <button type="button" data-action="insert-row-above">
+            <img src="icons/addrowend.svg" alt="" />
+            <span>Üste satır ekle</span>
+        </button>
+        <button type="button" data-action="delete-row">
+            <img src="icons/delrowend.svg" alt="" />
+            <span>Satır sil</span>
+        </button>
+        <button type="button" data-action="insert-col-left">
+            <img src="icons/addcolleft.svg" alt="" />
+            <span>Sola sütun ekle</span>
+        </button>
+        <button type="button" data-action="delete-col">
+            <img src="icons/delcol.svg" alt="" />
+            <span>Sütun sil</span>
+        </button>
         <hr>
-        <button type="button" data-action="add-sheet">Sayfa ekle</button>
-        <button type="button" data-action="rename-sheet">Ad değiştir</button>
-        <button type="button" data-action="delete-sheet">Sayfa sil</button>
+        <button type="button" data-action="add-sheet">
+            <img src="icons/sheet-add.svg" alt="" />
+            <span>Sayfa ekle</span>
+        </button>
+        <button type="button" data-action="duplicate-sheet">
+            <img src="icons/sheet-duplicate.svg" alt="" />
+            <span>Sayfayı çoğalt</span>
+        </button>
+        <button type="button" data-action="rename-sheet">
+            <img src="icons/rename.svg" alt="" />
+            <span>Ad değiştir</span>
+        </button>
+        <button type="button" data-action="delete-sheet">
+            <img src="icons/sheet-delete.svg" alt="" />
+            <span>Sayfa sil</span>
+        </button>
         <hr>
-        <button type="button" data-action="clear">Hücreleri temizle</button>
-        <button type="button" data-action="note">Not ekle</button>
+        <button type="button" data-action="clear">
+            <img src="icons/clear.svg" alt="" />
+            <span>Hücreleri temizle</span>
+        </button>
+        <button type="button" data-action="note">
+            <img src="icons/note.svg" alt="" />
+            <span>Not ekle</span>
+        </button>
     </div>
 
     <div id="border-menu" class="toolbar-menu" hidden>

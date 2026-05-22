@@ -1,6 +1,4 @@
-//xls biçimi ya düzeltilecek yada kaldırılacak
-//pdf olarak farklı kaydet eklenecek
-//Full Manuel Test
+//arama her zaman formül çubuğunun sağında gözüksün.
 const table = document.getElementById("data-table");
 const addRowBtn = document.getElementById("add-row-btn");
 const removeRowBtn = document.getElementById("remove-row-btn");
@@ -10,10 +8,25 @@ const undoBtn = document.getElementById("undo-btn");
 const redoBtn = document.getElementById("redo-btn");
 const cellName = document.getElementById("cell-name");
 const formulaInput = document.getElementById("formula-input");
+const findPanel = document.getElementById("find-panel");
+const findInput = document.getElementById("find-input");
+const findCount = document.getElementById("find-count");
+const findPrevBtn = document.getElementById("find-prev-btn");
+const findNextBtn = document.getElementById("find-next-btn");
+const findCloseBtn = document.getElementById("find-close-btn");
 const fileMenuBtn = document.getElementById("file-menu-btn");
 const fileMenu = document.getElementById("file-menu");
+const openFileBtn = document.getElementById("open-file-btn");
+const openFileInput = document.getElementById("open-file-input");
 const saveFileBtn = document.getElementById("save-file-btn");
 const saveAsFileBtn = document.getElementById("save-as-file-btn");
+const editMenuBtn = document.getElementById("edit-menu-btn");
+const editMenu = document.getElementById("edit-menu");
+const menuUndoBtn = document.getElementById("menu-undo-btn");
+const menuRedoBtn = document.getElementById("menu-redo-btn");
+const menuCutBtn = document.getElementById("menu-cut-btn");
+const menuCopyBtn = document.getElementById("menu-copy-btn");
+const menuPasteBtn = document.getElementById("menu-paste-btn");
 const contextMenu = document.getElementById("context-menu");
 const borderBtn = document.getElementById("border-btn");
 const borderMenu = document.getElementById("border-menu");
@@ -27,6 +40,12 @@ const textColorBtn = document.getElementById("text-color-btn");
 const fillColorBtn = document.getElementById("fill-color-btn");
 const textColorInput = document.getElementById("text-color-input");
 const fillColorInput = document.getElementById("fill-color-input");
+const alignLeftBtn = document.getElementById("align-left-btn");
+const alignCenterBtn = document.getElementById("align-center-btn");
+const alignRightBtn = document.getElementById("align-right-btn");
+const alignTopBtn = document.getElementById("align-top-btn");
+const alignMiddleBtn = document.getElementById("align-middle-btn");
+const alignBottomBtn = document.getElementById("align-bottom-btn");
 const sheetTabs = document.getElementById("sheet-tabs");
 const MIN_ROW_SIZE = 20;
 const MIN_COL_SIZE = 10;
@@ -55,6 +74,10 @@ const SAVE_AS_FILE_TYPES = [
     {
         description: "LibreOffice Calc çalışma kitabı",
         accept: { "application/vnd.oasis.opendocument.spreadsheet": [".ods"] }
+    },
+    {
+        description: "PDF dosyası",
+        accept: { "application/pdf": [".pdf"] }
     }
 ];
 let rowCount = 100;
@@ -67,14 +90,21 @@ let internalClipboard = null;
 let copiedRange = null;
 let clipboardMode = null;
 let contextMenuTarget = null;
+let findResults = [];
+let findResultIndex = -1;
 let sheets = [];
 let activeSheetIndex = 0;
 let renamingSheetIndex = null;
+let currentWorkbookFileName = null;
+let currentWorkbookFileHandle = null;
 let tableData = [];
 let colWidths = [];
 let rowHeights = [];
 let isMouseSelecting = false;
 let mouseSelectionMoved = false;
+let headerSelectionState = null;
+let moveSelectionState = null;
+let suppressClickAfterMove = false;
 let resizeState = null;
 let undoStack = [];
 let redoStack = [];
@@ -132,8 +162,21 @@ function updateFormulaBar() {
 }
 
 function updateToolbarState() {
-    removeRowBtn.disabled = rowCount <= MIN_ROW_SIZE;
-    removeColBtn.disabled = colCount <= MIN_COL_SIZE;
+    const isRowSelection = selectionMode === "row" && getSelectedRowIndexes().length > 0;
+    const isColumnSelection = selectionMode === "column" && getSelectedColumnIndexes().length > 0;
+    const selectedRowCount = getSelectedRowIndexes().length;
+    const selectedColCount = getSelectedColumnIndexes().length;
+    const canDeleteRows = isRowSelection && rowCount - selectedRowCount >= MIN_ROW_SIZE;
+    const canDeleteCols = isColumnSelection && colCount - selectedColCount >= MIN_COL_SIZE;
+
+    addRowBtn.disabled = !isRowSelection;
+    removeRowBtn.disabled = !canDeleteRows;
+    addColBtn.disabled = !isColumnSelection;
+    removeColBtn.disabled = !canDeleteCols;
+    addRowBtn.title = isRowSelection ? `Üste ${selectedRowCount} satır ekle` : "Satır seç";
+    removeRowBtn.title = isRowSelection ? `${selectedRowCount} satır sil` : "Satır seç";
+    addColBtn.title = isColumnSelection ? `Sola ${selectedColCount} sütun ekle` : "Sütun seç";
+    removeColBtn.title = isColumnSelection ? `${selectedColCount} sütun sil` : "Sütun seç";
     undoBtn.disabled = undoStack.length === 0;
     redoBtn.disabled = redoStack.length === 0;
 
@@ -141,8 +184,24 @@ function updateToolbarState() {
     boldBtn?.classList.toggle("active", Boolean(style.bold));
     italicBtn?.classList.toggle("active", Boolean(style.italic));
     underlineBtn?.classList.toggle("active", Boolean(style.underline));
+    alignLeftBtn?.classList.toggle("active", style.horizontalAlign === "left");
+    alignCenterBtn?.classList.toggle("active", style.horizontalAlign === "center");
+    alignRightBtn?.classList.toggle("active", style.horizontalAlign === "right");
+    alignTopBtn?.classList.toggle("active", style.verticalAlign === "top");
+    alignMiddleBtn?.classList.toggle("active", style.verticalAlign === "middle");
+    alignBottomBtn?.classList.toggle("active", style.verticalAlign === "bottom");
     if (textColorInput) textColorInput.value = normalizeColorValue(style.color, "#202124");
     if (fillColorInput) fillColorInput.value = normalizeColorValue(style.backgroundColor, "#fff2cc");
+    updateEditMenuState();
+}
+
+function updateEditMenuState() {
+    const canUseSelection = Boolean(selectedCell) && !isEditing;
+    if (menuUndoBtn) menuUndoBtn.disabled = undoStack.length === 0;
+    if (menuRedoBtn) menuRedoBtn.disabled = redoStack.length === 0;
+    if (menuCutBtn) menuCutBtn.disabled = !canUseSelection;
+    if (menuCopyBtn) menuCopyBtn.disabled = !canUseSelection;
+    if (menuPasteBtn) menuPasteBtn.disabled = !canUseSelection || !internalClipboard;
 }
 
 function enforceChartVisibility() {
@@ -172,6 +231,12 @@ function hideFileMenu() {
     if (!fileMenu) return;
 
     fileMenu.hidden = true;
+}
+
+function hideEditMenu() {
+    if (!editMenu) return;
+
+    editMenu.hidden = true;
 }
 
 function showBorderMenu() {
@@ -211,15 +276,20 @@ function updateContextMenuState() {
     const isColumnContext = contextMenuTarget?.type === "column" && selectionMode === "column";
     const isSheetContext = contextMenuTarget?.type === "sheet";
     const hasSelection = Boolean(selectedCell);
+    const selectedRowCount = getSelectedRowIndexes().length || 1;
+    const selectedColCount = getSelectedColumnIndexes().length || 1;
+    const rowDeleteCount = Math.min(selectedRowCount, Math.max(0, rowCount - MIN_ROW_SIZE));
+    const colDeleteCount = Math.min(selectedColCount, Math.max(0, colCount - MIN_COL_SIZE));
     const stateByAction = {
         cut: hasSelection,
         copy: hasSelection,
         paste: hasSelection && Boolean(internalClipboard),
         "insert-row-above": isRowContext,
-        "delete-row": isRowContext && rowCount > MIN_ROW_SIZE,
+        "delete-row": isRowContext && rowDeleteCount > 0,
         "insert-col-left": isColumnContext,
-        "delete-col": isColumnContext && colCount > MIN_COL_SIZE,
+        "delete-col": isColumnContext && colDeleteCount > 0,
         "add-sheet": isSheetContext,
+        "duplicate-sheet": isSheetContext,
         "rename-sheet": isSheetContext,
         "delete-sheet": isSheetContext && sheets.length > 1,
         clear: hasSelection && hasClearableContent(),
@@ -230,6 +300,16 @@ function updateContextMenuState() {
         const action = button.dataset.action;
         button.disabled = !stateByAction[action];
     });
+
+    setContextMenuLabel("insert-row-above", `Üste ${selectedRowCount} satır ekle`);
+    setContextMenuLabel("delete-row", `${selectedRowCount} satır sil`);
+    setContextMenuLabel("insert-col-left", `Sola ${selectedColCount} sütun ekle`);
+    setContextMenuLabel("delete-col", `${selectedColCount} sütun sil`);
+}
+
+function setContextMenuLabel(action, label) {
+    const button = contextMenu?.querySelector(`[data-action="${action}"] span`);
+    if (button) button.textContent = label;
 }
 
 function showContextMenu(e, target = null) {
@@ -264,22 +344,37 @@ function getActiveRange() {
     };
 }
 
-function hasClearableContent() {
-    const range = getActiveRange();
-    if (!range) return false;
+function getActiveRanges() {
+    const ranges = [];
+    const primaryRange = getActiveRange();
+    if (primaryRange) ranges.push(primaryRange);
 
-    for (let r = range.minRow; r <= range.maxRow; r++) {
-        for (let c = range.minCol; c <= range.maxCol; c++) {
-            const cell = tableData[r]?.[c];
-            if (cell && (
-                cell.value ||
-                cell.formula ||
-                hasAnyBorder(cell) ||
-                hasNonDefaultStyle(cell) ||
-                cell.merge ||
-                cell.mergedTo
-            )) {
-                return true;
+    extraSelections.forEach((range) => {
+        const normalizedRange = getNormalizedRange(range);
+        if (normalizedRange) ranges.push(normalizedRange);
+    });
+
+    return ranges;
+}
+
+function hasClearableContent() {
+    const ranges = getActiveRanges();
+    if (!ranges.length) return false;
+
+    for (const range of ranges) {
+        for (let r = range.minRow; r <= range.maxRow; r++) {
+            for (let c = range.minCol; c <= range.maxCol; c++) {
+                const cell = tableData[r]?.[c];
+                if (cell && (
+                    cell.value ||
+                    cell.formula ||
+                    hasAnyBorder(cell) ||
+                    hasNonDefaultStyle(cell) ||
+                    cell.merge ||
+                    cell.mergedTo
+                )) {
+                    return true;
+                }
             }
         }
     }
@@ -368,15 +463,17 @@ function pasteClipboard() {
 }
 
 function clearSelection() {
-    const range = getActiveRange();
-    if (!range) return false;
+    const ranges = getActiveRanges();
+    if (!ranges.length) return false;
 
     pushHistory();
-    for (let r = range.minRow; r <= range.maxRow; r++) {
-        for (let c = range.minCol; c <= range.maxCol; c++) {
-            tableData[r][c] = createEmptyCell();
+    ranges.forEach((range) => {
+        for (let r = range.minRow; r <= range.maxRow; r++) {
+            for (let c = range.minCol; c <= range.maxCol; c++) {
+                tableData[r][c] = createEmptyCell();
+            }
         }
-    }
+    });
 
     recalculateAll();
     clearClipboardState();
@@ -386,48 +483,50 @@ function clearSelection() {
 }
 
 function applyBorderToSelection(action) {
-    const range = getActiveRange();
-    if (!range) return false;
+    const ranges = getActiveRanges();
+    if (!ranges.length) return false;
 
     pushHistory();
-    for (let r = range.minRow; r <= range.maxRow; r++) {
-        for (let c = range.minCol; c <= range.maxCol; c++) {
-            const borders = action === "all"
-                ? createEmptyBorders()
-                : getCellBorders(tableData[r][c]);
+    ranges.forEach((range) => {
+        for (let r = range.minRow; r <= range.maxRow; r++) {
+            for (let c = range.minCol; c <= range.maxCol; c++) {
+                const borders = action === "all"
+                    ? createEmptyBorders()
+                    : getCellBorders(tableData[r][c]);
 
-            if (action === "clear") {
-                tableData[r][c].borders = createEmptyBorders();
-                continue;
+                if (action === "clear") {
+                    tableData[r][c].borders = createEmptyBorders();
+                    continue;
+                }
+
+                if (action === "all") {
+                    borders.top = true;
+                    borders.left = true;
+                    if (r === range.maxRow) borders.bottom = true;
+                    if (c === range.maxCol) borders.right = true;
+                }
+
+                if (action === "outer") {
+                    if (r === range.minRow) borders.top = true;
+                    if (r === range.maxRow) borders.bottom = true;
+                    if (c === range.minCol) borders.left = true;
+                    if (c === range.maxCol) borders.right = true;
+                }
+
+                if (action === "inner") {
+                    if (r < range.maxRow) borders.bottom = true;
+                    if (c < range.maxCol) borders.right = true;
+                }
+
+                if (action === "top" && r === range.minRow) borders.top = true;
+                if (action === "bottom" && r === range.maxRow) borders.bottom = true;
+                if (action === "left" && c === range.minCol) borders.left = true;
+                if (action === "right" && c === range.maxCol) borders.right = true;
+
+                tableData[r][c].borders = borders;
             }
-
-            if (action === "all") {
-                borders.top = true;
-                borders.left = true;
-                if (r === range.maxRow) borders.bottom = true;
-                if (c === range.maxCol) borders.right = true;
-            }
-
-            if (action === "outer") {
-                if (r === range.minRow) borders.top = true;
-                if (r === range.maxRow) borders.bottom = true;
-                if (c === range.minCol) borders.left = true;
-                if (c === range.maxCol) borders.right = true;
-            }
-
-            if (action === "inner") {
-                if (r < range.maxRow) borders.bottom = true;
-                if (c < range.maxCol) borders.right = true;
-            }
-
-            if (action === "top" && r === range.minRow) borders.top = true;
-            if (action === "bottom" && r === range.maxRow) borders.bottom = true;
-            if (action === "left" && c === range.minCol) borders.left = true;
-            if (action === "right" && c === range.maxCol) borders.right = true;
-
-            tableData[r][c].borders = borders;
         }
-    }
+    });
 
     renderTable();
     focusSelectedCell();
@@ -435,23 +534,25 @@ function applyBorderToSelection(action) {
 }
 
 function applyStyleToSelection(updater, options = {}) {
-    const range = getActiveRange();
-    if (!range) return false;
+    const ranges = getActiveRanges();
+    if (!ranges.length) return false;
 
     pushHistory();
-    for (let r = range.minRow; r <= range.maxRow; r++) {
-        for (let c = range.minCol; c <= range.maxCol; c++) {
-            const cell = tableData[r]?.[c];
-            if (!cell) continue;
+    ranges.forEach((range) => {
+        for (let r = range.minRow; r <= range.maxRow; r++) {
+            for (let c = range.minCol; c <= range.maxCol; c++) {
+                const cell = tableData[r]?.[c];
+                if (!cell) continue;
 
-            const style = getCellStyle(cell);
-            updater(style, cell);
-            cell.style = style;
+                const style = getCellStyle(cell);
+                updater(style, cell);
+                cell.style = style;
+            }
         }
-    }
+    });
 
     if (options.autoFit) {
-        fitRangeToContent(range);
+        ranges.forEach(fitRangeToContent);
     }
 
     renderTable();
@@ -485,6 +586,18 @@ function setTextColor(color) {
 function setFillColor(color) {
     return applyStyleToSelection((style) => {
         style.backgroundColor = normalizeColorValue(color, "#fff2cc");
+    });
+}
+
+function setHorizontalAlignment(value) {
+    return applyStyleToSelection((style) => {
+        style.horizontalAlign = value;
+    });
+}
+
+function setVerticalAlignment(value) {
+    return applyStyleToSelection((style) => {
+        style.verticalAlign = value;
     });
 }
 
@@ -620,11 +733,12 @@ function handleContextMenuAction(action) {
     if (action === "cut") cutSelection();
     if (action === "copy") copySelection();
     if (action === "paste") pasteClipboard();
-    if (action === "insert-row-above" && contextMenuTarget?.type === "row") insertRowAt(contextMenuTarget.row);
-    if (action === "delete-row" && contextMenuTarget?.type === "row") deleteRowAt(contextMenuTarget.row);
-    if (action === "insert-col-left" && contextMenuTarget?.type === "column") insertColAt(contextMenuTarget.col);
-    if (action === "delete-col" && contextMenuTarget?.type === "column") deleteColAt(contextMenuTarget.col);
+    if (action === "insert-row-above" && contextMenuTarget?.type === "row") insertRowsAboveSelection();
+    if (action === "delete-row" && contextMenuTarget?.type === "row") deleteSelectedRows();
+    if (action === "insert-col-left" && contextMenuTarget?.type === "column") insertColsLeftOfSelection();
+    if (action === "delete-col" && contextMenuTarget?.type === "column") deleteSelectedColumns();
     if (action === "add-sheet") addSheet();
+    if (action === "duplicate-sheet") duplicateSheet();
     if (action === "rename-sheet") renameActiveSheet();
     if (action === "delete-sheet") deleteActiveSheet();
     if (action === "clear") clearSelection();
@@ -646,7 +760,9 @@ function selectCell(row, col) {
 function isColumnHeaderActive(col) {
     if (!selectedCell) return false;
     if (selectionMode === "all") return true;
-    if (selectionMode === "column") return selectedCell.col === col;
+    if (selectionMode === "column") {
+        return isColumnInColumnSelection(col);
+    }
     if (selectionMode === "cell" || selectionMode === "range") return selectedCell.col === col;
     return false;
 }
@@ -654,35 +770,284 @@ function isColumnHeaderActive(col) {
 function isRowHeaderActive(row) {
     if (!selectedCell) return false;
     if (selectionMode === "all") return true;
-    if (selectionMode === "row") return selectedCell.row === row;
+    if (selectionMode === "row") {
+        return isRowInRowSelection(row);
+    }
     if (selectionMode === "cell" || selectionMode === "range") return selectedCell.row === row;
     return false;
 }
 
-function selectColumn(col) {
-    if (!isCellWithinBounds(0, col)) return;
+function isColumnInColumnSelection(col) {
+    if (selectionMode !== "column") return false;
 
-    selectedCell = { row: 0, col };
-    selectionMode = "column";
-    extraSelections = [];
-    selectionRange = {
+    const ranges = [selectionRange, ...extraSelections].filter(Boolean);
+    return ranges.some((range) => {
+        const normalizedRange = getNormalizedRange(range);
+        return normalizedRange && col >= normalizedRange.minCol && col <= normalizedRange.maxCol;
+    });
+}
+
+function isRowInRowSelection(row) {
+    if (selectionMode !== "row") return false;
+
+    const ranges = [selectionRange, ...extraSelections].filter(Boolean);
+    return ranges.some((range) => {
+        const normalizedRange = getNormalizedRange(range);
+        return normalizedRange && row >= normalizedRange.minRow && row <= normalizedRange.maxRow;
+    });
+}
+
+function getSelectedColumnIndexes() {
+    if (selectionMode !== "column") return [];
+
+    const columns = new Set();
+    [selectionRange, ...extraSelections].filter(Boolean).forEach((range) => {
+        const normalizedRange = getNormalizedRange(range);
+        if (!normalizedRange) return;
+
+        for (let col = normalizedRange.minCol; col <= normalizedRange.maxCol; col++) {
+            if (col >= 0 && col < colCount) columns.add(col);
+        }
+    });
+
+    return [...columns].sort((a, b) => a - b);
+}
+
+function getSelectedRowIndexes() {
+    if (selectionMode !== "row") return [];
+
+    const rows = new Set();
+    [selectionRange, ...extraSelections].filter(Boolean).forEach((range) => {
+        const normalizedRange = getNormalizedRange(range);
+        if (!normalizedRange) return;
+
+        for (let row = normalizedRange.minRow; row <= normalizedRange.maxRow; row++) {
+            if (row >= 0 && row < rowCount) rows.add(row);
+        }
+    });
+
+    return [...rows].sort((a, b) => a - b);
+}
+
+function createColumnSelectionRange(col) {
+    return {
         start: { row: 0, col },
         end: { row: rowCount - 1, col }
     };
+}
+
+function createRowSelectionRange(row) {
+    return {
+        start: { row, col: 0 },
+        end: { row, col: colCount - 1 }
+    };
+}
+
+function toggleExtraColumnSelection(col) {
+    const existsAt = extraSelections.findIndex((range) => {
+        const normalizedRange = getNormalizedRange(range);
+        return normalizedRange?.minCol === col && normalizedRange?.maxCol === col;
+    });
+
+    if (existsAt >= 0) {
+        extraSelections.splice(existsAt, 1);
+    } else {
+        extraSelections.push(createColumnSelectionRange(col));
+    }
+}
+
+function toggleExtraRowSelection(row) {
+    const existsAt = extraSelections.findIndex((range) => {
+        const normalizedRange = getNormalizedRange(range);
+        return normalizedRange?.minRow === row && normalizedRange?.maxRow === row;
+    });
+
+    if (existsAt >= 0) {
+        extraSelections.splice(existsAt, 1);
+    } else {
+        extraSelections.push(createRowSelectionRange(row));
+    }
+}
+
+function startHeaderSelection(type, index) {
+    headerSelectionState = {
+        type,
+        start: index,
+        moved: false
+    };
+
+    if (type === "column") {
+        selectedCell = { row: 0, col: index };
+        selectionMode = "column";
+        selectionRange = createColumnSelectionRange(index);
+    } else {
+        selectedCell = { row: index, col: 0 };
+        selectionMode = "row";
+        selectionRange = createRowSelectionRange(index);
+    }
+
+    extraSelections = [];
     renderTable();
     focusSelectedCell();
 }
 
-function selectRow(row) {
+function updateHeaderSelection(type, index) {
+    if (!headerSelectionState || headerSelectionState.type !== type) return;
+    if (headerSelectionState.start === index && !headerSelectionState.moved) return;
+
+    headerSelectionState.moved = true;
+    extraSelections = [];
+
+    if (type === "column") {
+        selectionMode = "column";
+        selectionRange = {
+            start: { row: 0, col: headerSelectionState.start },
+            end: { row: rowCount - 1, col: index }
+        };
+    } else {
+        selectionMode = "row";
+        selectionRange = {
+            start: { row: headerSelectionState.start, col: 0 },
+            end: { row: index, col: colCount - 1 }
+        };
+    }
+
+    renderTable();
+    focusSelectedCell();
+}
+
+function startMoveSelection(type, startIndex) {
+    moveSelectionState = {
+        type,
+        startIndex,
+        targetIndex: startIndex,
+        moved: false
+    };
+}
+
+function updateMoveSelection(type, targetIndex) {
+    if (!moveSelectionState || moveSelectionState.type !== type) return;
+
+    moveSelectionState.targetIndex = targetIndex;
+    moveSelectionState.moved = moveSelectionState.startIndex !== targetIndex;
+    renderTable();
+    focusSelectedCell();
+}
+
+function startCellMove(row, col) {
+    const range = getActiveRange();
+    if (!range) return false;
+
+    moveSelectionState = {
+        type: "cell",
+        startIndex: { row, col },
+        targetIndex: { row: range.minRow, col: range.minCol },
+        sourceRange: { ...range },
+        moved: false
+    };
+    return true;
+}
+
+function isNearSelectionEdge(e, cell, row, col) {
+    const edgeSize = 6;
+    const rect = cell.getBoundingClientRect();
+    const visualRange = getVisualCellRange(row, col);
+    const ranges = getActiveRanges();
+
+    return ranges.some((range) => {
+        if (!rangesIntersect(visualRange, range)) return false;
+
+        const isTopEdge = visualRange.minRow <= range.minRow && e.clientY - rect.top <= edgeSize;
+        const isBottomEdge = visualRange.maxRow >= range.maxRow && rect.bottom - e.clientY <= edgeSize;
+        const isLeftEdge = visualRange.minCol <= range.minCol && e.clientX - rect.left <= edgeSize;
+        const isRightEdge = visualRange.maxCol >= range.maxCol && rect.right - e.clientX <= edgeSize;
+
+        return isTopEdge || isBottomEdge || isLeftEdge || isRightEdge;
+    });
+}
+
+function updateCellMoveTarget(row, col) {
+    if (!moveSelectionState || moveSelectionState.type !== "cell") return;
+
+    moveSelectionState.targetIndex = { row, col };
+    moveSelectionState.moved =
+        row !== moveSelectionState.sourceRange.minRow ||
+        col !== moveSelectionState.sourceRange.minCol;
+    renderTable();
+    focusSelectedCell();
+}
+
+function getCellMoveTargetRange() {
+    if (!moveSelectionState || moveSelectionState.type !== "cell") return null;
+
+    const { sourceRange, targetIndex } = moveSelectionState;
+    const rowOffset = targetIndex.row - sourceRange.minRow;
+    const colOffset = targetIndex.col - sourceRange.minCol;
+
+    return {
+        minRow: sourceRange.minRow + rowOffset,
+        maxRow: sourceRange.maxRow + rowOffset,
+        minCol: sourceRange.minCol + colOffset,
+        maxCol: sourceRange.maxCol + colOffset
+    };
+}
+
+function selectColumn(col, event = {}) {
+    if (!isCellWithinBounds(0, col)) return;
+
+    if (event.shiftKey && selectedCell && selectionMode === "column") {
+        selectionMode = "column";
+        extraSelections = [];
+        selectionRange = {
+            start: { row: 0, col: selectedCell.col },
+            end: { row: rowCount - 1, col }
+        };
+        renderTable();
+        focusSelectedCell();
+        return;
+    }
+
+    if ((event.ctrlKey || event.metaKey) && selectedCell && selectionMode === "column") {
+        toggleExtraColumnSelection(col);
+        renderTable();
+        focusSelectedCell();
+        return;
+    }
+
+    selectedCell = { row: 0, col };
+    selectionMode = "column";
+    extraSelections = [];
+    selectionRange = createColumnSelectionRange(col);
+    renderTable();
+    focusSelectedCell();
+}
+
+function selectRow(row, event = {}) {
     if (!isCellWithinBounds(row, 0)) return;
+
+    if (event.shiftKey && selectedCell && selectionMode === "row") {
+        selectionMode = "row";
+        extraSelections = [];
+        selectionRange = {
+            start: { row: selectedCell.row, col: 0 },
+            end: { row, col: colCount - 1 }
+        };
+        renderTable();
+        focusSelectedCell();
+        return;
+    }
+
+    if ((event.ctrlKey || event.metaKey) && selectedCell && selectionMode === "row") {
+        toggleExtraRowSelection(row);
+        renderTable();
+        focusSelectedCell();
+        return;
+    }
 
     selectedCell = { row, col: 0 };
     selectionMode = "row";
     extraSelections = [];
-    selectionRange = {
-        start: { row, col: 0 },
-        end: { row, col: colCount - 1 }
-    };
+    selectionRange = createRowSelectionRange(row);
     renderTable();
     focusSelectedCell();
 }
@@ -721,22 +1086,67 @@ function focusSelectedCell(shouldScroll = false) {
 function getNormalizedRange(range) {
     if (!range) return null;
 
-    return {
+    return expandRangeForMerges({
         minRow: Math.min(range.start.row, range.end.row),
         maxRow: Math.max(range.start.row, range.end.row),
         minCol: Math.min(range.start.col, range.end.col),
         maxCol: Math.max(range.start.col, range.end.col)
+    });
+}
+
+function expandRangeForMerges(range) {
+    if (!range) return null;
+
+    let expandedRange = { ...range };
+    let didExpand = true;
+
+    while (didExpand) {
+        didExpand = false;
+
+        for (let r = 0; r < rowCount; r++) {
+            for (let c = 0; c < colCount; c++) {
+                const cell = tableData[r]?.[c];
+                if (!cell?.merge) continue;
+
+                const mergeRange = getMergeRange(r, c);
+                if (!mergeRange || !rangesIntersect(expandedRange, mergeRange)) continue;
+
+                const nextRange = {
+                    minRow: Math.min(expandedRange.minRow, mergeRange.minRow),
+                    maxRow: Math.max(expandedRange.maxRow, mergeRange.maxRow),
+                    minCol: Math.min(expandedRange.minCol, mergeRange.minCol),
+                    maxCol: Math.max(expandedRange.maxCol, mergeRange.maxCol)
+                };
+
+                if (
+                    nextRange.minRow !== expandedRange.minRow ||
+                    nextRange.maxRow !== expandedRange.maxRow ||
+                    nextRange.minCol !== expandedRange.minCol ||
+                    nextRange.maxCol !== expandedRange.maxCol
+                ) {
+                    expandedRange = nextRange;
+                    didExpand = true;
+                }
+            }
+        }
+    }
+
+    return expandedRange;
+}
+
+function getVisualCellRange(row, col) {
+    return getMergeRange(row, col) ?? {
+        minRow: row,
+        maxRow: row,
+        minCol: col,
+        maxCol: col
     };
 }
 
 function isCellInNormalizedRange(row, col, range) {
-    return (
-        range &&
-        row >= range.minRow &&
-        row <= range.maxRow &&
-        col >= range.minCol &&
-        col <= range.maxCol
-    );
+    if (!range) return false;
+
+    return rangesIntersect(getVisualCellRange(row, col), range);
 }
 
 function isCellInCurrentSelection(row, col) {
@@ -761,11 +1171,13 @@ function isCellInCurrentSelection(row, col) {
 function addRangeBoundaryClasses(cell, row, col, range, prefix) {
     if (!isCellInNormalizedRange(row, col, range)) return;
 
+    const visualRange = getVisualCellRange(row, col);
+
     cell.classList.add(`${prefix}-range`);
-    if (row === range.minRow) cell.classList.add(`${prefix}-top`);
-    if (row === range.maxRow) cell.classList.add(`${prefix}-bottom`);
-    if (col === range.minCol) cell.classList.add(`${prefix}-left`);
-    if (col === range.maxCol) cell.classList.add(`${prefix}-right`);
+    if (visualRange.minRow <= range.minRow) cell.classList.add(`${prefix}-top`);
+    if (visualRange.maxRow >= range.maxRow) cell.classList.add(`${prefix}-bottom`);
+    if (visualRange.minCol <= range.minCol) cell.classList.add(`${prefix}-left`);
+    if (visualRange.maxCol >= range.maxCol) cell.classList.add(`${prefix}-right`);
 }
 
 function addExtraCellSelection(row, col) {
@@ -836,7 +1248,9 @@ function createDefaultCellStyle() {
         underline: false,
         fontSize: DEFAULT_FONT_SIZE,
         color: "#202124",
-        backgroundColor: ""
+        backgroundColor: "",
+        horizontalAlign: "left",
+        verticalAlign: "middle"
     };
 }
 
@@ -857,7 +1271,9 @@ function hasNonDefaultStyle(cell) {
         style.underline !== defaults.underline ||
         (Number(style.fontSize) || DEFAULT_FONT_SIZE) !== defaults.fontSize ||
         style.color !== defaults.color ||
-        style.backgroundColor !== defaults.backgroundColor
+        style.backgroundColor !== defaults.backgroundColor ||
+        style.horizontalAlign !== defaults.horizontalAlign ||
+        style.verticalAlign !== defaults.verticalAlign
     );
 }
 
@@ -893,14 +1309,20 @@ function ensureGridSize(requiredRows, requiredCols) {
 }
 
 function insertRowAt(index) {
+    insertRowsAt(index, 1);
+}
+
+function insertRowsAt(index, count) {
+    if (count <= 0) return;
+
     pushHistory();
     const targetIndex = Math.max(0, Math.min(index, rowCount));
-    rowCount++;
-    rowHeights.splice(targetIndex, 0, DEFAULT_ROW_HEIGHT);
+    rowCount += count;
+    rowHeights.splice(targetIndex, 0, ...Array.from({ length: count }, () => DEFAULT_ROW_HEIGHT));
     tableData.splice(
         targetIndex,
         0,
-        Array.from({ length: colCount }, createEmptyCell)
+        ...Array.from({ length: count }, () => Array.from({ length: colCount }, createEmptyCell))
     );
     selectedCell = { row: targetIndex, col: selectedCell?.col ?? 0 };
     selectionRange = null;
@@ -915,12 +1337,18 @@ function insertRowAt(index) {
 }
 
 function insertColAt(index) {
+    insertColsAt(index, 1);
+}
+
+function insertColsAt(index, count) {
+    if (count <= 0) return;
+
     pushHistory();
     const targetIndex = Math.max(0, Math.min(index, colCount));
-    colCount++;
-    colWidths.splice(targetIndex, 0, DEFAULT_COL_WIDTH);
+    colCount += count;
+    colWidths.splice(targetIndex, 0, ...Array.from({ length: count }, () => DEFAULT_COL_WIDTH));
     tableData.forEach((row) => {
-        row.splice(targetIndex, 0, createEmptyCell());
+        row.splice(targetIndex, 0, ...Array.from({ length: count }, createEmptyCell));
     });
     selectedCell = { row: selectedCell?.row ?? 0, col: targetIndex };
     selectionRange = null;
@@ -935,15 +1363,26 @@ function insertColAt(index) {
 }
 
 function deleteRowAt(index) {
-    if (rowCount <= MIN_ROW_SIZE) return;
+    deleteRowsAt([index]);
+}
 
+function deleteRowsAt(indexes) {
+    const uniqueIndexes = [...new Set(indexes)]
+        .filter((index) => index >= 0 && index < rowCount)
+        .sort((a, b) => b - a);
+    const deleteCount = Math.min(uniqueIndexes.length, Math.max(0, rowCount - MIN_ROW_SIZE));
+    if (deleteCount <= 0) return;
+
+    const indexesToDelete = uniqueIndexes.slice(0, deleteCount);
     pushHistory();
-    const targetIndex = Math.max(0, Math.min(index, rowCount - 1));
-    rowCount--;
-    tableData.splice(targetIndex, 1);
-    rowHeights.splice(targetIndex, 1);
+    indexesToDelete.forEach((targetIndex) => {
+        tableData.splice(targetIndex, 1);
+        rowHeights.splice(targetIndex, 1);
+    });
+    rowCount -= indexesToDelete.length;
+    const topDeletedIndex = Math.min(...indexesToDelete);
     selectedCell = {
-        row: Math.min(targetIndex, rowCount - 1),
+        row: Math.min(topDeletedIndex, rowCount - 1),
         col: selectedCell?.col ?? 0
     };
     selectionRange = null;
@@ -959,18 +1398,29 @@ function deleteRowAt(index) {
 }
 
 function deleteColAt(index) {
-    if (colCount <= MIN_COL_SIZE) return;
+    deleteColsAt([index]);
+}
 
+function deleteColsAt(indexes) {
+    const uniqueIndexes = [...new Set(indexes)]
+        .filter((index) => index >= 0 && index < colCount)
+        .sort((a, b) => b - a);
+    const deleteCount = Math.min(uniqueIndexes.length, Math.max(0, colCount - MIN_COL_SIZE));
+    if (deleteCount <= 0) return;
+
+    const indexesToDelete = uniqueIndexes.slice(0, deleteCount);
     pushHistory();
-    const targetIndex = Math.max(0, Math.min(index, colCount - 1));
-    colCount--;
-    colWidths.splice(targetIndex, 1);
-    tableData.forEach((row) => {
-        row.splice(targetIndex, 1);
+    indexesToDelete.forEach((targetIndex) => {
+        colWidths.splice(targetIndex, 1);
+        tableData.forEach((row) => {
+            row.splice(targetIndex, 1);
+        });
     });
+    colCount -= indexesToDelete.length;
+    const leftDeletedIndex = Math.min(...indexesToDelete);
     selectedCell = {
         row: selectedCell?.row ?? 0,
-        col: Math.min(targetIndex, colCount - 1)
+        col: Math.min(leftDeletedIndex, colCount - 1)
     };
     selectionRange = null;
     selectionMode = "cell";
@@ -982,6 +1432,279 @@ function deleteColAt(index) {
     normalizeSelectedCell();
     renderTable();
     focusSelectedCell();
+}
+
+function insertRowsAboveSelection() {
+    const rows = getSelectedRowIndexes();
+    const count = rows.length || 1;
+    const targetIndex = rows.length ? Math.min(...rows) : contextMenuTarget?.row ?? selectedCell?.row ?? 0;
+    insertRowsAt(targetIndex, count);
+}
+
+function insertColsLeftOfSelection() {
+    const cols = getSelectedColumnIndexes();
+    const count = cols.length || 1;
+    const targetIndex = cols.length ? Math.min(...cols) : contextMenuTarget?.col ?? selectedCell?.col ?? 0;
+    insertColsAt(targetIndex, count);
+}
+
+function deleteSelectedRows() {
+    const rows = getSelectedRowIndexes();
+    deleteRowsAt(rows.length ? rows : [contextMenuTarget?.row ?? selectedCell?.row ?? 0]);
+}
+
+function deleteSelectedColumns() {
+    const cols = getSelectedColumnIndexes();
+    deleteColsAt(cols.length ? cols : [contextMenuTarget?.col ?? selectedCell?.col ?? 0]);
+}
+
+function getCellSearchText(row, col) {
+    const cell = tableData[row]?.[col];
+    if (!cell) return "";
+
+    return `${cell.formula ?? ""}\n${cell.value ?? ""}`;
+}
+
+function updateFindCount() {
+    if (!findCount) return;
+
+    findCount.textContent = findResults.length
+        ? `${findResultIndex + 1}/${findResults.length}`
+        : "0/0";
+}
+
+function runFindQuery(query, preferredStart = selectedCell) {
+    findResults = [];
+    findResultIndex = -1;
+    const normalizedQuery = query.trim().toLowerCase();
+
+    if (!normalizedQuery) {
+        updateFindCount();
+        return;
+    }
+
+    for (let r = 0; r < rowCount; r++) {
+        for (let c = 0; c < colCount; c++) {
+            if (getCellSearchText(r, c).toLowerCase().includes(normalizedQuery)) {
+                findResults.push({ row: r, col: c });
+            }
+        }
+    }
+
+    if (findResults.length) {
+        const startRow = preferredStart?.row ?? 0;
+        const startCol = preferredStart?.col ?? 0;
+        const nextIndex = findResults.findIndex((result) => (
+            result.row > startRow ||
+            (result.row === startRow && result.col >= startCol)
+        ));
+        findResultIndex = nextIndex >= 0 ? nextIndex : 0;
+    }
+
+    updateFindCount();
+}
+
+function goToFindResult(index) {
+    if (!findResults.length) {
+        updateFindCount();
+        return false;
+    }
+
+    findResultIndex = (index + findResults.length) % findResults.length;
+    const result = findResults[findResultIndex];
+    selectCell(result.row, result.col);
+    focusSelectedCell(true);
+    updateFindCount();
+    findInput?.focus();
+    findInput?.select();
+    return true;
+}
+
+function findNext(step = 1) {
+    if (!findInput) return false;
+
+    if (!findResults.length) {
+        runFindQuery(findInput.value);
+    }
+
+    return goToFindResult(findResultIndex + step);
+}
+
+function openFindPanel() {
+    if (!findPanel || !findInput) return;
+
+    if (isEditing) {
+        exitEditMode(true);
+    }
+
+    findPanel.hidden = false;
+    runFindQuery(findInput.value);
+    findInput.focus();
+    findInput.select();
+}
+
+function closeFindPanel() {
+    if (!findPanel) return;
+
+    findPanel.hidden = true;
+    findResults = [];
+    findResultIndex = -1;
+    updateFindCount();
+    focusSelectedCell();
+}
+
+function moveSelectedCellsTo(targetRow, targetCol) {
+    const ranges = getActiveRanges();
+    const sourceRange = getActiveRange();
+    if (!ranges.length || !sourceRange) return false;
+
+    const rowOffset = targetRow - sourceRange.minRow;
+    const colOffset = targetCol - sourceRange.minCol;
+    if (rowOffset === 0 && colOffset === 0) return false;
+
+    const sourceCells = [];
+    const seen = new Set();
+    ranges.forEach((range) => {
+        for (let r = range.minRow; r <= range.maxRow; r++) {
+            for (let c = range.minCol; c <= range.maxCol; c++) {
+                const key = `${r}:${c}`;
+                if (seen.has(key)) continue;
+                seen.add(key);
+                sourceCells.push({
+                    row: r,
+                    col: c,
+                    targetRow: r + rowOffset,
+                    targetCol: c + colOffset,
+                    cell: cloneCellData(tableData[r][c])
+                });
+            }
+        }
+    });
+
+    const requiredRows = Math.max(...sourceCells.map((item) => item.targetRow)) + 1;
+    const requiredCols = Math.max(...sourceCells.map((item) => item.targetCol)) + 1;
+    if (Math.min(...sourceCells.map((item) => item.targetRow)) < 0) return false;
+    if (Math.min(...sourceCells.map((item) => item.targetCol)) < 0) return false;
+
+    pushHistory();
+    ensureGridSize(requiredRows, requiredCols);
+
+    sourceCells.forEach(({ row, col }) => {
+        tableData[row][col] = createEmptyCell();
+    });
+
+    sourceCells.forEach(({ targetRow: row, targetCol: col, cell }) => {
+        if (cell.mergedTo) {
+            cell.mergedTo = {
+                row: cell.mergedTo.row + rowOffset,
+                col: cell.mergedTo.col + colOffset
+            };
+        }
+        tableData[row][col] = cell;
+    });
+
+    selectedCell = { row: sourceRange.minRow + rowOffset, col: sourceRange.minCol + colOffset };
+    selectionRange = {
+        start: { row: sourceRange.minRow + rowOffset, col: sourceRange.minCol + colOffset },
+        end: { row: sourceRange.maxRow + rowOffset, col: sourceRange.maxCol + colOffset }
+    };
+    selectionMode = "range";
+    extraSelections = extraSelections.map((range) => ({
+        start: { row: range.start.row + rowOffset, col: range.start.col + colOffset },
+        end: { row: range.end.row + rowOffset, col: range.end.col + colOffset }
+    }));
+    clearClipboardState();
+    recalculateAll();
+    renderTable();
+    focusSelectedCell();
+    return true;
+}
+
+function moveSelectedRowsTo(targetIndex) {
+    const selectedRows = getSelectedRowIndexes();
+    if (!selectedRows.length || selectedRows.includes(targetIndex)) return false;
+
+    const rowsAscending = [...selectedRows].sort((a, b) => a - b);
+    const rowsDescending = [...selectedRows].sort((a, b) => b - a);
+    const movedRows = rowsAscending.map((row) => cloneTableData([tableData[row]])[0]);
+    const movedHeights = rowsAscending.map((row) => rowHeights[row]);
+    let insertionIndex = Math.max(0, Math.min(targetIndex, rowCount));
+    insertionIndex -= rowsAscending.filter((row) => row < insertionIndex).length;
+
+    pushHistory();
+    rowsDescending.forEach((row) => {
+        tableData.splice(row, 1);
+        rowHeights.splice(row, 1);
+    });
+    tableData.splice(insertionIndex, 0, ...movedRows);
+    rowHeights.splice(insertionIndex, 0, ...movedHeights);
+
+    selectedCell = { row: insertionIndex, col: 0 };
+    selectionMode = "row";
+    extraSelections = [];
+    selectionRange = {
+        start: { row: insertionIndex, col: 0 },
+        end: { row: insertionIndex + movedRows.length - 1, col: colCount - 1 }
+    };
+    clearClipboardState();
+    recalculateAll();
+    renderTable();
+    focusSelectedCell();
+    return true;
+}
+
+function moveSelectedColumnsTo(targetIndex) {
+    const selectedCols = getSelectedColumnIndexes();
+    if (!selectedCols.length || selectedCols.includes(targetIndex)) return false;
+
+    const colsAscending = [...selectedCols].sort((a, b) => a - b);
+    const colsDescending = [...selectedCols].sort((a, b) => b - a);
+    const movedWidths = colsAscending.map((col) => colWidths[col]);
+    const movedCellsByRow = tableData.map((row) => colsAscending.map((col) => cloneCellData(row[col])));
+    let insertionIndex = Math.max(0, Math.min(targetIndex, colCount));
+    insertionIndex -= colsAscending.filter((col) => col < insertionIndex).length;
+
+    pushHistory();
+    colsDescending.forEach((col) => {
+        colWidths.splice(col, 1);
+        tableData.forEach((row) => row.splice(col, 1));
+    });
+    colWidths.splice(insertionIndex, 0, ...movedWidths);
+    tableData.forEach((row, rowIndex) => {
+        row.splice(insertionIndex, 0, ...movedCellsByRow[rowIndex]);
+    });
+
+    selectedCell = { row: 0, col: insertionIndex };
+    selectionMode = "column";
+    extraSelections = [];
+    selectionRange = {
+        start: { row: 0, col: insertionIndex },
+        end: { row: rowCount - 1, col: insertionIndex + movedWidths.length - 1 }
+    };
+    clearClipboardState();
+    recalculateAll();
+    renderTable();
+    focusSelectedCell();
+    return true;
+}
+
+function finishMoveSelection() {
+    if (!moveSelectionState) return;
+
+    const state = moveSelectionState;
+    moveSelectionState = null;
+    if (!state.moved) return;
+
+    suppressClickAfterMove = true;
+    if (state.type === "cell") {
+        moveSelectedCellsTo(state.targetIndex.row, state.targetIndex.col);
+    }
+    if (state.type === "row") {
+        moveSelectedRowsTo(state.targetIndex);
+    }
+    if (state.type === "column") {
+        moveSelectedColumnsTo(state.targetIndex);
+    }
 }
 
 function cloneRange(range) {
@@ -1028,6 +1751,20 @@ function createBlankSheetState(name) {
         tableData: createBlankTableData(100, 26),
         colWidths: Array.from({ length: 26 }, () => DEFAULT_COL_WIDTH),
         rowHeights: Array.from({ length: 100 }, () => DEFAULT_ROW_HEIGHT)
+    };
+}
+
+function cloneSheetState(sheet, name) {
+    return {
+        name,
+        rowCount: sheet.rowCount,
+        colCount: sheet.colCount,
+        selectedCell: sheet.selectedCell ? { ...sheet.selectedCell } : { row: 0, col: 0 },
+        selectionRange: cloneRange(sheet.selectionRange),
+        selectionMode: sheet.selectionMode,
+        tableData: cloneTableData(sheet.tableData),
+        colWidths: [...sheet.colWidths],
+        rowHeights: [...sheet.rowHeights]
     };
 }
 
@@ -1160,6 +1897,40 @@ function addSheet() {
     focusSelectedCell();
 }
 
+function getUniqueSheetName(baseName) {
+    const existingNames = new Set(sheets.map((sheet) => sheet.name));
+    let candidate = `${baseName} kopya`;
+    let counter = 2;
+
+    while (existingNames.has(candidate)) {
+        candidate = `${baseName} kopya ${counter}`;
+        counter++;
+    }
+
+    return candidate;
+}
+
+function duplicateSheet() {
+    const sourceIndex = contextMenuTarget?.index ?? activeSheetIndex;
+    captureCurrentSheet();
+    const sourceSheet = sheets[sourceIndex];
+    if (!sourceSheet) return false;
+
+    const copyName = getUniqueSheetName(sourceSheet.name);
+    const copy = cloneSheetState(sourceSheet, copyName);
+    const insertIndex = sourceIndex + 1;
+
+    sheets.splice(insertIndex, 0, copy);
+    activeSheetIndex = insertIndex;
+    applySheetState(sheets[activeSheetIndex]);
+    undoStack = [];
+    redoStack = [];
+    renderSheetTabs();
+    renderTable();
+    focusSelectedCell();
+    return true;
+}
+
 function renameActiveSheet() {
     startSheetRename(contextMenuTarget?.index ?? activeSheetIndex);
 }
@@ -1246,6 +2017,30 @@ function getFileExtension(fileName) {
     return match ? match[1].toLowerCase() : "";
 }
 
+function getFileBaseName(fileName) {
+    return String(fileName || "").replace(/\.[^.]+$/, "");
+}
+
+function setCurrentWorkbookFile(fileName, handle = null) {
+    if (getFileExtension(fileName) !== "avc") return;
+
+    currentWorkbookFileName = fileName;
+    currentWorkbookFileHandle = handle;
+    document.title = `${fileName} - avCELL`;
+}
+
+function clearCurrentWorkbookFile() {
+    currentWorkbookFileName = null;
+    currentWorkbookFileHandle = null;
+    document.title = "avCELL";
+}
+
+function getCurrentSaveBaseName() {
+    return currentWorkbookFileName
+        ? getFileBaseName(currentWorkbookFileName)
+        : getDefaultSaveBaseName();
+}
+
 function createSavePayload() {
     captureCurrentSheet();
 
@@ -1263,6 +2058,114 @@ function createSavePayload() {
             rowHeights: [...sheet.rowHeights]
         }))
     };
+}
+
+function normalizeImportedCell(cell) {
+    return {
+        value: cell?.value ?? "",
+        formula: cell?.formula ?? null,
+        borders: { ...getCellBorders(cell) },
+        style: { ...getCellStyle(cell) },
+        merge: cell?.merge ? { ...cell.merge } : null,
+        mergedTo: cell?.mergedTo ? { ...cell.mergedTo } : null
+    };
+}
+
+function normalizeImportedRange(range, rowCountValue, colCountValue) {
+    if (!range?.start || !range?.end) return null;
+
+    return {
+        start: {
+            row: Math.max(0, Math.min(rowCountValue - 1, Number(range.start.row) || 0)),
+            col: Math.max(0, Math.min(colCountValue - 1, Number(range.start.col) || 0))
+        },
+        end: {
+            row: Math.max(0, Math.min(rowCountValue - 1, Number(range.end.row) || 0)),
+            col: Math.max(0, Math.min(colCountValue - 1, Number(range.end.col) || 0))
+        }
+    };
+}
+
+function normalizeImportedSheet(sheet, index) {
+    const safeRowCount = Math.max(MIN_ROW_SIZE, Number(sheet?.rowCount) || 100);
+    const safeColCount = Math.max(MIN_COL_SIZE, Number(sheet?.colCount) || 26);
+    const safeTableData = [];
+
+    for (let r = 0; r < safeRowCount; r++) {
+        const row = [];
+        for (let c = 0; c < safeColCount; c++) {
+            row.push(normalizeImportedCell(sheet?.tableData?.[r]?.[c]));
+        }
+        safeTableData.push(row);
+    }
+
+    return {
+        name: String(sheet?.name || `Sayfa${index + 1}`),
+        rowCount: safeRowCount,
+        colCount: safeColCount,
+        selectedCell: {
+            row: Math.max(0, Math.min(safeRowCount - 1, Number(sheet?.selectedCell?.row) || 0)),
+            col: Math.max(0, Math.min(safeColCount - 1, Number(sheet?.selectedCell?.col) || 0))
+        },
+        selectionRange: normalizeImportedRange(sheet?.selectionRange, safeRowCount, safeColCount),
+        selectionMode: ["cell", "range", "row", "column", "all"].includes(sheet?.selectionMode)
+            ? sheet.selectionMode
+            : "cell",
+        tableData: safeTableData,
+        colWidths: Array.from({ length: safeColCount }, (_, col) =>
+            Math.max(MIN_COL_WIDTH, Number(sheet?.colWidths?.[col]) || DEFAULT_COL_WIDTH)
+        ),
+        rowHeights: Array.from({ length: safeRowCount }, (_, row) =>
+            Math.max(MIN_ROW_HEIGHT, Number(sheet?.rowHeights?.[row]) || DEFAULT_ROW_HEIGHT)
+        )
+    };
+}
+
+function loadWorkbookPayload(payload) {
+    if (payload?.app !== "avCELL" || !Array.isArray(payload.sheets) || payload.sheets.length === 0) {
+        throw new Error("Geçersiz avCELL dosyası.");
+    }
+
+    sheets = payload.sheets.map(normalizeImportedSheet);
+    activeSheetIndex = Math.max(0, Math.min(sheets.length - 1, Number(payload.activeSheetIndex) || 0));
+    undoStack = [];
+    redoStack = [];
+    renamingSheetIndex = null;
+    extraSelections = [];
+    clearClipboardState();
+    applySheetState(sheets[activeSheetIndex]);
+    normalizeSelectedCell();
+    renderSheetTabs();
+    renderTable();
+    focusSelectedCell();
+}
+
+async function openWorkbookFile(file, handle = null) {
+    if (!file) return false;
+
+    const text = await file.text();
+    const payload = JSON.parse(text);
+    loadWorkbookPayload(payload);
+    setCurrentWorkbookFile(file.name, handle);
+    return true;
+}
+
+async function openWorkbook() {
+    if ("showOpenFilePicker" in window) {
+        const [handle] = await window.showOpenFilePicker({
+            types: [AVC_FILE_TYPE],
+            multiple: false
+        });
+        const file = await handle.getFile();
+        await openWorkbookFile(file, handle);
+        return true;
+    }
+
+    if (!openFileInput) return false;
+
+    openFileInput.value = "";
+    openFileInput.click();
+    return true;
 }
 
 function xmlEscape(value) {
@@ -1297,23 +2200,37 @@ function getUsedSheetBounds(sheet) {
     return { maxRow, maxCol };
 }
 
-function buildHtmlWorkbook(payload) {
-    const sheetsHtml = payload.sheets.map((sheet) => {
+function sanitizeSpreadsheetName(name, fallback) {
+    const cleanedName = String(name || fallback)
+        .replace(/[\[\]:*?/\\]/g, " ")
+        .trim()
+        .slice(0, 31);
+
+    return cleanedName || fallback;
+}
+
+function buildXmlWorkbook(payload) {
+    const worksheets = payload.sheets.map((sheet, index) => {
         const bounds = getUsedSheetBounds(sheet);
         const rows = [];
 
         for (let r = 0; r <= bounds.maxRow; r++) {
             const cells = [];
             for (let c = 0; c <= bounds.maxCol; c++) {
-                cells.push(`<td>${xmlEscape(getSheetCellText(sheet, r, c))}</td>`);
+                const value = getSheetCellText(sheet, r, c);
+                const formula = value.startsWith("=") ? ` ss:Formula="${xmlEscape(value)}"` : "";
+                const plainValue = value.startsWith("=") ? "" : value;
+                const type = plainValue.trim() !== "" && Number.isFinite(Number(plainValue)) ? "Number" : "String";
+                cells.push(`<Cell${formula}><Data ss:Type="${type}">${xmlEscape(plainValue)}</Data></Cell>`);
             }
-            rows.push(`<tr>${cells.join("")}</tr>`);
+            rows.push(`<Row>${cells.join("")}</Row>`);
         }
 
-        return `<h2>${xmlEscape(sheet.name)}</h2><table>${rows.join("")}</table>`;
+        const sheetName = sanitizeSpreadsheetName(sheet.name, `Sayfa${index + 1}`);
+        return `<Worksheet ss:Name="${xmlEscape(sheetName)}"><Table>${rows.join("")}</Table></Worksheet>`;
     });
 
-    return `<!doctype html><html><head><meta charset="utf-8"><title>avCELL</title></head><body>${sheetsHtml.join("")}</body></html>`;
+    return `<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><DocumentProperties xmlns="urn:schemas-microsoft-com:office:office"><Author>avCELL</Author></DocumentProperties><ExcelWorkbook xmlns="urn:schemas-microsoft-com:office:excel"><ProtectStructure>False</ProtectStructure><ProtectWindows>False</ProtectWindows></ExcelWorkbook>${worksheets.join("")}</Workbook>`;
 }
 
 function createAvcBlob(payload) {
@@ -1323,7 +2240,7 @@ function createAvcBlob(payload) {
 }
 
 function createXlsBlob(payload) {
-    return new Blob([buildHtmlWorkbook(payload)], {
+    return new Blob([buildXmlWorkbook(payload)], {
         type: "application/vnd.ms-excel"
     });
 }
@@ -1459,7 +2376,7 @@ function createXlsxBlob(payload) {
         .map((_, index) => `<Override PartName="/xl/worksheets/sheet${index + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`)
         .join("");
     const sheetsXml = payload.sheets
-        .map((sheet, index) => `<sheet name="${xmlEscape(sheet.name)}" sheetId="${index + 1}" r:id="rId${index + 1}"/>`)
+        .map((sheet, index) => `<sheet name="${xmlEscape(sanitizeSpreadsheetName(sheet.name, `Sayfa${index + 1}`))}" sheetId="${index + 1}" r:id="rId${index + 1}"/>`)
         .join("");
     const sheetRels = payload.sheets
         .map((_, index) => `<Relationship Id="rId${index + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${index + 1}.xml"/>`)
@@ -1532,11 +2449,87 @@ function createOdsBlob(payload) {
     ], "application/vnd.oasis.opendocument.spreadsheet");
 }
 
+function pdfEscape(value) {
+    return String(value ?? "")
+        .replace(/[^\x20-\x7e]/g, "?")
+        .replace(/\\/g, "\\\\")
+        .replace(/\(/g, "\\(")
+        .replace(/\)/g, "\\)");
+}
+
+function buildPdfPages(payload) {
+    const pages = [];
+    const maxLinesPerPage = 42;
+
+    payload.sheets.forEach((sheet) => {
+        const bounds = getUsedSheetBounds(sheet);
+        const lines = [sheet.name, ""];
+
+        for (let r = 0; r <= bounds.maxRow; r++) {
+            const cells = [];
+            for (let c = 0; c <= bounds.maxCol; c++) {
+                cells.push(getSheetCellText(sheet, r, c));
+            }
+            lines.push(cells.join("    "));
+        }
+
+        for (let i = 0; i < lines.length; i += maxLinesPerPage) {
+            pages.push(lines.slice(i, i + maxLinesPerPage));
+        }
+    });
+
+    return pages.length ? pages : [["avCELL"]];
+}
+
+function createPdfBlob(payload) {
+    const pages = buildPdfPages(payload);
+    const objects = [
+        "<< /Type /Catalog /Pages 2 0 R >>",
+        ""
+    ];
+    const pageObjectIds = [];
+
+    pages.forEach((lines) => {
+        const pageObjectId = objects.length + 1;
+        const contentObjectId = pageObjectId + 1;
+        pageObjectIds.push(pageObjectId);
+
+        const textLines = lines.map((line, index) => {
+            const y = 800 - index * 17;
+            return `BT /F1 11 Tf 50 ${y} Td (${pdfEscape(line)}) Tj ET`;
+        });
+        const content = textLines.join("\n");
+
+        objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 ${pages.length * 2 + 3} 0 R >> >> /Contents ${contentObjectId} 0 R >>`);
+        objects.push(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
+    });
+
+    objects[1] = `<< /Type /Pages /Kids [${pageObjectIds.map((id) => `${id} 0 R`).join(" ")}] /Count ${pageObjectIds.length} >>`;
+    objects.push("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+
+    let pdf = "%PDF-1.4\n";
+    const offsets = [0];
+    objects.forEach((object, index) => {
+        offsets.push(pdf.length);
+        pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
+    });
+
+    const xrefOffset = pdf.length;
+    pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+    offsets.slice(1).forEach((offset) => {
+        pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
+    });
+    pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+
+    return new Blob([pdf], { type: "application/pdf" });
+}
+
 function createBlobForFileName(fileName, payload) {
     const extension = getFileExtension(fileName);
     if (extension === "xls") return createXlsBlob(payload);
     if (extension === "xlsx") return createXlsxBlob(payload);
     if (extension === "ods") return createOdsBlob(payload);
+    if (extension === "pdf") return createPdfBlob(payload);
     return createAvcBlob(payload);
 }
 
@@ -1561,10 +2554,17 @@ async function writeSaveFile(blob, fileName, types = [AVC_FILE_TYPE]) {
         const writable = await handle.createWritable();
         await writable.write(blob);
         await writable.close();
-        return;
+        return {
+            fileName: handle.name || fileName,
+            handle
+        };
     }
 
     downloadSaveFile(blob, fileName);
+    return {
+        fileName,
+        handle: null
+    };
 }
 
 async function writeSaveAsFile(defaultName) {
@@ -1581,38 +2581,49 @@ async function writeSaveAsFile(defaultName) {
         await writable.write(blob);
         await writable.close();
         updateNextSaveNumber(fileName);
+        setCurrentWorkbookFile(fileName, getFileExtension(fileName) === "avc" ? handle : null);
         return true;
     }
 
-    const requestedName = prompt("Dosya adı (.avc, .xls, .xlsx, .ods)", `${defaultName}.avc`);
+    const requestedName = prompt("Dosya adı (.avc, .xls, .xlsx, .ods, .pdf)", `${defaultName}.avc`);
     if (requestedName === null) return false;
 
     const safeName = sanitizeFileName(requestedName);
     if (!safeName) return false;
 
-    const fileName = /\.(avc|xls|xlsx|ods)$/i.test(safeName) ? safeName : `${safeName}.avc`;
+    const fileName = /\.(avc|xls|xlsx|ods|pdf)$/i.test(safeName) ? safeName : `${safeName}.avc`;
     const payload = createSavePayload();
     const blob = createBlobForFileName(fileName, payload);
     downloadSaveFile(blob, fileName);
     updateNextSaveNumber(fileName);
+    setCurrentWorkbookFile(fileName);
     return true;
 }
 
 async function saveWorkbook() {
-    const defaultName = getDefaultSaveBaseName();
-    const requestedName = prompt("Dosya adı", defaultName);
-    if (requestedName === null) return false;
-
-    const safeName = sanitizeFileName(requestedName);
-    if (!safeName) return false;
-
-    const fileName = ensureSaveExtension(safeName);
     const payload = createSavePayload();
     const blob = createAvcBlob(payload);
 
     try {
-        await writeSaveFile(blob, fileName);
-        updateNextSaveNumber(fileName);
+        if (currentWorkbookFileHandle) {
+            const writable = await currentWorkbookFileHandle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+            updateNextSaveNumber(currentWorkbookFileName);
+            return true;
+        }
+
+        const defaultName = getCurrentSaveBaseName();
+        const requestedName = prompt("Dosya adı", defaultName);
+        if (requestedName === null) return false;
+
+        const safeName = sanitizeFileName(requestedName);
+        if (!safeName) return false;
+
+        const fileName = ensureSaveExtension(safeName);
+        const result = await writeSaveFile(blob, fileName);
+        setCurrentWorkbookFile(result.fileName, result.handle);
+        updateNextSaveNumber(result.fileName);
         return true;
     } catch (error) {
         if (error?.name !== "AbortError") {
@@ -1623,7 +2634,7 @@ async function saveWorkbook() {
 }
 
 async function saveWorkbookAs() {
-    const defaultName = getDefaultSaveBaseName();
+    const defaultName = getCurrentSaveBaseName();
 
     try {
         return await writeSaveAsFile(defaultName);
@@ -1889,17 +2900,48 @@ function renderTable() {
         if (isColumnHeaderActive(c)) {
             th.classList.add("active-header");
         }
-        th.addEventListener("click", () => {
+        if (moveSelectionState?.type === "column" && moveSelectionState.targetIndex === c) {
+            th.classList.add("move-target-header");
+        }
+        th.addEventListener("mousedown", (e) => {
+            if (e.button !== 0 || resizeState || e.shiftKey || e.ctrlKey || e.metaKey) return;
             if (isEditing) {
                 exitEditMode(true);
             }
-            selectColumn(c);
+            if (selectionMode === "column" && isColumnInColumnSelection(c)) {
+                startMoveSelection("column", c);
+                e.preventDefault();
+                return;
+            }
+            startHeaderSelection("column", c);
+            e.preventDefault();
+        });
+        th.addEventListener("mouseenter", () => {
+            updateMoveSelection("column", c);
+            updateHeaderSelection("column", c);
+        });
+        th.addEventListener("click", (e) => {
+            if (suppressClickAfterMove) {
+                suppressClickAfterMove = false;
+                e.preventDefault();
+                return;
+            }
+            if (headerSelectionState?.moved) {
+                e.preventDefault();
+                return;
+            }
+            if (isEditing) {
+                exitEditMode(true);
+            }
+            selectColumn(c, e);
         });
         th.addEventListener("contextmenu", (e) => {
             if (isEditing) {
                 exitEditMode(true);
             }
-            selectColumn(c);
+            if (!(selectionMode === "column" && isColumnInColumnSelection(c))) {
+                selectColumn(c);
+            }
             showContextMenu(e, { type: "column", col: c });
         });
         headerRow.appendChild(th);
@@ -1932,17 +2974,48 @@ function renderTable() {
         if (isRowHeaderActive(r)) {
             rowHeader.classList.add("active-header");
         }
-        rowHeader.addEventListener("click", () => {
+        if (moveSelectionState?.type === "row" && moveSelectionState.targetIndex === r) {
+            rowHeader.classList.add("move-target-header");
+        }
+        rowHeader.addEventListener("mousedown", (e) => {
+            if (e.button !== 0 || resizeState || e.shiftKey || e.ctrlKey || e.metaKey) return;
             if (isEditing) {
                 exitEditMode(true);
             }
-            selectRow(r);
+            if (selectionMode === "row" && isRowInRowSelection(r)) {
+                startMoveSelection("row", r);
+                e.preventDefault();
+                return;
+            }
+            startHeaderSelection("row", r);
+            e.preventDefault();
+        });
+        rowHeader.addEventListener("mouseenter", () => {
+            updateMoveSelection("row", r);
+            updateHeaderSelection("row", r);
+        });
+        rowHeader.addEventListener("click", (e) => {
+            if (suppressClickAfterMove) {
+                suppressClickAfterMove = false;
+                e.preventDefault();
+                return;
+            }
+            if (headerSelectionState?.moved) {
+                e.preventDefault();
+                return;
+            }
+            if (isEditing) {
+                exitEditMode(true);
+            }
+            selectRow(r, e);
         });
         rowHeader.addEventListener("contextmenu", (e) => {
             if (isEditing) {
                 exitEditMode(true);
             }
-            selectRow(r);
+            if (!(selectionMode === "row" && isRowInRowSelection(r))) {
+                selectRow(r);
+            }
             showContextMenu(e, { type: "row", row: r });
         });
         tr.appendChild(rowHeader);
@@ -1983,6 +3056,8 @@ function renderTable() {
             td.style.textDecoration = cellStyle.underline ? "underline" : "none";
             td.style.fontSize = `${Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, Number(cellStyle.fontSize) || DEFAULT_FONT_SIZE))}px`;
             td.style.color = normalizeColorValue(cellStyle.color, "#202124");
+            td.style.textAlign = cellStyle.horizontalAlign;
+            td.style.verticalAlign = cellStyle.verticalAlign;
             if (cellStyle.backgroundColor) {
                 td.style.backgroundColor = normalizeColorValue(cellStyle.backgroundColor, "#fff2cc");
             }
@@ -2011,7 +3086,8 @@ function renderTable() {
                 if (isCellInNormalizedRange(r, c, range)) {
                     td.classList.add("range-selected");
                     addRangeBoundaryClasses(td, r, c, range, "selection");
-                    if (r === range.maxRow && c === range.maxCol) {
+                    const visualRange = getVisualCellRange(r, c);
+                    if (visualRange.maxRow === range.maxRow && visualRange.maxCol === range.maxCol) {
                         td.classList.add("selection-handle-cell");
                     }
                 }
@@ -2036,6 +3112,12 @@ function renderTable() {
                     if (c === range.minCol) td.classList.add("copied-left");
                     if (c === range.maxCol) td.classList.add("copied-right");
                 }
+            }
+
+            const moveTargetRange = getCellMoveTargetRange();
+            if (moveTargetRange && isCellInNormalizedRange(r, c, moveTargetRange)) {
+                td.classList.add("move-target-cell");
+                addRangeBoundaryClasses(td, r, c, moveTargetRange, "move-target");
             }
 
             // CHART HIGHLIGHT STATE (chartConfig varsa)
@@ -2083,6 +3165,15 @@ function renderTable() {
 
                 if (e.shiftKey || e.ctrlKey || e.metaKey) return;
 
+                if (
+                    isCellInCurrentSelection(r, c) &&
+                    isNearSelectionEdge(e, e.currentTarget, r, c) &&
+                    startCellMove(r, c)
+                ) {
+                    e.preventDefault();
+                    return;
+                }
+
                 isMouseSelecting = true;
                 mouseSelectionMoved = false;
                 selectedCell = { row: r, col: c };
@@ -2095,6 +3186,7 @@ function renderTable() {
             });
 
             td.addEventListener("mouseenter", () => {
+                updateCellMoveTarget(r, c);
                 if (!isMouseSelecting || !selectedCell) return;
                 if (selectedCell.row === r && selectedCell.col === c) return;
 
@@ -2109,7 +3201,24 @@ function renderTable() {
                 focusSelectedCell();
             });
 
+            td.addEventListener("mousemove", (e) => {
+                if (isEditing || resizeState || moveSelectionState || isMouseSelecting) return;
+                e.currentTarget.classList.toggle(
+                    "selection-move-cursor",
+                    isCellInCurrentSelection(r, c) && isNearSelectionEdge(e, e.currentTarget, r, c)
+                );
+            });
+
+            td.addEventListener("mouseleave", (e) => {
+                e.currentTarget.classList.remove("selection-move-cursor");
+            });
+
             td.addEventListener("click", (e) => {
+                if (suppressClickAfterMove) {
+                    suppressClickAfterMove = false;
+                    e.preventDefault();
+                    return;
+                }
                 if (mouseSelectionMoved) {
                     mouseSelectionMoved = false;
                     e.preventDefault();
@@ -2169,8 +3278,31 @@ fileMenuBtn?.addEventListener("click", (e) => {
     e.stopPropagation();
     hideContextMenu();
     hideBorderMenu();
+    hideEditMenu();
     if (fileMenu) {
         fileMenu.hidden = !fileMenu.hidden;
+    }
+});
+
+openFileBtn?.addEventListener("click", async () => {
+    hideFileMenu();
+    try {
+        await openWorkbook();
+    } catch (error) {
+        if (error?.name !== "AbortError") {
+            alert(error?.message || "Dosya açılamadı.");
+        }
+    }
+});
+
+openFileInput?.addEventListener("change", async () => {
+    const file = openFileInput.files?.[0];
+    if (!file) return;
+
+    try {
+        await openWorkbookFile(file);
+    } catch (error) {
+        alert(error?.message || "Dosya açılamadı.");
     }
 });
 
@@ -2184,10 +3316,47 @@ saveAsFileBtn?.addEventListener("click", async () => {
     await saveWorkbookAs();
 });
 
+editMenuBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    hideContextMenu();
+    hideBorderMenu();
+    hideFileMenu();
+    updateEditMenuState();
+    if (editMenu) {
+        editMenu.hidden = !editMenu.hidden;
+    }
+});
+
+menuUndoBtn?.addEventListener("click", () => {
+    hideEditMenu();
+    undo();
+});
+
+menuRedoBtn?.addEventListener("click", () => {
+    hideEditMenu();
+    redo();
+});
+
+menuCutBtn?.addEventListener("click", () => {
+    hideEditMenu();
+    cutSelection();
+});
+
+menuCopyBtn?.addEventListener("click", () => {
+    hideEditMenu();
+    copySelection();
+});
+
+menuPasteBtn?.addEventListener("click", () => {
+    hideEditMenu();
+    pasteClipboard();
+});
+
 borderBtn?.addEventListener("click", (e) => {
     e.stopPropagation();
     hideContextMenu();
     hideFileMenu();
+    hideEditMenu();
     if (borderMenu?.hidden) {
         showBorderMenu();
     } else {
@@ -2260,31 +3429,85 @@ fillColorInput?.addEventListener("input", () => {
     setFillColor(fillColorInput.value);
 });
 
+findInput?.addEventListener("input", () => {
+    runFindQuery(findInput.value);
+    updateFindCount();
+});
+
+findInput?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+        e.preventDefault();
+        findNext(e.shiftKey ? -1 : 1);
+    }
+    if (e.key === "Escape") {
+        e.preventDefault();
+        closeFindPanel();
+    }
+});
+
+findPrevBtn?.addEventListener("click", () => {
+    findNext(-1);
+});
+
+findNextBtn?.addEventListener("click", () => {
+    findNext(1);
+});
+
+findCloseBtn?.addEventListener("click", () => {
+    closeFindPanel();
+});
+
+alignLeftBtn?.addEventListener("click", () => {
+    hideContextMenu();
+    hideBorderMenu();
+    setHorizontalAlignment("left");
+});
+
+alignCenterBtn?.addEventListener("click", () => {
+    hideContextMenu();
+    hideBorderMenu();
+    setHorizontalAlignment("center");
+});
+
+alignRightBtn?.addEventListener("click", () => {
+    hideContextMenu();
+    hideBorderMenu();
+    setHorizontalAlignment("right");
+});
+
+alignTopBtn?.addEventListener("click", () => {
+    hideContextMenu();
+    hideBorderMenu();
+    setVerticalAlignment("top");
+});
+
+alignMiddleBtn?.addEventListener("click", () => {
+    hideContextMenu();
+    hideBorderMenu();
+    setVerticalAlignment("middle");
+});
+
+alignBottomBtn?.addEventListener("click", () => {
+    hideContextMenu();
+    hideBorderMenu();
+    setVerticalAlignment("bottom");
+});
+
 addRowBtn.addEventListener("click", () => {
-    insertRowAt(selectedCell?.row ?? 0);
+    if (addRowBtn.disabled) return;
+    insertRowsAboveSelection();
 });
 removeRowBtn.addEventListener("click", () => {
-    if (rowCount > MIN_ROW_SIZE) {
-        pushHistory();
-        rowCount--;
-        tableData.pop();
-        rowHeights.pop();
-        normalizeSelectedCell();
-        renderTable();
-    }
+    if (removeRowBtn.disabled) return;
+    deleteSelectedRows();
 });
 addColBtn.addEventListener("click", () => {
-    insertColAt(selectedCell?.col ?? 0);
+    if (addColBtn.disabled) return;
+    insertColsLeftOfSelection();
 });
 removeColBtn.addEventListener("click", () => {
-    if (colCount > MIN_COL_SIZE) {
-        pushHistory();
-        colCount--;
-        tableData.forEach(row => row.pop());
-        colWidths.pop();
-        normalizeSelectedCell();
-        renderTable();
-    }
+    if (removeColBtn.disabled) return;
+    deleteSelectedColumns();
 });
 function placeCursorAtEnd(element) {
     const range = document.createRange();
@@ -2784,6 +4007,9 @@ window.addEventListener("click", (e) => {
     if (fileMenu && !fileMenu.contains(e.target) && !fileMenuBtn?.contains(e.target)) {
         hideFileMenu();
     }
+    if (editMenu && !editMenu.contains(e.target) && !editMenuBtn?.contains(e.target)) {
+        hideEditMenu();
+    }
 });
 
 window.addEventListener("mousedown", (e) => {
@@ -2806,6 +4032,7 @@ window.addEventListener("contextmenu", (e) => {
 window.addEventListener("scroll", hideContextMenu, true);
 window.addEventListener("scroll", hideBorderMenu, true);
 window.addEventListener("scroll", hideFileMenu, true);
+window.addEventListener("scroll", hideEditMenu, true);
 
 contextMenu?.addEventListener("click", (e) => {
     e.stopPropagation();
@@ -2839,14 +4066,29 @@ window.addEventListener("mousemove", (e) => {
 });
 
 window.addEventListener("mouseup", () => {
+    finishMoveSelection();
     isMouseSelecting = false;
+    headerSelectionState = null;
     resizeState = null;
 });
 
 window.addEventListener("keydown", (e) => {
+    if (e.ctrlKey && !e.shiftKey && e.code === "KeyF") {
+        e.preventDefault();
+        openFindPanel();
+        return;
+    }
+
     if (e.key === "Escape") {
+        if (findPanel && !findPanel.hidden) {
+            e.preventDefault();
+            closeFindPanel();
+            return;
+        }
         hideContextMenu();
         hideBorderMenu();
+        hideFileMenu();
+        hideEditMenu();
         if (!isEditing && clearClipboardState(true)) {
             e.preventDefault();
             return;
