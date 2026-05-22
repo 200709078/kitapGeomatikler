@@ -1,7 +1,6 @@
-// tüm kenarlıklar çizildiğinde iç kenarlıklar daha kalın çiziliyor.
-// kenarlık ikonlarında çizim yapılmayan kenarlar daha koyu kesikli olacak.
-// sağ alt köşedeki karecik seçim neresi ise o seçimin daima sağ alt köşesinde olmalı
-//imsmanifest dosyasını düzenle
+//xls biçimi ya düzeltilecek yada kaldırılacak
+//pdf olarak farklı kaydet eklenecek
+//Full Manuel Test
 const table = document.getElementById("data-table");
 const addRowBtn = document.getElementById("add-row-btn");
 const removeRowBtn = document.getElementById("remove-row-btn");
@@ -11,9 +10,23 @@ const undoBtn = document.getElementById("undo-btn");
 const redoBtn = document.getElementById("redo-btn");
 const cellName = document.getElementById("cell-name");
 const formulaInput = document.getElementById("formula-input");
+const fileMenuBtn = document.getElementById("file-menu-btn");
+const fileMenu = document.getElementById("file-menu");
+const saveFileBtn = document.getElementById("save-file-btn");
+const saveAsFileBtn = document.getElementById("save-as-file-btn");
 const contextMenu = document.getElementById("context-menu");
 const borderBtn = document.getElementById("border-btn");
 const borderMenu = document.getElementById("border-menu");
+const mergeBtn = document.getElementById("merge-btn");
+const boldBtn = document.getElementById("bold-btn");
+const italicBtn = document.getElementById("italic-btn");
+const underlineBtn = document.getElementById("underline-btn");
+const fontSizeDecreaseBtn = document.getElementById("font-size-decrease-btn");
+const fontSizeIncreaseBtn = document.getElementById("font-size-increase-btn");
+const textColorBtn = document.getElementById("text-color-btn");
+const fillColorBtn = document.getElementById("fill-color-btn");
+const textColorInput = document.getElementById("text-color-input");
+const fillColorInput = document.getElementById("fill-color-input");
 const sheetTabs = document.getElementById("sheet-tabs");
 const MIN_ROW_SIZE = 20;
 const MIN_COL_SIZE = 10;
@@ -21,6 +34,29 @@ const DEFAULT_COL_WIDTH = 84;
 const DEFAULT_ROW_HEIGHT = 26;
 const MIN_COL_WIDTH = 48;
 const MIN_ROW_HEIGHT = 22;
+const DEFAULT_FONT_SIZE = 13;
+const MIN_FONT_SIZE = 8;
+const MAX_FONT_SIZE = 36;
+const SAVE_NAME_COUNTER_KEY = "avcell.nextSaveNumber";
+const AVC_FILE_TYPE = {
+    description: "avCELL dosyası",
+    accept: { "application/json": [".avc"] }
+};
+const SAVE_AS_FILE_TYPES = [
+    AVC_FILE_TYPE,
+    {
+        description: "Excel 97-2003 çalışma kitabı",
+        accept: { "application/vnd.ms-excel": [".xls"] }
+    },
+    {
+        description: "Excel çalışma kitabı",
+        accept: { "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"] }
+    },
+    {
+        description: "LibreOffice Calc çalışma kitabı",
+        accept: { "application/vnd.oasis.opendocument.spreadsheet": [".ods"] }
+    }
+];
 let rowCount = 100;
 let colCount = 26;
 let selectedCell = { row: 0, col: 0 };
@@ -100,6 +136,13 @@ function updateToolbarState() {
     removeColBtn.disabled = colCount <= MIN_COL_SIZE;
     undoBtn.disabled = undoStack.length === 0;
     redoBtn.disabled = redoStack.length === 0;
+
+    const style = selectedCell ? getCellStyle(tableData[selectedCell.row]?.[selectedCell.col]) : createDefaultCellStyle();
+    boldBtn?.classList.toggle("active", Boolean(style.bold));
+    italicBtn?.classList.toggle("active", Boolean(style.italic));
+    underlineBtn?.classList.toggle("active", Boolean(style.underline));
+    if (textColorInput) textColorInput.value = normalizeColorValue(style.color, "#202124");
+    if (fillColorInput) fillColorInput.value = normalizeColorValue(style.backgroundColor, "#fff2cc");
 }
 
 function enforceChartVisibility() {
@@ -123,6 +166,12 @@ function hideBorderMenu() {
     if (!borderMenu) return;
 
     borderMenu.hidden = true;
+}
+
+function hideFileMenu() {
+    if (!fileMenu) return;
+
+    fileMenu.hidden = true;
 }
 
 function showBorderMenu() {
@@ -167,10 +216,8 @@ function updateContextMenuState() {
         copy: hasSelection,
         paste: hasSelection && Boolean(internalClipboard),
         "insert-row-above": isRowContext,
-        "insert-row-below": isRowContext,
         "delete-row": isRowContext && rowCount > MIN_ROW_SIZE,
         "insert-col-left": isColumnContext,
-        "insert-col-right": isColumnContext,
         "delete-col": isColumnContext && colCount > MIN_COL_SIZE,
         "add-sheet": isSheetContext,
         "rename-sheet": isSheetContext,
@@ -224,7 +271,14 @@ function hasClearableContent() {
     for (let r = range.minRow; r <= range.maxRow; r++) {
         for (let c = range.minCol; c <= range.maxCol; c++) {
             const cell = tableData[r]?.[c];
-            if (cell && (cell.value || cell.formula)) {
+            if (cell && (
+                cell.value ||
+                cell.formula ||
+                hasAnyBorder(cell) ||
+                hasNonDefaultStyle(cell) ||
+                cell.merge ||
+                cell.mergedTo
+            )) {
                 return true;
             }
         }
@@ -241,7 +295,7 @@ function setClipboardFromSelection(mode = "copy") {
     for (let r = range.minRow; r <= range.maxRow; r++) {
         const row = [];
         for (let c = range.minCol; c <= range.maxCol; c++) {
-            row.push(cloneCellData(tableData[r][c]));
+            row.push(cloneClipboardCellData(tableData[r][c]));
         }
         internalClipboard.push(row);
     }
@@ -338,7 +392,9 @@ function applyBorderToSelection(action) {
     pushHistory();
     for (let r = range.minRow; r <= range.maxRow; r++) {
         for (let c = range.minCol; c <= range.maxCol; c++) {
-            const borders = getCellBorders(tableData[r][c]);
+            const borders = action === "all"
+                ? createEmptyBorders()
+                : getCellBorders(tableData[r][c]);
 
             if (action === "clear") {
                 tableData[r][c].borders = createEmptyBorders();
@@ -347,9 +403,9 @@ function applyBorderToSelection(action) {
 
             if (action === "all") {
                 borders.top = true;
-                borders.right = true;
-                borders.bottom = true;
                 borders.left = true;
+                if (r === range.maxRow) borders.bottom = true;
+                if (c === range.maxCol) borders.right = true;
             }
 
             if (action === "outer") {
@@ -378,6 +434,177 @@ function applyBorderToSelection(action) {
     return true;
 }
 
+function applyStyleToSelection(updater, options = {}) {
+    const range = getActiveRange();
+    if (!range) return false;
+
+    pushHistory();
+    for (let r = range.minRow; r <= range.maxRow; r++) {
+        for (let c = range.minCol; c <= range.maxCol; c++) {
+            const cell = tableData[r]?.[c];
+            if (!cell) continue;
+
+            const style = getCellStyle(cell);
+            updater(style, cell);
+            cell.style = style;
+        }
+    }
+
+    if (options.autoFit) {
+        fitRangeToContent(range);
+    }
+
+    renderTable();
+    focusSelectedCell();
+    return true;
+}
+
+function toggleStyleProperty(property) {
+    if (!selectedCell) return false;
+
+    const currentStyle = getCellStyle(tableData[selectedCell.row]?.[selectedCell.col]);
+    const nextValue = !currentStyle[property];
+    return applyStyleToSelection((style) => {
+        style[property] = nextValue;
+    });
+}
+
+function changeFontSize(delta) {
+    return applyStyleToSelection((style) => {
+        const currentSize = Number(style.fontSize) || DEFAULT_FONT_SIZE;
+        style.fontSize = Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, currentSize + delta));
+    }, { autoFit: true });
+}
+
+function setTextColor(color) {
+    return applyStyleToSelection((style) => {
+        style.color = normalizeColorValue(color, "#202124");
+    });
+}
+
+function setFillColor(color) {
+    return applyStyleToSelection((style) => {
+        style.backgroundColor = normalizeColorValue(color, "#fff2cc");
+    });
+}
+
+function rangesIntersect(a, b) {
+    return !(
+        a.maxRow < b.minRow ||
+        a.minRow > b.maxRow ||
+        a.maxCol < b.minCol ||
+        a.minCol > b.maxCol
+    );
+}
+
+function getMergeRange(row, col) {
+    const cell = tableData[row]?.[col];
+    if (!cell) return null;
+
+    if (cell.merge) {
+        return {
+            minRow: row,
+            maxRow: row + cell.merge.rowspan - 1,
+            minCol: col,
+            maxCol: col + cell.merge.colspan - 1
+        };
+    }
+
+    if (cell.mergedTo) {
+        return getMergeRange(cell.mergedTo.row, cell.mergedTo.col);
+    }
+
+    return null;
+}
+
+function clearMergeAt(row, col) {
+    const cell = tableData[row]?.[col];
+    if (!cell?.merge) return;
+
+    const { rowspan, colspan } = cell.merge;
+    for (let r = row; r < row + rowspan; r++) {
+        for (let c = col; c < col + colspan; c++) {
+            if (!tableData[r]?.[c]) continue;
+            tableData[r][c].mergedTo = null;
+        }
+    }
+
+    cell.merge = null;
+}
+
+function clearMergesIntersectingRange(range) {
+    const parents = [];
+
+    for (let r = 0; r < rowCount; r++) {
+        for (let c = 0; c < colCount; c++) {
+            const mergeRange = getMergeRange(r, c);
+            const isParent = tableData[r][c].merge;
+
+            if (isParent && mergeRange && rangesIntersect(range, mergeRange)) {
+                parents.push({ row: r, col: c });
+            }
+        }
+    }
+
+    parents.forEach(({ row, col }) => clearMergeAt(row, col));
+}
+
+function toggleMergeSelection() {
+    const range = getActiveRange();
+    if (!range) return false;
+
+    const isSingleCell =
+        range.minRow === range.maxRow &&
+        range.minCol === range.maxCol;
+    const existingMerge = isSingleCell
+        ? getMergeRange(range.minRow, range.minCol)
+        : null;
+
+    if (existingMerge) {
+        pushHistory();
+        clearMergeAt(existingMerge.minRow, existingMerge.minCol);
+        renderTable();
+        focusSelectedCell();
+        return true;
+    }
+
+    if (isSingleCell) return false;
+
+    pushHistory();
+    clearMergesIntersectingRange(range);
+
+    const parent = tableData[range.minRow][range.minCol];
+    parent.merge = {
+        rowspan: range.maxRow - range.minRow + 1,
+        colspan: range.maxCol - range.minCol + 1
+    };
+    parent.mergedTo = null;
+
+    for (let r = range.minRow; r <= range.maxRow; r++) {
+        for (let c = range.minCol; c <= range.maxCol; c++) {
+            if (r === range.minRow && c === range.minCol) continue;
+
+            tableData[r][c].value = "";
+            tableData[r][c].formula = null;
+            tableData[r][c].borders = createEmptyBorders();
+            tableData[r][c].merge = null;
+            tableData[r][c].mergedTo = {
+                row: range.minRow,
+                col: range.minCol
+            };
+        }
+    }
+
+    selectedCell = { row: range.minRow, col: range.minCol };
+    selectionRange = null;
+    selectionMode = "cell";
+    extraSelections = [];
+    clearClipboardState();
+    renderTable();
+    focusSelectedCell();
+    return true;
+}
+
 function cutSelection() {
     return setClipboardFromSelection("cut");
 }
@@ -394,10 +621,8 @@ function handleContextMenuAction(action) {
     if (action === "copy") copySelection();
     if (action === "paste") pasteClipboard();
     if (action === "insert-row-above" && contextMenuTarget?.type === "row") insertRowAt(contextMenuTarget.row);
-    if (action === "insert-row-below" && contextMenuTarget?.type === "row") insertRowAt(contextMenuTarget.row + 1);
     if (action === "delete-row" && contextMenuTarget?.type === "row") deleteRowAt(contextMenuTarget.row);
     if (action === "insert-col-left" && contextMenuTarget?.type === "column") insertColAt(contextMenuTarget.col);
-    if (action === "insert-col-right" && contextMenuTarget?.type === "column") insertColAt(contextMenuTarget.col + 1);
     if (action === "delete-col" && contextMenuTarget?.type === "column") deleteColAt(contextMenuTarget.col);
     if (action === "add-sheet") addSheet();
     if (action === "rename-sheet") renameActiveSheet();
@@ -565,7 +790,21 @@ function cloneCellData(cell) {
     return {
         value: cell.value,
         formula: cell.formula,
-        borders: { ...getCellBorders(cell) }
+        borders: { ...getCellBorders(cell) },
+        style: { ...getCellStyle(cell) },
+        merge: cell.merge ? { ...cell.merge } : null,
+        mergedTo: cell.mergedTo ? { ...cell.mergedTo } : null
+    };
+}
+
+function cloneClipboardCellData(cell) {
+    return {
+        value: cell.value,
+        formula: cell.formula,
+        borders: { ...getCellBorders(cell) },
+        style: { ...getCellStyle(cell) },
+        merge: null,
+        mergedTo: null
     };
 }
 
@@ -585,11 +824,55 @@ function getCellBorders(cell) {
     };
 }
 
+function hasAnyBorder(cell) {
+    const borders = getCellBorders(cell);
+    return borders.top || borders.right || borders.bottom || borders.left;
+}
+
+function createDefaultCellStyle() {
+    return {
+        bold: false,
+        italic: false,
+        underline: false,
+        fontSize: DEFAULT_FONT_SIZE,
+        color: "#202124",
+        backgroundColor: ""
+    };
+}
+
+function getCellStyle(cell) {
+    return {
+        ...createDefaultCellStyle(),
+        ...(cell?.style ?? {})
+    };
+}
+
+function hasNonDefaultStyle(cell) {
+    const style = getCellStyle(cell);
+    const defaults = createDefaultCellStyle();
+
+    return (
+        style.bold !== defaults.bold ||
+        style.italic !== defaults.italic ||
+        style.underline !== defaults.underline ||
+        (Number(style.fontSize) || DEFAULT_FONT_SIZE) !== defaults.fontSize ||
+        style.color !== defaults.color ||
+        style.backgroundColor !== defaults.backgroundColor
+    );
+}
+
+function normalizeColorValue(value, fallback) {
+    return /^#[0-9a-f]{6}$/i.test(value ?? "") ? value : fallback;
+}
+
 function createEmptyCell() {
     return {
         value: "",
         formula: null,
-        borders: createEmptyBorders()
+        borders: createEmptyBorders(),
+        style: createDefaultCellStyle(),
+        merge: null,
+        mergedTo: null
     };
 }
 
@@ -926,6 +1209,432 @@ function deleteActiveSheet() {
     focusSelectedCell();
 }
 
+function getNextSaveNumber() {
+    const storedValue = Number(localStorage.getItem(SAVE_NAME_COUNTER_KEY));
+    return Number.isInteger(storedValue) && storedValue > 0 ? storedValue : 1;
+}
+
+function getDefaultSaveBaseName() {
+    return `avcell${getNextSaveNumber()}`;
+}
+
+function updateNextSaveNumber(fileName) {
+    const currentNumber = getNextSaveNumber();
+    const match = fileName.match(/^avcell(\d+)(?:\.avc|\.avcell\.json|\.json)?$/i);
+    const usedNumber = match ? Number(match[1]) : currentNumber;
+    const nextNumber = Math.max(currentNumber + 1, usedNumber + 1);
+
+    localStorage.setItem(SAVE_NAME_COUNTER_KEY, String(nextNumber));
+}
+
+function sanitizeFileName(name) {
+    return name
+        .trim()
+        .replace(/[<>:"/\\|?*\x00-\x1F]/g, "_")
+        .replace(/\.+$/g, "");
+}
+
+function ensureSaveExtension(fileName) {
+    if (/\.avc$/i.test(fileName)) return fileName;
+    if (/\.avcell\.json$/i.test(fileName)) return fileName.replace(/\.avcell\.json$/i, ".avc");
+    if (/\.json$/i.test(fileName)) return fileName.replace(/\.json$/i, ".avc");
+    return `${fileName}.avc`;
+}
+
+function getFileExtension(fileName) {
+    const match = fileName.match(/\.([^.]+)$/);
+    return match ? match[1].toLowerCase() : "";
+}
+
+function createSavePayload() {
+    captureCurrentSheet();
+
+    return {
+        app: "avCELL",
+        version: 1,
+        savedAt: new Date().toISOString(),
+        activeSheetIndex,
+        sheets: sheets.map((sheet) => ({
+            ...sheet,
+            selectedCell: sheet.selectedCell ? { ...sheet.selectedCell } : { row: 0, col: 0 },
+            selectionRange: cloneRange(sheet.selectionRange),
+            tableData: cloneTableData(sheet.tableData),
+            colWidths: [...sheet.colWidths],
+            rowHeights: [...sheet.rowHeights]
+        }))
+    };
+}
+
+function xmlEscape(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&apos;");
+}
+
+function getSheetCellText(sheet, row, col) {
+    const cell = sheet.tableData[row]?.[col];
+    if (!cell) return "";
+
+    return cell.formula ?? cell.value ?? "";
+}
+
+function getUsedSheetBounds(sheet) {
+    let maxRow = 0;
+    let maxCol = 0;
+
+    for (let r = 0; r < sheet.rowCount; r++) {
+        for (let c = 0; c < sheet.colCount; c++) {
+            if (getSheetCellText(sheet, r, c) !== "") {
+                maxRow = Math.max(maxRow, r);
+                maxCol = Math.max(maxCol, c);
+            }
+        }
+    }
+
+    return { maxRow, maxCol };
+}
+
+function buildHtmlWorkbook(payload) {
+    const sheetsHtml = payload.sheets.map((sheet) => {
+        const bounds = getUsedSheetBounds(sheet);
+        const rows = [];
+
+        for (let r = 0; r <= bounds.maxRow; r++) {
+            const cells = [];
+            for (let c = 0; c <= bounds.maxCol; c++) {
+                cells.push(`<td>${xmlEscape(getSheetCellText(sheet, r, c))}</td>`);
+            }
+            rows.push(`<tr>${cells.join("")}</tr>`);
+        }
+
+        return `<h2>${xmlEscape(sheet.name)}</h2><table>${rows.join("")}</table>`;
+    });
+
+    return `<!doctype html><html><head><meta charset="utf-8"><title>avCELL</title></head><body>${sheetsHtml.join("")}</body></html>`;
+}
+
+function createAvcBlob(payload) {
+    return new Blob([JSON.stringify(payload, null, 2)], {
+        type: "application/json"
+    });
+}
+
+function createXlsBlob(payload) {
+    return new Blob([buildHtmlWorkbook(payload)], {
+        type: "application/vnd.ms-excel"
+    });
+}
+
+function createCrc32Table() {
+    const table = [];
+    for (let i = 0; i < 256; i++) {
+        let value = i;
+        for (let bit = 0; bit < 8; bit++) {
+            value = value & 1 ? 0xedb88320 ^ (value >>> 1) : value >>> 1;
+        }
+        table.push(value >>> 0);
+    }
+    return table;
+}
+
+const CRC32_TABLE = createCrc32Table();
+
+function getCrc32(bytes) {
+    let crc = 0xffffffff;
+    for (const byte of bytes) {
+        crc = CRC32_TABLE[(crc ^ byte) & 0xff] ^ (crc >>> 8);
+    }
+    return (crc ^ 0xffffffff) >>> 0;
+}
+
+function writeUint16(view, offset, value) {
+    view.setUint16(offset, value, true);
+}
+
+function writeUint32(view, offset, value) {
+    view.setUint32(offset, value, true);
+}
+
+function createZipBlob(entries, type) {
+    const encoder = new TextEncoder();
+    const preparedEntries = entries.map((entry) => ({
+        nameBytes: encoder.encode(entry.name),
+        dataBytes: typeof entry.data === "string" ? encoder.encode(entry.data) : entry.data,
+        name: entry.name
+    }));
+    const localParts = [];
+    const centralParts = [];
+    let offset = 0;
+
+    preparedEntries.forEach((entry) => {
+        const crc = getCrc32(entry.dataBytes);
+        const localHeader = new Uint8Array(30);
+        const localView = new DataView(localHeader.buffer);
+        writeUint32(localView, 0, 0x04034b50);
+        writeUint16(localView, 4, 20);
+        writeUint16(localView, 6, 0);
+        writeUint16(localView, 8, 0);
+        writeUint16(localView, 10, 0);
+        writeUint16(localView, 12, 0);
+        writeUint32(localView, 14, crc);
+        writeUint32(localView, 18, entry.dataBytes.length);
+        writeUint32(localView, 22, entry.dataBytes.length);
+        writeUint16(localView, 26, entry.nameBytes.length);
+        writeUint16(localView, 28, 0);
+        localParts.push(localHeader, entry.nameBytes, entry.dataBytes);
+
+        const centralHeader = new Uint8Array(46);
+        const centralView = new DataView(centralHeader.buffer);
+        writeUint32(centralView, 0, 0x02014b50);
+        writeUint16(centralView, 4, 20);
+        writeUint16(centralView, 6, 20);
+        writeUint16(centralView, 8, 0);
+        writeUint16(centralView, 10, 0);
+        writeUint16(centralView, 12, 0);
+        writeUint16(centralView, 14, 0);
+        writeUint32(centralView, 16, crc);
+        writeUint32(centralView, 20, entry.dataBytes.length);
+        writeUint32(centralView, 24, entry.dataBytes.length);
+        writeUint16(centralView, 28, entry.nameBytes.length);
+        writeUint16(centralView, 30, 0);
+        writeUint16(centralView, 32, 0);
+        writeUint16(centralView, 34, 0);
+        writeUint16(centralView, 36, 0);
+        writeUint32(centralView, 38, 0);
+        writeUint32(centralView, 42, offset);
+        centralParts.push(centralHeader, entry.nameBytes);
+
+        offset += localHeader.length + entry.nameBytes.length + entry.dataBytes.length;
+    });
+
+    const centralOffset = offset;
+    const centralSize = centralParts.reduce((sum, part) => sum + part.length, 0);
+    const endHeader = new Uint8Array(22);
+    const endView = new DataView(endHeader.buffer);
+    writeUint32(endView, 0, 0x06054b50);
+    writeUint16(endView, 8, preparedEntries.length);
+    writeUint16(endView, 10, preparedEntries.length);
+    writeUint32(endView, 12, centralSize);
+    writeUint32(endView, 16, centralOffset);
+
+    return new Blob([...localParts, ...centralParts, endHeader], { type });
+}
+
+function buildXlsxSheetXml(sheet) {
+    const bounds = getUsedSheetBounds(sheet);
+    const rows = [];
+
+    for (let r = 0; r <= bounds.maxRow; r++) {
+        const cells = [];
+        for (let c = 0; c <= bounds.maxCol; c++) {
+            const value = getSheetCellText(sheet, r, c);
+            if (value === "") continue;
+
+            const cellRef = `${getColumnLabel(c)}${r + 1}`;
+            const formula = value.startsWith("=") ? value.slice(1) : null;
+            const numericValue = !formula && value.trim() !== "" && Number.isFinite(Number(value));
+            if (formula) {
+                cells.push(`<c r="${cellRef}"><f>${xmlEscape(formula)}</f></c>`);
+            } else if (numericValue) {
+                cells.push(`<c r="${cellRef}"><v>${xmlEscape(value)}</v></c>`);
+            } else {
+                cells.push(`<c r="${cellRef}" t="inlineStr"><is><t>${xmlEscape(value)}</t></is></c>`);
+            }
+        }
+        rows.push(`<row r="${r + 1}">${cells.join("")}</row>`);
+    }
+
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${rows.join("")}</sheetData></worksheet>`;
+}
+
+function createXlsxBlob(payload) {
+    const sheetFiles = payload.sheets.map((sheet, index) => ({
+        name: `xl/worksheets/sheet${index + 1}.xml`,
+        data: buildXlsxSheetXml(sheet)
+    }));
+    const sheetContentTypes = payload.sheets
+        .map((_, index) => `<Override PartName="/xl/worksheets/sheet${index + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`)
+        .join("");
+    const sheetsXml = payload.sheets
+        .map((sheet, index) => `<sheet name="${xmlEscape(sheet.name)}" sheetId="${index + 1}" r:id="rId${index + 1}"/>`)
+        .join("");
+    const sheetRels = payload.sheets
+        .map((_, index) => `<Relationship Id="rId${index + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${index + 1}.xml"/>`)
+        .join("");
+
+    return createZipBlob([
+        {
+            name: "[Content_Types].xml",
+            data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${sheetContentTypes}</Types>`
+        },
+        {
+            name: "_rels/.rels",
+            data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`
+        },
+        {
+            name: "xl/workbook.xml",
+            data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheetsXml}</sheets></workbook>`
+        },
+        {
+            name: "xl/_rels/workbook.xml.rels",
+            data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheetRels}<Relationship Id="rId${payload.sheets.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`
+        },
+        {
+            name: "xl/styles.xml",
+            data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="1"><font><sz val="11"/><name val="Arial"/></font></fonts><fills count="1"><fill><patternFill patternType="none"/></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf/></cellStyleXfs><cellXfs count="1"><xf/></cellXfs></styleSheet>`
+        },
+        ...sheetFiles
+    ], "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+}
+
+function buildOdsContentXml(payload) {
+    const tables = payload.sheets.map((sheet) => {
+        const bounds = getUsedSheetBounds(sheet);
+        const rows = [];
+
+        for (let r = 0; r <= bounds.maxRow; r++) {
+            const cells = [];
+            for (let c = 0; c <= bounds.maxCol; c++) {
+                const value = getSheetCellText(sheet, r, c);
+                const number = value.trim() !== "" && Number.isFinite(Number(value));
+                if (number) {
+                    cells.push(`<table:table-cell office:value-type="float" office:value="${xmlEscape(value)}"><text:p>${xmlEscape(value)}</text:p></table:table-cell>`);
+                } else {
+                    cells.push(`<table:table-cell office:value-type="string"><text:p>${xmlEscape(value)}</text:p></table:table-cell>`);
+                }
+            }
+            rows.push(`<table:table-row>${cells.join("")}</table:table-row>`);
+        }
+
+        return `<table:table table:name="${xmlEscape(sheet.name)}">${rows.join("")}</table:table>`;
+    });
+
+    return `<?xml version="1.0" encoding="UTF-8"?><office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" office:version="1.2"><office:body><office:spreadsheet>${tables.join("")}</office:spreadsheet></office:body></office:document-content>`;
+}
+
+function createOdsBlob(payload) {
+    return createZipBlob([
+        {
+            name: "mimetype",
+            data: "application/vnd.oasis.opendocument.spreadsheet"
+        },
+        {
+            name: "META-INF/manifest.xml",
+            data: `<?xml version="1.0" encoding="UTF-8"?><manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0" manifest:version="1.2"><manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.spreadsheet"/><manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/></manifest:manifest>`
+        },
+        {
+            name: "content.xml",
+            data: buildOdsContentXml(payload)
+        }
+    ], "application/vnd.oasis.opendocument.spreadsheet");
+}
+
+function createBlobForFileName(fileName, payload) {
+    const extension = getFileExtension(fileName);
+    if (extension === "xls") return createXlsBlob(payload);
+    if (extension === "xlsx") return createXlsxBlob(payload);
+    if (extension === "ods") return createOdsBlob(payload);
+    return createAvcBlob(payload);
+}
+
+function downloadSaveFile(blob, fileName) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+}
+
+async function writeSaveFile(blob, fileName, types = [AVC_FILE_TYPE]) {
+    if ("showSaveFilePicker" in window) {
+        const handle = await window.showSaveFilePicker({
+            suggestedName: fileName,
+            types
+        });
+        const writable = await handle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        return;
+    }
+
+    downloadSaveFile(blob, fileName);
+}
+
+async function writeSaveAsFile(defaultName) {
+    if ("showSaveFilePicker" in window) {
+        const handle = await window.showSaveFilePicker({
+            suggestedName: `${defaultName}.avc`,
+            types: SAVE_AS_FILE_TYPES
+        });
+        const fileName = handle.name || `${defaultName}.avc`;
+        const payload = createSavePayload();
+        const blob = createBlobForFileName(fileName, payload);
+        const writable = await handle.createWritable();
+
+        await writable.write(blob);
+        await writable.close();
+        updateNextSaveNumber(fileName);
+        return true;
+    }
+
+    const requestedName = prompt("Dosya adı (.avc, .xls, .xlsx, .ods)", `${defaultName}.avc`);
+    if (requestedName === null) return false;
+
+    const safeName = sanitizeFileName(requestedName);
+    if (!safeName) return false;
+
+    const fileName = /\.(avc|xls|xlsx|ods)$/i.test(safeName) ? safeName : `${safeName}.avc`;
+    const payload = createSavePayload();
+    const blob = createBlobForFileName(fileName, payload);
+    downloadSaveFile(blob, fileName);
+    updateNextSaveNumber(fileName);
+    return true;
+}
+
+async function saveWorkbook() {
+    const defaultName = getDefaultSaveBaseName();
+    const requestedName = prompt("Dosya adı", defaultName);
+    if (requestedName === null) return false;
+
+    const safeName = sanitizeFileName(requestedName);
+    if (!safeName) return false;
+
+    const fileName = ensureSaveExtension(safeName);
+    const payload = createSavePayload();
+    const blob = createAvcBlob(payload);
+
+    try {
+        await writeSaveFile(blob, fileName);
+        updateNextSaveNumber(fileName);
+        return true;
+    } catch (error) {
+        if (error?.name !== "AbortError") {
+            alert("Dosya kaydedilemedi.");
+        }
+        return false;
+    }
+}
+
+async function saveWorkbookAs() {
+    const defaultName = getDefaultSaveBaseName();
+
+    try {
+        return await writeSaveAsFile(defaultName);
+    } catch (error) {
+        if (error?.name !== "AbortError") {
+            alert("Dosya kaydedilemedi.");
+        }
+        return false;
+    }
+}
+
 function createHistorySnapshot() {
     return {
         rowCount,
@@ -1050,37 +1759,68 @@ function getDisplayText(row, col) {
     return cell.formula ?? cell.value ?? "";
 }
 
-function autoFitColumn(col) {
-    pushHistory();
+function getCellFontSize(row, col) {
+    const style = getCellStyle(tableData[row]?.[col]);
+    return Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, Number(style.fontSize) || DEFAULT_FONT_SIZE));
+}
 
-    const headerLength = getColumnLabel(col).length;
-    let maxLength = headerLength;
+function getTextLineMetrics(row, col) {
+    const text = getDisplayText(row, col);
+    const lines = text ? text.split(/\r\n|\r|\n/) : [""];
+    const fontSize = getCellFontSize(row, col);
+    const longestLineLength = Math.max(...lines.map((line) => line.length), 1);
+
+    return {
+        lineCount: lines.length,
+        fontSize,
+        estimatedWidth: longestLineLength * fontSize * 0.62 + 24,
+        estimatedHeight: lines.length * (fontSize + 7) + 6
+    };
+}
+
+function fitColumnToContent(col, shouldApply = true, minWidth = MIN_COL_WIDTH) {
+    const headerWidth = getColumnLabel(col).length * DEFAULT_FONT_SIZE * 0.72 + 24;
+    let width = headerWidth;
 
     for (let row = 0; row < rowCount; row++) {
-        maxLength = Math.max(maxLength, getDisplayText(row, col).length);
+        width = Math.max(width, getTextLineMetrics(row, col).estimatedWidth);
     }
 
-    colWidths[col] = Math.max(
-        MIN_COL_WIDTH,
-        Math.min(360, maxLength * 8 + 24)
-    );
-    applyColumnWidth(col);
+    colWidths[col] = Math.max(minWidth, Math.min(360, Math.ceil(width)));
+    if (shouldApply) applyColumnWidth(col);
+}
+
+function fitRowToContent(row, shouldApply = true, minHeight = MIN_ROW_HEIGHT) {
+    let height = DEFAULT_ROW_HEIGHT;
+
+    for (let col = 0; col < colCount; col++) {
+        height = Math.max(height, getTextLineMetrics(row, col).estimatedHeight);
+    }
+
+    rowHeights[row] = Math.max(minHeight, Math.min(160, Math.ceil(height)));
+    if (shouldApply) applyRowHeight(row);
+}
+
+function fitRangeToContent(range) {
+    if (!range) return;
+
+    for (let col = range.minCol; col <= range.maxCol; col++) {
+        fitColumnToContent(col, false, DEFAULT_COL_WIDTH);
+    }
+
+    for (let row = range.minRow; row <= range.maxRow; row++) {
+        fitRowToContent(row, false, DEFAULT_ROW_HEIGHT);
+    }
+}
+
+function autoFitColumn(col) {
+    pushHistory();
+    fitColumnToContent(col);
 }
 
 function autoFitRow(row) {
     pushHistory();
-
-    let maxLines = 1;
-    for (let col = 0; col < colCount; col++) {
-        const lineCount = getDisplayText(row, col).split(/\r\n|\r|\n/).length;
-        maxLines = Math.max(maxLines, lineCount);
-    }
-
-    rowHeights[row] = Math.max(
-        MIN_ROW_HEIGHT,
-        Math.min(160, maxLines * 20 + 6)
-    );
-    applyRowHeight(row);
+    fitRowToContent(row);
 }
 // MODEL INITIALIZE
 function initData() {
@@ -1091,10 +1831,7 @@ function initData() {
     for (let r = 0; r < rowCount; r++) {
         const row = [];
         for (let c = 0; c < colCount; c++) {
-            row.push({
-                value: "",
-                formula: null
-            });
+            row.push(createEmptyCell());
         }
         tableData.push(row);
     }
@@ -1211,16 +1948,44 @@ function renderTable() {
         tr.appendChild(rowHeader);
 
         for (let c = 0; c < colCount; c++) {
+            if (tableData[r][c].mergedTo) continue;
+
             const td = document.createElement("td");
             // data binding
             td.dataset.row = r;
             td.dataset.col = c;
-            setColumnWidth(td, c);
-            setRowHeight(td, r);
+            const merge = tableData[r][c].merge;
+            if (merge) {
+                td.colSpan = merge.colspan;
+                td.rowSpan = merge.rowspan;
+                td.classList.add("merged-cell");
+                const width = colWidths
+                    .slice(c, c + merge.colspan)
+                    .reduce((sum, value) => sum + (value ?? DEFAULT_COL_WIDTH), 0);
+                const height = rowHeights
+                    .slice(r, r + merge.rowspan)
+                    .reduce((sum, value) => sum + (value ?? DEFAULT_ROW_HEIGHT), 0);
+                td.style.width = `${width}px`;
+                td.style.minWidth = `${width}px`;
+                td.style.maxWidth = `${width}px`;
+                td.style.height = `${height}px`;
+            } else {
+                setColumnWidth(td, c);
+                setRowHeight(td, r);
+            }
 
             td.textContent = tableData[r][c].value;
             td.contentEditable = false;
             td.tabIndex = -1;
+            const cellStyle = getCellStyle(tableData[r][c]);
+            td.style.fontWeight = cellStyle.bold ? "700" : "400";
+            td.style.fontStyle = cellStyle.italic ? "italic" : "normal";
+            td.style.textDecoration = cellStyle.underline ? "underline" : "none";
+            td.style.fontSize = `${Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, Number(cellStyle.fontSize) || DEFAULT_FONT_SIZE))}px`;
+            td.style.color = normalizeColorValue(cellStyle.color, "#202124");
+            if (cellStyle.backgroundColor) {
+                td.style.backgroundColor = normalizeColorValue(cellStyle.backgroundColor, "#fff2cc");
+            }
             const borders = getCellBorders(tableData[r][c]);
             if (borders.top) td.classList.add("cell-border-top");
             if (borders.right) td.classList.add("cell-border-right");
@@ -1234,6 +1999,9 @@ function renderTable() {
                 selectedCell.col === c
             ) {
                 td.classList.add("selected");
+                if (!selectionRange && extraSelections.length === 0) {
+                    td.classList.add("selection-handle-cell");
+                }
             }
 
             // RANGE SELECTED STATE (Shift + seçim)
@@ -1243,6 +2011,9 @@ function renderTable() {
                 if (isCellInNormalizedRange(r, c, range)) {
                     td.classList.add("range-selected");
                     addRangeBoundaryClasses(td, r, c, range, "selection");
+                    if (r === range.maxRow && c === range.maxCol) {
+                        td.classList.add("selection-handle-cell");
+                    }
                 }
             }
 
@@ -1394,9 +2165,29 @@ function renderTable() {
 undoBtn.addEventListener("click", undo);
 redoBtn.addEventListener("click", redo);
 
+fileMenuBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    hideContextMenu();
+    hideBorderMenu();
+    if (fileMenu) {
+        fileMenu.hidden = !fileMenu.hidden;
+    }
+});
+
+saveFileBtn?.addEventListener("click", async () => {
+    hideFileMenu();
+    await saveWorkbook();
+});
+
+saveAsFileBtn?.addEventListener("click", async () => {
+    hideFileMenu();
+    await saveWorkbookAs();
+});
+
 borderBtn?.addEventListener("click", (e) => {
     e.stopPropagation();
     hideContextMenu();
+    hideFileMenu();
     if (borderMenu?.hidden) {
         showBorderMenu();
     } else {
@@ -1413,8 +2204,64 @@ borderMenu?.addEventListener("click", (e) => {
     hideBorderMenu();
 });
 
+mergeBtn?.addEventListener("click", () => {
+    hideContextMenu();
+    hideBorderMenu();
+    toggleMergeSelection();
+});
+
+boldBtn?.addEventListener("click", () => {
+    hideContextMenu();
+    hideBorderMenu();
+    toggleStyleProperty("bold");
+});
+
+italicBtn?.addEventListener("click", () => {
+    hideContextMenu();
+    hideBorderMenu();
+    toggleStyleProperty("italic");
+});
+
+underlineBtn?.addEventListener("click", () => {
+    hideContextMenu();
+    hideBorderMenu();
+    toggleStyleProperty("underline");
+});
+
+fontSizeDecreaseBtn?.addEventListener("click", () => {
+    hideContextMenu();
+    hideBorderMenu();
+    changeFontSize(-1);
+});
+
+fontSizeIncreaseBtn?.addEventListener("click", () => {
+    hideContextMenu();
+    hideBorderMenu();
+    changeFontSize(1);
+});
+
+textColorBtn?.addEventListener("click", () => {
+    hideContextMenu();
+    hideBorderMenu();
+    textColorInput?.click();
+});
+
+fillColorBtn?.addEventListener("click", () => {
+    hideContextMenu();
+    hideBorderMenu();
+    fillColorInput?.click();
+});
+
+textColorInput?.addEventListener("input", () => {
+    setTextColor(textColorInput.value);
+});
+
+fillColorInput?.addEventListener("input", () => {
+    setFillColor(fillColorInput.value);
+});
+
 addRowBtn.addEventListener("click", () => {
-    insertRowAt(rowCount);
+    insertRowAt(selectedCell?.row ?? 0);
 });
 removeRowBtn.addEventListener("click", () => {
     if (rowCount > MIN_ROW_SIZE) {
@@ -1427,7 +2274,7 @@ removeRowBtn.addEventListener("click", () => {
     }
 });
 addColBtn.addEventListener("click", () => {
-    insertColAt(colCount);
+    insertColAt(selectedCell?.col ?? 0);
 });
 removeColBtn.addEventListener("click", () => {
     if (colCount > MIN_COL_SIZE) {
@@ -1934,6 +2781,9 @@ window.addEventListener("click", (e) => {
     if (borderMenu && !borderMenu.contains(e.target) && !borderBtn?.contains(e.target)) {
         hideBorderMenu();
     }
+    if (fileMenu && !fileMenu.contains(e.target) && !fileMenuBtn?.contains(e.target)) {
+        hideFileMenu();
+    }
 });
 
 window.addEventListener("mousedown", (e) => {
@@ -1955,6 +2805,7 @@ window.addEventListener("contextmenu", (e) => {
 
 window.addEventListener("scroll", hideContextMenu, true);
 window.addEventListener("scroll", hideBorderMenu, true);
+window.addEventListener("scroll", hideFileMenu, true);
 
 contextMenu?.addEventListener("click", (e) => {
     e.stopPropagation();

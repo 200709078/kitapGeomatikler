@@ -33,15 +33,33 @@
       <file href="public/index.html" />
       <file href="public/style.css" />
 
-      <file href="public/icons/addcolend.svg" />
+      <file href="public/icons/addcolleft.svg" />
       <file href="public/icons/addgraph.svg" />
       <file href="public/icons/addrowend.svg" />
+      <file href="public/icons/border-all.svg" />
+      <file href="public/icons/border-bottom.svg" />
+      <file href="public/icons/border-clear.svg" />
+      <file href="public/icons/border-inner.svg" />
+      <file href="public/icons/border-left.svg" />
+      <file href="public/icons/border-menu.svg" />
+      <file href="public/icons/border-outer.svg" />
+      <file href="public/icons/border-right.svg" />
+      <file href="public/icons/border-top.svg" />
       <file href="public/icons/clear.svg" />
       <file href="public/icons/delcolend.svg" />
       <file href="public/icons/delrowend.svg" />
       <file href="public/icons/favicon.svg" />
-      <file href="public/icons/redo-letter.svg" />
-      <file href="public/icons/undo-letter.svg" />
+      <file href="public/icons/fill-color.svg" />
+      <file href="public/icons/logo.svg" />
+      <file href="public/icons/merge-cells.svg" />
+      <file href="public/icons/redo.svg" />
+      <file href="public/icons/text-bold.svg" />
+      <file href="public/icons/text-color.svg" />
+      <file href="public/icons/text-italic.svg" />
+      <file href="public/icons/text-size-decrease.svg" />
+      <file href="public/icons/text-size-increase.svg" />
+      <file href="public/icons/text-underline.svg" />
+      <file href="public/icons/undo.svg" />
     </resource>
   </resources>
 </manifest>

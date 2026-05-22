@@ -1,4 +1,4 @@
 <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none">
-  <path d="M5 6h14" stroke="#3c4043" stroke-width="2.2"/>
-  <path d="M5 12h14M5 18h14" stroke="#dadce0" stroke-width="1.2"/>
+  <path d="M5 12h14M5 18h14M6 5v14M12 5v14M18 5v14" stroke="#5f6368" stroke-width="1.4" stroke-dasharray="2 2"/>
+  <path d="M5 6h14" stroke="#202124" stroke-width="2.2"/>
 </svg>

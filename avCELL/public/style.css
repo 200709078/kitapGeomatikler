@@ -74,7 +74,12 @@ body {
   gap: 2px;
 }
 
-.text-menu button {
+.menu-shell {
+  position: relative;
+}
+
+.text-menu button,
+.text-menu-popover button {
   height: 24px;
   padding: 0 8px;
   border: 1px solid transparent;
@@ -85,9 +90,35 @@ body {
   cursor: default;
 }
 
-.text-menu button:hover {
+.text-menu button:hover,
+.text-menu-popover button:hover {
   background: #f1f3f4;
   border-color: #e8eaed;
+}
+
+.text-menu-popover {
+  position: absolute;
+  z-index: 1002;
+  top: 26px;
+  left: 0;
+  min-width: 148px;
+  padding: 6px;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(60, 64, 67, 0.22);
+}
+
+.text-menu-popover[hidden] {
+  display: none;
+}
+
+.text-menu-popover button {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 28px;
+  text-align: left;
 }
 
 #control-panel {
@@ -146,6 +177,11 @@ body {
   background: #e8eaed;
 }
 
+.icon-btn.active {
+  background: #e8f0fe;
+  border-color: #d2e3fc;
+}
+
 .icon-btn:disabled {
   cursor: default;
   opacity: 0.42;
@@ -162,6 +198,14 @@ body {
   display: block;
   width: 22px;
   height: 22px;
+}
+
+.hidden-color-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .toolbar-menu {
@@ -431,6 +475,10 @@ td.cell-border-left {
   border-left: 1px solid #202124;
 }
 
+td.merged-cell {
+  white-space: pre-wrap;
+}
+
 td.selected {
   position: relative;
   background: #ffffff;
@@ -444,13 +492,17 @@ td.has-note {
   position: relative;
 }
 
-td.selected::after {
+td.selection-handle-cell {
+  position: relative;
+}
+
+td.selection-handle-cell::after {
   content: "";
   position: absolute;
-  right: -5px;
-  bottom: -5px;
-  width: 10px;
-  height: 10px;
+  right: -6px;
+  bottom: -6px;
+  width: 12px;
+  height: 12px;
   background: var(--sheet-blue);
   border: 1px solid #ffffff;
   box-sizing: border-box;

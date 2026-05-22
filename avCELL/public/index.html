@@ -17,11 +17,17 @@
     <main id="app-shell">
         <header id="top-bar">
             <h2 class="app-logo">
-                <img src="icons/favicon.svg" alt="avCELL" />
+                <img src="icons/logo.svg" alt="avCELL" />
             </h2>
             <section id="menu-bar" aria-label="Ana menü">
                 <nav class="text-menu">
-                    <button type="button">Dosya</button>
+                    <div class="menu-shell">
+                        <button id="file-menu-btn" type="button">Dosya</button>
+                        <div id="file-menu" class="text-menu-popover" hidden>
+                            <button id="save-file-btn" type="button">Kaydet</button>
+                            <button id="save-as-file-btn" type="button">Farklı kaydet</button>
+                        </div>
+                    </div>
                     <button type="button">Düzenle</button>
                     <button type="button">Görünüm</button>
                     <button type="button">Ekle</button>
@@ -43,7 +49,7 @@
                         </button>
                     </div>
                     <div class="toolbar-cluster">
-                        <button id="add-row-btn" class="icon-btn" title="Satır Ekle">
+                        <button id="add-row-btn" class="icon-btn" title="Üste Satır Ekle">
                             <img src="icons/addrowend.svg" alt="" />
                         </button>
                         <button id="remove-row-btn" class="icon-btn" title="Satır Sil">
@@ -51,8 +57,8 @@
                         </button>
                     </div>
                     <div class="toolbar-cluster">
-                        <button id="add-col-btn" class="icon-btn" title="Sütun Ekle">
-                            <img src="icons/addcolend.svg" alt="" />
+                        <button id="add-col-btn" class="icon-btn" title="Sola Sütun Ekle">
+                            <img src="icons/addcolleft.svg" alt="" />
                         </button>
                         <button id="remove-col-btn" class="icon-btn" title="Sütun Sil">
                             <img src="icons/delcolend.svg" alt="" />
@@ -62,6 +68,34 @@
                         <button id="border-btn" class="icon-btn" title="Kenarlıklar">
                             <img src="icons/border-menu.svg" alt="" />
                         </button>
+                        <button id="merge-btn" class="icon-btn" title="Hücreleri birleştir">
+                            <img src="icons/merge-cells.svg" alt="" />
+                        </button>
+                    </div>
+                    <div class="toolbar-cluster">
+                        <button id="bold-btn" class="icon-btn" title="Kalın">
+                            <img src="icons/text-bold.svg" alt="" />
+                        </button>
+                        <button id="italic-btn" class="icon-btn" title="İtalik">
+                            <img src="icons/text-italic.svg" alt="" />
+                        </button>
+                        <button id="underline-btn" class="icon-btn" title="Altı çizili">
+                            <img src="icons/text-underline.svg" alt="" />
+                        </button>
+                        <button id="font-size-decrease-btn" class="icon-btn" title="Yazı boyutunu azalt">
+                            <img src="icons/text-size-decrease.svg" alt="" />
+                        </button>
+                        <button id="font-size-increase-btn" class="icon-btn" title="Yazı boyutunu artır">
+                            <img src="icons/text-size-increase.svg" alt="" />
+                        </button>
+                        <button id="text-color-btn" class="icon-btn" title="Yazı rengi">
+                            <img src="icons/text-color.svg" alt="" />
+                        </button>
+                        <button id="fill-color-btn" class="icon-btn" title="Dolgu rengi">
+                            <img src="icons/fill-color.svg" alt="" />
+                        </button>
+                        <input id="text-color-input" class="hidden-color-input" type="color" value="#202124" aria-label="Yazı rengi" />
+                        <input id="fill-color-input" class="hidden-color-input" type="color" value="#fff2cc" aria-label="Dolgu rengi" />
                     </div>
                 </div>
             </section>
@@ -121,10 +155,8 @@
         <button type="button" data-action="paste">Yapıştır</button>
         <hr>
         <button type="button" data-action="insert-row-above">Üste satır ekle</button>
-        <button type="button" data-action="insert-row-below">Alta satır ekle</button>
         <button type="button" data-action="delete-row">Satır sil</button>
         <button type="button" data-action="insert-col-left">Sola sütun ekle</button>
-        <button type="button" data-action="insert-col-right">Sağa sütun ekle</button>
         <button type="button" data-action="delete-col">Sütun sil</button>
         <hr>
         <button type="button" data-action="add-sheet">Sayfa ekle</button>
