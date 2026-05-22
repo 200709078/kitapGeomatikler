@@ -16,7 +16,9 @@
 <body>
     <main id="app-shell">
         <header id="top-bar">
-            <h2>avCELL</h2>
+            <h2 class="app-logo">
+                <img src="icons/favicon.svg" alt="avCELL" />
+            </h2>
             <section id="menu-bar" aria-label="Ana menü">
                 <nav class="text-menu">
                     <button type="button">Dosya</button>
@@ -39,7 +41,7 @@
                         <button id="redo-btn" class="icon-btn" title="Yinele (Ctrl+Y)">
                             <img src="icons/redo.svg" alt="" />
                         </button>
-                    </div>as
+                    </div>
                     <div class="toolbar-cluster">
                         <button id="add-row-btn" class="icon-btn" title="Satır Ekle">
                             <img src="icons/addrowend.svg" alt="" />
@@ -54,6 +56,11 @@
                         </button>
                         <button id="remove-col-btn" class="icon-btn" title="Sütun Sil">
                             <img src="icons/delcolend.svg" alt="" />
+                        </button>
+                    </div>
+                    <div class="toolbar-cluster">
+                        <button id="border-btn" class="icon-btn" title="Kenarlıklar">
+                            <img src="icons/border-menu.svg" alt="" />
                         </button>
                     </div>
                 </div>
@@ -107,6 +114,54 @@
     <section id="chart-area" class="future-chart-panel" hidden>
         <canvas id="chartCanvas"></canvas>
     </section>
+
+    <div id="context-menu" hidden>
+        <button type="button" data-action="cut">Kes</button>
+        <button type="button" data-action="copy">Kopyala</button>
+        <button type="button" data-action="paste">Yapıştır</button>
+        <hr>
+        <button type="button" data-action="insert-row-above">Üste satır ekle</button>
+        <button type="button" data-action="insert-row-below">Alta satır ekle</button>
+        <button type="button" data-action="delete-row">Satır sil</button>
+        <button type="button" data-action="insert-col-left">Sola sütun ekle</button>
+        <button type="button" data-action="insert-col-right">Sağa sütun ekle</button>
+        <button type="button" data-action="delete-col">Sütun sil</button>
+        <hr>
+        <button type="button" data-action="add-sheet">Sayfa ekle</button>
+        <button type="button" data-action="rename-sheet">Ad değiştir</button>
+        <button type="button" data-action="delete-sheet">Sayfa sil</button>
+        <hr>
+        <button type="button" data-action="clear">Hücreleri temizle</button>
+        <button type="button" data-action="note">Not ekle</button>
+    </div>
+
+    <div id="border-menu" class="toolbar-menu" hidden>
+        <button type="button" data-border-action="all" title="Tüm kenarlıklar">
+            <img src="icons/border-all.svg" alt="" />
+        </button>
+        <button type="button" data-border-action="outer" title="Dış kenarlık">
+            <img src="icons/border-outer.svg" alt="" />
+        </button>
+        <button type="button" data-border-action="inner" title="İç kenarlık">
+            <img src="icons/border-inner.svg" alt="" />
+        </button>
+        <button type="button" data-border-action="top" title="Üst kenarlık">
+            <img src="icons/border-top.svg" alt="" />
+        </button>
+        <button type="button" data-border-action="bottom" title="Alt kenarlık">
+            <img src="icons/border-bottom.svg" alt="" />
+        </button>
+        <button type="button" data-border-action="left" title="Sol kenarlık">
+            <img src="icons/border-left.svg" alt="" />
+        </button>
+        <button type="button" data-border-action="right" title="Sağ kenarlık">
+            <img src="icons/border-right.svg" alt="" />
+        </button>
+        <button type="button" data-border-action="clear" title="Kenarlıkları temizle">
+            <img src="icons/border-clear.svg" alt="" />
+        </button>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="app.js"></script>
 </body>

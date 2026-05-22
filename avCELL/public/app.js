@@ -1,5 +1,7 @@
-// sağ tık popup menü eklenesek.
-// popup menüde tıklandığı yere göre eklemeler yapılacak. Sütunda açılırsa sütun ekle aktif, satırda tıklanırsa satır ekle, koyala, yapıştır, kes gibi...
+// tüm kenarlıklar çizildiğinde iç kenarlıklar daha kalın çiziliyor.
+// kenarlık ikonlarında çizim yapılmayan kenarlar daha koyu kesikli olacak.
+// sağ alt köşedeki karecik seçim neresi ise o seçimin daima sağ alt köşesinde olmalı
+//imsmanifest dosyasını düzenle
 const table = document.getElementById("data-table");
 const addRowBtn = document.getElementById("add-row-btn");
 const removeRowBtn = document.getElementById("remove-row-btn");
@@ -9,6 +11,10 @@ const undoBtn = document.getElementById("undo-btn");
 const redoBtn = document.getElementById("redo-btn");
 const cellName = document.getElementById("cell-name");
 const formulaInput = document.getElementById("formula-input");
+const contextMenu = document.getElementById("context-menu");
+const borderBtn = document.getElementById("border-btn");
+const borderMenu = document.getElementById("border-menu");
+const sheetTabs = document.getElementById("sheet-tabs");
 const MIN_ROW_SIZE = 20;
 const MIN_COL_SIZE = 10;
 const DEFAULT_COL_WIDTH = 84;
@@ -23,6 +29,11 @@ let selectionMode = "cell";
 let extraSelections = [];
 let internalClipboard = null;
 let copiedRange = null;
+let clipboardMode = null;
+let contextMenuTarget = null;
+let sheets = [];
+let activeSheetIndex = 0;
+let renamingSheetIndex = null;
 let tableData = [];
 let colWidths = [];
 let rowHeights = [];
@@ -102,6 +113,299 @@ function enforceChartVisibility() {
     });
 }
 
+function hideContextMenu() {
+    if (!contextMenu) return;
+
+    contextMenu.hidden = true;
+}
+
+function hideBorderMenu() {
+    if (!borderMenu) return;
+
+    borderMenu.hidden = true;
+}
+
+function showBorderMenu() {
+    if (!borderBtn || !borderMenu) return;
+
+    const buttonRect = borderBtn.getBoundingClientRect();
+    borderMenu.hidden = false;
+    const menuRect = borderMenu.getBoundingClientRect();
+    const left = Math.min(buttonRect.left, window.innerWidth - menuRect.width - 8);
+    const top = Math.min(buttonRect.bottom + 4, window.innerHeight - menuRect.height - 8);
+
+    borderMenu.style.left = `${Math.max(8, left)}px`;
+    borderMenu.style.top = `${Math.max(8, top)}px`;
+}
+
+function clearClipboardState(shouldRender = false, shouldFocus = true) {
+    if (!internalClipboard && !copiedRange && !clipboardMode) return false;
+
+    internalClipboard = null;
+    copiedRange = null;
+    clipboardMode = null;
+
+    if (shouldRender) {
+        renderTable();
+        if (shouldFocus) {
+            focusSelectedCell();
+        }
+    }
+
+    return true;
+}
+
+function updateContextMenuState() {
+    if (!contextMenu) return;
+
+    const isRowContext = contextMenuTarget?.type === "row" && selectionMode === "row";
+    const isColumnContext = contextMenuTarget?.type === "column" && selectionMode === "column";
+    const isSheetContext = contextMenuTarget?.type === "sheet";
+    const hasSelection = Boolean(selectedCell);
+    const stateByAction = {
+        cut: hasSelection,
+        copy: hasSelection,
+        paste: hasSelection && Boolean(internalClipboard),
+        "insert-row-above": isRowContext,
+        "insert-row-below": isRowContext,
+        "delete-row": isRowContext && rowCount > MIN_ROW_SIZE,
+        "insert-col-left": isColumnContext,
+        "insert-col-right": isColumnContext,
+        "delete-col": isColumnContext && colCount > MIN_COL_SIZE,
+        "add-sheet": isSheetContext,
+        "rename-sheet": isSheetContext,
+        "delete-sheet": isSheetContext && sheets.length > 1,
+        clear: hasSelection && hasClearableContent(),
+        note: hasSelection
+    };
+
+    contextMenu.querySelectorAll("[data-action]").forEach((button) => {
+        const action = button.dataset.action;
+        button.disabled = !stateByAction[action];
+    });
+}
+
+function showContextMenu(e, target = null) {
+    if (!contextMenu) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    contextMenuTarget = target;
+    updateContextMenuState();
+    contextMenu.hidden = false;
+
+    const menuRect = contextMenu.getBoundingClientRect();
+    const left = Math.min(e.clientX, window.innerWidth - menuRect.width - 8);
+    const top = Math.min(e.clientY, window.innerHeight - menuRect.height - 8);
+
+    contextMenu.style.left = `${Math.max(8, left)}px`;
+    contextMenu.style.top = `${Math.max(8, top)}px`;
+}
+
+function getActiveRange() {
+    if (selectionRange) {
+        return getNormalizedRange(selectionRange);
+    }
+
+    if (!selectedCell) return null;
+
+    return {
+        minRow: selectedCell.row,
+        maxRow: selectedCell.row,
+        minCol: selectedCell.col,
+        maxCol: selectedCell.col
+    };
+}
+
+function hasClearableContent() {
+    const range = getActiveRange();
+    if (!range) return false;
+
+    for (let r = range.minRow; r <= range.maxRow; r++) {
+        for (let c = range.minCol; c <= range.maxCol; c++) {
+            const cell = tableData[r]?.[c];
+            if (cell && (cell.value || cell.formula)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+function setClipboardFromSelection(mode = "copy") {
+    const range = getActiveRange();
+    if (!range) return false;
+
+    internalClipboard = [];
+    for (let r = range.minRow; r <= range.maxRow; r++) {
+        const row = [];
+        for (let c = range.minCol; c <= range.maxCol; c++) {
+            row.push(cloneCellData(tableData[r][c]));
+        }
+        internalClipboard.push(row);
+    }
+
+    copiedRange = {
+        start: { row: range.minRow, col: range.minCol },
+        end: { row: range.maxRow, col: range.maxCol }
+    };
+    clipboardMode = mode;
+    renderTable();
+    focusSelectedCell();
+    return true;
+}
+
+function copySelection() {
+    return setClipboardFromSelection("copy");
+}
+
+function pasteClipboard() {
+    if (!internalClipboard || !selectedCell) return false;
+
+    pushHistory();
+    const startRow = selectedCell.row;
+    const startCol = selectedCell.col;
+    const sourceRange = copiedRange ? getNormalizedRange(copiedRange) : null;
+    const requiredRows = startRow + internalClipboard.length;
+    const requiredCols = startCol + Math.max(...internalClipboard.map((row) => row.length));
+
+    ensureGridSize(requiredRows, requiredCols);
+
+    const targetRange = {
+        minRow: startRow,
+        maxRow: startRow + internalClipboard.length - 1,
+        minCol: startCol,
+        maxCol: requiredCols - 1
+    };
+
+    for (let r = 0; r < internalClipboard.length; r++) {
+        for (let c = 0; c < internalClipboard[r].length; c++) {
+            const targetRow = startRow + r;
+            const targetCol = startCol + c;
+
+            tableData[targetRow][targetCol] = cloneCellData(internalClipboard[r][c]);
+        }
+    }
+
+    if (clipboardMode === "cut" && sourceRange) {
+        for (let r = sourceRange.minRow; r <= sourceRange.maxRow; r++) {
+            for (let c = sourceRange.minCol; c <= sourceRange.maxCol; c++) {
+                const isInsideTarget =
+                    r >= targetRange.minRow &&
+                    r <= targetRange.maxRow &&
+                    c >= targetRange.minCol &&
+                    c <= targetRange.maxCol;
+
+                if (!isInsideTarget && r < rowCount && c < colCount) {
+                    tableData[r][c] = createEmptyCell();
+                }
+            }
+        }
+        internalClipboard = null;
+        copiedRange = null;
+        clipboardMode = null;
+    }
+
+    recalculateAll();
+    renderTable();
+    focusSelectedCell();
+    return true;
+}
+
+function clearSelection() {
+    const range = getActiveRange();
+    if (!range) return false;
+
+    pushHistory();
+    for (let r = range.minRow; r <= range.maxRow; r++) {
+        for (let c = range.minCol; c <= range.maxCol; c++) {
+            tableData[r][c] = createEmptyCell();
+        }
+    }
+
+    recalculateAll();
+    clearClipboardState();
+    renderTable();
+    focusSelectedCell();
+    return true;
+}
+
+function applyBorderToSelection(action) {
+    const range = getActiveRange();
+    if (!range) return false;
+
+    pushHistory();
+    for (let r = range.minRow; r <= range.maxRow; r++) {
+        for (let c = range.minCol; c <= range.maxCol; c++) {
+            const borders = getCellBorders(tableData[r][c]);
+
+            if (action === "clear") {
+                tableData[r][c].borders = createEmptyBorders();
+                continue;
+            }
+
+            if (action === "all") {
+                borders.top = true;
+                borders.right = true;
+                borders.bottom = true;
+                borders.left = true;
+            }
+
+            if (action === "outer") {
+                if (r === range.minRow) borders.top = true;
+                if (r === range.maxRow) borders.bottom = true;
+                if (c === range.minCol) borders.left = true;
+                if (c === range.maxCol) borders.right = true;
+            }
+
+            if (action === "inner") {
+                if (r < range.maxRow) borders.bottom = true;
+                if (c < range.maxCol) borders.right = true;
+            }
+
+            if (action === "top" && r === range.minRow) borders.top = true;
+            if (action === "bottom" && r === range.maxRow) borders.bottom = true;
+            if (action === "left" && c === range.minCol) borders.left = true;
+            if (action === "right" && c === range.maxCol) borders.right = true;
+
+            tableData[r][c].borders = borders;
+        }
+    }
+
+    renderTable();
+    focusSelectedCell();
+    return true;
+}
+
+function cutSelection() {
+    return setClipboardFromSelection("cut");
+}
+
+function addNoteToSelection() {
+    if (!selectedCell) return false;
+
+    alert("Not ekleme daha sonra bağlanacak.");
+    return true;
+}
+
+function handleContextMenuAction(action) {
+    if (action === "cut") cutSelection();
+    if (action === "copy") copySelection();
+    if (action === "paste") pasteClipboard();
+    if (action === "insert-row-above" && contextMenuTarget?.type === "row") insertRowAt(contextMenuTarget.row);
+    if (action === "insert-row-below" && contextMenuTarget?.type === "row") insertRowAt(contextMenuTarget.row + 1);
+    if (action === "delete-row" && contextMenuTarget?.type === "row") deleteRowAt(contextMenuTarget.row);
+    if (action === "insert-col-left" && contextMenuTarget?.type === "column") insertColAt(contextMenuTarget.col);
+    if (action === "insert-col-right" && contextMenuTarget?.type === "column") insertColAt(contextMenuTarget.col + 1);
+    if (action === "delete-col" && contextMenuTarget?.type === "column") deleteColAt(contextMenuTarget.col);
+    if (action === "add-sheet") addSheet();
+    if (action === "rename-sheet") renameActiveSheet();
+    if (action === "delete-sheet") deleteActiveSheet();
+    if (action === "clear") clearSelection();
+    if (action === "note") addNoteToSelection();
+}
+
 function selectCell(row, col) {
     if (!isCellWithinBounds(row, col)) return false;
 
@@ -109,7 +413,6 @@ function selectCell(row, col) {
     selectionRange = null;
     selectionMode = "cell";
     extraSelections = [];
-    copiedRange = null;
     renderTable();
     focusSelectedCell();
     return true;
@@ -137,7 +440,6 @@ function selectColumn(col) {
     selectedCell = { row: 0, col };
     selectionMode = "column";
     extraSelections = [];
-    copiedRange = null;
     selectionRange = {
         start: { row: 0, col },
         end: { row: rowCount - 1, col }
@@ -152,7 +454,6 @@ function selectRow(row) {
     selectedCell = { row, col: 0 };
     selectionMode = "row";
     extraSelections = [];
-    copiedRange = null;
     selectionRange = {
         start: { row, col: 0 },
         end: { row, col: colCount - 1 }
@@ -165,7 +466,6 @@ function selectAllCells() {
     selectedCell = { row: 0, col: 0 };
     selectionMode = "all";
     extraSelections = [];
-    copiedRange = null;
     selectionRange = {
         start: { row: 0, col: 0 },
         end: { row: rowCount - 1, col: colCount - 1 }
@@ -214,6 +514,25 @@ function isCellInNormalizedRange(row, col, range) {
     );
 }
 
+function isCellInCurrentSelection(row, col) {
+    if (selectionRange && isCellInNormalizedRange(row, col, getNormalizedRange(selectionRange))) {
+        return true;
+    }
+
+    if (extraSelections.some((range) =>
+        isCellInNormalizedRange(row, col, getNormalizedRange(range))
+    )) {
+        return true;
+    }
+
+    return (
+        selectedCell &&
+        selectionMode === "cell" &&
+        selectedCell.row === row &&
+        selectedCell.col === col
+    );
+}
+
 function addRangeBoundaryClasses(cell, row, col, range, prefix) {
     if (!isCellInNormalizedRange(row, col, range)) return;
 
@@ -245,15 +564,49 @@ function addExtraCellSelection(row, col) {
 function cloneCellData(cell) {
     return {
         value: cell.value,
-        formula: cell.formula
+        formula: cell.formula,
+        borders: { ...getCellBorders(cell) }
+    };
+}
+
+function createEmptyBorders() {
+    return {
+        top: false,
+        right: false,
+        bottom: false,
+        left: false
+    };
+}
+
+function getCellBorders(cell) {
+    return {
+        ...createEmptyBorders(),
+        ...(cell?.borders ?? {})
     };
 }
 
 function createEmptyCell() {
     return {
         value: "",
-        formula: null
+        formula: null,
+        borders: createEmptyBorders()
     };
+}
+
+function ensureGridSize(requiredRows, requiredCols) {
+    while (rowCount < requiredRows) {
+        rowCount++;
+        rowHeights.push(DEFAULT_ROW_HEIGHT);
+        tableData.push(Array.from({ length: colCount }, createEmptyCell));
+    }
+
+    while (colCount < requiredCols) {
+        colCount++;
+        colWidths.push(DEFAULT_COL_WIDTH);
+        tableData.forEach((row) => {
+            row.push(createEmptyCell());
+        });
+    }
 }
 
 function insertRowAt(index) {
@@ -271,6 +624,8 @@ function insertRowAt(index) {
     selectionMode = "cell";
     extraSelections = [];
     copiedRange = null;
+    internalClipboard = null;
+    clipboardMode = null;
     normalizeSelectedCell();
     renderTable();
     focusSelectedCell();
@@ -289,6 +644,58 @@ function insertColAt(index) {
     selectionMode = "cell";
     extraSelections = [];
     copiedRange = null;
+    internalClipboard = null;
+    clipboardMode = null;
+    normalizeSelectedCell();
+    renderTable();
+    focusSelectedCell();
+}
+
+function deleteRowAt(index) {
+    if (rowCount <= MIN_ROW_SIZE) return;
+
+    pushHistory();
+    const targetIndex = Math.max(0, Math.min(index, rowCount - 1));
+    rowCount--;
+    tableData.splice(targetIndex, 1);
+    rowHeights.splice(targetIndex, 1);
+    selectedCell = {
+        row: Math.min(targetIndex, rowCount - 1),
+        col: selectedCell?.col ?? 0
+    };
+    selectionRange = null;
+    selectionMode = "cell";
+    extraSelections = [];
+    copiedRange = null;
+    internalClipboard = null;
+    clipboardMode = null;
+    recalculateAll();
+    normalizeSelectedCell();
+    renderTable();
+    focusSelectedCell();
+}
+
+function deleteColAt(index) {
+    if (colCount <= MIN_COL_SIZE) return;
+
+    pushHistory();
+    const targetIndex = Math.max(0, Math.min(index, colCount - 1));
+    colCount--;
+    colWidths.splice(targetIndex, 1);
+    tableData.forEach((row) => {
+        row.splice(targetIndex, 1);
+    });
+    selectedCell = {
+        row: selectedCell?.row ?? 0,
+        col: Math.min(targetIndex, colCount - 1)
+    };
+    selectionRange = null;
+    selectionMode = "cell";
+    extraSelections = [];
+    copiedRange = null;
+    internalClipboard = null;
+    clipboardMode = null;
+    recalculateAll();
     normalizeSelectedCell();
     renderTable();
     focusSelectedCell();
@@ -305,6 +712,218 @@ function cloneRange(range) {
 
 function cloneTableData(data) {
     return data.map((row) => row.map(cloneCellData));
+}
+
+function createBlankTableData(rows, cols) {
+    return Array.from({ length: rows }, () =>
+        Array.from({ length: cols }, () => createEmptyCell())
+    );
+}
+
+function createSheetState(name) {
+    return {
+        name,
+        rowCount,
+        colCount,
+        selectedCell: selectedCell ? { ...selectedCell } : { row: 0, col: 0 },
+        selectionRange: cloneRange(selectionRange),
+        selectionMode,
+        tableData: cloneTableData(tableData),
+        colWidths: [...colWidths],
+        rowHeights: [...rowHeights]
+    };
+}
+
+function createBlankSheetState(name) {
+    return {
+        name,
+        rowCount: 100,
+        colCount: 26,
+        selectedCell: { row: 0, col: 0 },
+        selectionRange: null,
+        selectionMode: "cell",
+        tableData: createBlankTableData(100, 26),
+        colWidths: Array.from({ length: 26 }, () => DEFAULT_COL_WIDTH),
+        rowHeights: Array.from({ length: 100 }, () => DEFAULT_ROW_HEIGHT)
+    };
+}
+
+function captureCurrentSheet() {
+    if (!sheets[activeSheetIndex]) return;
+
+    sheets[activeSheetIndex] = createSheetState(sheets[activeSheetIndex].name);
+}
+
+function applySheetState(sheet) {
+    rowCount = sheet.rowCount;
+    colCount = sheet.colCount;
+    selectedCell = sheet.selectedCell ? { ...sheet.selectedCell } : { row: 0, col: 0 };
+    selectionRange = cloneRange(sheet.selectionRange);
+    selectionMode = sheet.selectionMode;
+    tableData = cloneTableData(sheet.tableData);
+    colWidths = [...sheet.colWidths];
+    rowHeights = [...sheet.rowHeights];
+    extraSelections = [];
+    copiedRange = null;
+    internalClipboard = null;
+    clipboardMode = null;
+    isEditing = false;
+}
+
+function updateSheetRenameInputWidth(input) {
+    const characterCount = Math.max(4, input.value.length + 1);
+    input.style.width = `${characterCount}ch`;
+}
+
+function renderSheetTabs() {
+    if (!sheetTabs) return;
+
+    sheetTabs.innerHTML = "";
+    sheets.forEach((sheet, index) => {
+        if (index === renamingSheetIndex) {
+            const input = document.createElement("input");
+            input.type = "text";
+            input.className = `sheet-tab sheet-tab-editor${index === activeSheetIndex ? " active" : ""}`;
+            input.value = sheet.name;
+            input.spellcheck = false;
+            updateSheetRenameInputWidth(input);
+
+            let isCancelled = false;
+            input.addEventListener("input", () => {
+                updateSheetRenameInputWidth(input);
+            });
+            input.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    finishSheetRename(index, input.value, true);
+                }
+
+                if (e.key === "Escape") {
+                    e.preventDefault();
+                    isCancelled = true;
+                    finishSheetRename(index, input.value, false);
+                }
+            });
+            input.addEventListener("blur", () => {
+                if (!isCancelled) {
+                    finishSheetRename(index, input.value, true);
+                }
+            });
+
+            sheetTabs.appendChild(input);
+            setTimeout(() => {
+                input.focus();
+                input.select();
+            }, 0);
+            return;
+        }
+
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `sheet-tab${index === activeSheetIndex ? " active" : ""}`;
+        button.textContent = sheet.name;
+        button.addEventListener("click", () => {
+            if (index === activeSheetIndex) return;
+
+            captureCurrentSheet();
+            activeSheetIndex = index;
+            applySheetState(sheets[activeSheetIndex]);
+            undoStack = [];
+            redoStack = [];
+            renderSheetTabs();
+            renderTable();
+            focusSelectedCell();
+        });
+        button.addEventListener("contextmenu", (e) => {
+            if (index !== activeSheetIndex) {
+                captureCurrentSheet();
+                activeSheetIndex = index;
+                applySheetState(sheets[activeSheetIndex]);
+                undoStack = [];
+                redoStack = [];
+                renderSheetTabs();
+                renderTable();
+            }
+            showContextMenu(e, { type: "sheet", index });
+        });
+        button.addEventListener("dblclick", () => {
+            startSheetRename(index);
+        });
+        sheetTabs.appendChild(button);
+    });
+
+    const addButton = document.createElement("button");
+    addButton.type = "button";
+    addButton.className = "sheet-add-btn";
+    addButton.title = "Sayfa ekle";
+    addButton.setAttribute("aria-label", "Sayfa ekle");
+    addButton.textContent = "+";
+    addButton.addEventListener("click", () => {
+        addSheet();
+    });
+    sheetTabs.appendChild(addButton);
+}
+
+function addSheet() {
+    captureCurrentSheet();
+    const nextNumber = sheets.length + 1;
+    sheets.push(createBlankSheetState(`Sayfa${nextNumber}`));
+    activeSheetIndex = sheets.length - 1;
+    applySheetState(sheets[activeSheetIndex]);
+    undoStack = [];
+    redoStack = [];
+    renderSheetTabs();
+    renderTable();
+    focusSelectedCell();
+}
+
+function renameActiveSheet() {
+    startSheetRename(contextMenuTarget?.index ?? activeSheetIndex);
+}
+
+function startSheetRename(index) {
+    if (!sheets[index]) return;
+
+    if (index !== activeSheetIndex) {
+        captureCurrentSheet();
+        activeSheetIndex = index;
+        applySheetState(sheets[activeSheetIndex]);
+        undoStack = [];
+        redoStack = [];
+        renderTable();
+    }
+
+    renamingSheetIndex = index;
+    renderSheetTabs();
+}
+
+function finishSheetRename(index, name, shouldSave) {
+    if (!sheets[index]) return;
+    if (renamingSheetIndex !== index) return;
+
+    if (shouldSave) {
+        const trimmedName = name.trim();
+        if (trimmedName) {
+            captureCurrentSheet();
+            sheets[index].name = trimmedName;
+        }
+    }
+
+    renamingSheetIndex = null;
+    renderSheetTabs();
+}
+
+function deleteActiveSheet() {
+    if (sheets.length <= 1) return;
+
+    sheets.splice(activeSheetIndex, 1);
+    activeSheetIndex = Math.max(0, activeSheetIndex - 1);
+    applySheetState(sheets[activeSheetIndex]);
+    undoStack = [];
+    redoStack = [];
+    renderSheetTabs();
+    renderTable();
+    focusSelectedCell();
 }
 
 function createHistorySnapshot() {
@@ -333,6 +952,8 @@ function restoreHistorySnapshot(snapshot) {
     rowHeights = [...snapshot.rowHeights];
     extraSelections = [];
     copiedRange = null;
+    internalClipboard = null;
+    clipboardMode = null;
     isEditing = false;
     editBackupValue = "";
 
@@ -483,6 +1104,7 @@ function renderTable() {
     table.innerHTML = "";
     table.addEventListener("contextmenu", (e) => {
         e.preventDefault();
+        hideContextMenu();
     });
 
     // HEADER
@@ -498,6 +1120,13 @@ function renderTable() {
         }
         selectAllCells();
     });
+    cornerHeader.addEventListener("contextmenu", (e) => {
+        if (isEditing) {
+            exitEditMode(true);
+        }
+        selectAllCells();
+        showContextMenu(e, { type: "all" });
+    });
     headerRow.appendChild(cornerHeader);
 
     for (let c = 0; c < colCount; c++) {
@@ -506,21 +1135,6 @@ function renderTable() {
         th.dataset.col = c;
         setColumnWidth(th, c);
         th.textContent = getColumnLabel(c);
-        const insertHandle = document.createElement("button");
-        insertHandle.type = "button";
-        insertHandle.classList.add("insert-col-handle");
-        insertHandle.textContent = "+";
-        insertHandle.title = "Sola sütun ekle";
-        insertHandle.addEventListener("mousedown", (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-        });
-        insertHandle.addEventListener("click", (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            insertColAt(c);
-        });
-        th.appendChild(insertHandle);
         const resizeHandle = document.createElement("span");
         resizeHandle.classList.add("col-resize-handle");
         resizeHandle.addEventListener("mousedown", (e) => {
@@ -544,6 +1158,13 @@ function renderTable() {
             }
             selectColumn(c);
         });
+        th.addEventListener("contextmenu", (e) => {
+            if (isEditing) {
+                exitEditMode(true);
+            }
+            selectColumn(c);
+            showContextMenu(e, { type: "column", col: c });
+        });
         headerRow.appendChild(th);
     }
     table.appendChild(headerRow);
@@ -557,21 +1178,6 @@ function renderTable() {
         rowHeader.dataset.row = r;
         setRowHeight(rowHeader, r);
         rowHeader.textContent = r + 1;
-        const insertHandle = document.createElement("button");
-        insertHandle.type = "button";
-        insertHandle.classList.add("insert-row-handle");
-        insertHandle.textContent = "+";
-        insertHandle.title = "Üste satır ekle";
-        insertHandle.addEventListener("mousedown", (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-        });
-        insertHandle.addEventListener("click", (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            insertRowAt(r);
-        });
-        rowHeader.appendChild(insertHandle);
         const resizeHandle = document.createElement("span");
         resizeHandle.classList.add("row-resize-handle");
         resizeHandle.addEventListener("mousedown", (e) => {
@@ -595,6 +1201,13 @@ function renderTable() {
             }
             selectRow(r);
         });
+        rowHeader.addEventListener("contextmenu", (e) => {
+            if (isEditing) {
+                exitEditMode(true);
+            }
+            selectRow(r);
+            showContextMenu(e, { type: "row", row: r });
+        });
         tr.appendChild(rowHeader);
 
         for (let c = 0; c < colCount; c++) {
@@ -608,6 +1221,11 @@ function renderTable() {
             td.textContent = tableData[r][c].value;
             td.contentEditable = false;
             td.tabIndex = -1;
+            const borders = getCellBorders(tableData[r][c]);
+            if (borders.top) td.classList.add("cell-border-top");
+            if (borders.right) td.classList.add("cell-border-right");
+            if (borders.bottom) td.classList.add("cell-border-bottom");
+            if (borders.left) td.classList.add("cell-border-left");
 
             // SELECTED STATE -> CSS
             if (
@@ -661,15 +1279,31 @@ function renderTable() {
 
 
             // EVENT LISTENERS
-            td.addEventListener("mousedown", (e) => {
-                if (e.button !== 0 || isEditing || resizeState) return;
+            td.addEventListener("contextmenu", (e) => {
+                if (isEditing) {
+                    exitEditMode(true);
+                }
 
-                if (e.detail > 1) {
+                if (!isCellInCurrentSelection(r, c)) {
                     selectedCell = { row: r, col: c };
                     selectionRange = null;
                     selectionMode = "cell";
                     extraSelections = [];
-                    copiedRange = null;
+                    renderTable();
+                }
+
+                showContextMenu(e, { type: "cell", row: r, col: c });
+            });
+
+            td.addEventListener("mousedown", (e) => {
+                if (e.button !== 0 || isEditing || resizeState) return;
+
+                if (e.detail > 1) {
+                    clearClipboardState();
+                    selectedCell = { row: r, col: c };
+                    selectionRange = null;
+                    selectionMode = "cell";
+                    extraSelections = [];
                     renderTable();
                     enterEditMode(r, c);
                     e.preventDefault();
@@ -684,7 +1318,6 @@ function renderTable() {
                 selectionRange = null;
                 selectionMode = "cell";
                 extraSelections = [];
-                copiedRange = null;
                 renderTable();
                 focusSelectedCell();
                 e.preventDefault();
@@ -719,11 +1352,9 @@ function renderTable() {
                 if ((e.ctrlKey || e.metaKey) && selectedCell) {
                     addExtraCellSelection(r, c);
                     selectionMode = "range";
-                    copiedRange = null;
                 } else if (e.shiftKey && selectedCell) {
                     selectionMode = "range";
                     extraSelections = [];
-                    copiedRange = null;
                     selectionRange = {
                         start: { ...selectedCell },
                         end: { row: r, col: c }
@@ -733,7 +1364,6 @@ function renderTable() {
                     selectionRange = null;
                     selectionMode = "cell";
                     extraSelections = [];
-                    copiedRange = null;
                 }
 
                 renderTable();
@@ -741,11 +1371,11 @@ function renderTable() {
             });
 
             td.addEventListener("dblclick", () => {
+                clearClipboardState();
                 selectedCell = { row: r, col: c };
                 selectionRange = null;
                 selectionMode = "cell";
                 extraSelections = [];
-                copiedRange = null;
                 renderTable();
                 enterEditMode(r, c);
             });
@@ -763,6 +1393,25 @@ function renderTable() {
 // === EVENTS ===
 undoBtn.addEventListener("click", undo);
 redoBtn.addEventListener("click", redo);
+
+borderBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    hideContextMenu();
+    if (borderMenu?.hidden) {
+        showBorderMenu();
+    } else {
+        hideBorderMenu();
+    }
+});
+
+borderMenu?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const button = e.target.closest("[data-border-action]");
+    if (!button) return;
+
+    applyBorderToSelection(button.dataset.borderAction);
+    hideBorderMenu();
+});
 
 addRowBtn.addEventListener("click", () => {
     insertRowAt(rowCount);
@@ -841,6 +1490,7 @@ function syncEditingCellFromFormulaBar() {
 function handleEditingCellKeydown(e) {
     if (e.altKey && e.key === "Enter") {
         e.preventDefault();
+        e.stopPropagation();
         insertLineBreakAtCursor(e.currentTarget);
         syncFormulaBarFromEditingCell();
     }
@@ -955,6 +1605,22 @@ function calculateAVG(range) {
     return values.reduce((sum, v) => sum + v, 0) / values.length;
 }
 
+function calculateCOUNT(range) {
+    const cells = getCellsInRange(range);
+    let count = 0;
+
+    cells.forEach(({ row, col }) => {
+        const cell = tableData[row]?.[col];
+        const value = cell?.formula ? getCellNumericValue(row, col) : parseFloat(cell?.value);
+
+        if (!isNaN(value)) {
+            count++;
+        }
+    });
+
+    return count;
+}
+
 function calculateMIN(range) {
     const cells = getCellsInRange(range);
     let min = null;
@@ -990,9 +1656,17 @@ function evaluateFormula(formula, currentRow, currentCol) {
     expr = expr.replace(/SUM\(\s*([A-Z]+\d+:[A-Z]+\d+)\s*\)/gi, (_, range) => {
         return calculateSUM(range.toUpperCase());
     });
-    //AVG 
+    // AVERAGE / AVG
     expr = expr.replace(/AVG\(\s*([A-Z]+\d+:[A-Z]+\d+)\s*\)/gi, (_, range) => {
         return calculateAVG(range.toUpperCase());
+    });
+    expr = expr.replace(/AVERAGE\(\s*([A-Z]+\d+:[A-Z]+\d+)\s*\)/gi, (_, range) => {
+        return calculateAVG(range.toUpperCase());
+    });
+
+    // COUNT
+    expr = expr.replace(/COUNT\(\s*([A-Z]+\d+:[A-Z]+\d+)\s*\)/gi, (_, range) => {
+        return calculateCOUNT(range.toUpperCase());
     });
 
     // MIN
@@ -1048,6 +1722,10 @@ function recalculateAll() {
 }
 
 function enterEditMode(row, col, initialChar = null) {
+    if (internalClipboard || copiedRange || clipboardMode) {
+        clearClipboardState(true);
+    }
+
     const cell = document.querySelector(
         `td[data-row="${row}"][data-col="${col}"]`
     );
@@ -1160,6 +1838,8 @@ function commitFormulaInput() {
 
     recalculateAll();
     copiedRange = null;
+    internalClipboard = null;
+    clipboardMode = null;
     renderTable();
     if (chartConfig) {
         renderChartFromInputs();
@@ -1189,6 +1869,7 @@ cellName.addEventListener("keydown", (e) => {
 
     if (e.key === "Escape") {
         e.preventDefault();
+        clearClipboardState(true);
         updateFormulaBar();
         focusSelectedCell();
     }
@@ -1199,6 +1880,7 @@ cellName.addEventListener("blur", updateFormulaBar);
 formulaInput.addEventListener("keydown", (e) => {
     if (e.altKey && e.key === "Enter" && isEditing) {
         e.preventDefault();
+        e.stopPropagation();
         const start = formulaInput.selectionStart;
         const end = formulaInput.selectionEnd;
         const value = formulaInput.value;
@@ -1217,12 +1899,19 @@ formulaInput.addEventListener("keydown", (e) => {
 
     if (e.key === "Escape") {
         e.preventDefault();
+        clearClipboardState(true);
         if (isEditing) {
             exitEditMode(false);
         } else {
             updateFormulaBar();
         }
         focusSelectedCell();
+    }
+});
+
+formulaInput.addEventListener("beforeinput", () => {
+    if (!isEditing) {
+        clearClipboardState(true, false);
     }
 });
 
@@ -1236,6 +1925,44 @@ formulaInput.addEventListener("blur", () => {
     if (selectedCell) {
         commitFormulaInput();
     }
+});
+
+window.addEventListener("click", (e) => {
+    if (contextMenu && !contextMenu.contains(e.target)) {
+        hideContextMenu();
+    }
+    if (borderMenu && !borderMenu.contains(e.target) && !borderBtn?.contains(e.target)) {
+        hideBorderMenu();
+    }
+});
+
+window.addEventListener("mousedown", (e) => {
+    if (e.button !== 0) return;
+    if (contextMenu && !contextMenu.contains(e.target)) {
+        hideContextMenu();
+    }
+});
+
+window.addEventListener("contextmenu", (e) => {
+    const isSpreadsheetTarget = e.target.closest(
+        "#data-table td, #data-table th, #sheet-tabs .sheet-tab"
+    );
+
+    if (!isSpreadsheetTarget) {
+        hideContextMenu();
+    }
+});
+
+window.addEventListener("scroll", hideContextMenu, true);
+window.addEventListener("scroll", hideBorderMenu, true);
+
+contextMenu?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const button = e.target.closest("[data-action]");
+    if (button && !button.disabled) {
+        handleContextMenuAction(button.dataset.action);
+    }
+    hideContextMenu();
 });
 
 window.addEventListener("mousemove", (e) => {
@@ -1266,6 +1993,15 @@ window.addEventListener("mouseup", () => {
 });
 
 window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+        hideContextMenu();
+        hideBorderMenu();
+        if (!isEditing && clearClipboardState(true)) {
+            e.preventDefault();
+            return;
+        }
+    }
+
     // Eğer focus bir input veya textarea'daysa tablo klavyesi çalışmasın
     if (
         document.activeElement &&
@@ -1289,60 +2025,26 @@ window.addEventListener("keydown", (e) => {
         redo();
         return;
     }
-    // CTRL + C
-    if (e.ctrlKey && e.code === "KeyC") {
+    if (e.ctrlKey && e.code === "KeyX") {
         if (isEditing || !selectedCell) return;
 
-        if (selectionRange) {
-            const range = getNormalizedRange(selectionRange);
-
-            internalClipboard = [];
-            for (let r = range.minRow; r <= range.maxRow; r++) {
-                const row = [];
-                for (let c = range.minCol; c <= range.maxCol; c++) {
-                    row.push(cloneCellData(tableData[r][c]));
-                }
-                internalClipboard.push(row);
-            }
-            copiedRange = { ...selectionRange };
-        } else if (selectedCell) {
-            const { row, col } = selectedCell;
-            internalClipboard = [[cloneCellData(tableData[row][col])]];
-            copiedRange = {
-                start: { row, col },
-                end: { row, col }
-            };
-        }
-        renderTable();
-        focusSelectedCell();
+        cutSelection();
         e.preventDefault();
         return;
     }
-    // CTRL + V
+
+    if (e.ctrlKey && e.code === "KeyC") {
+        if (isEditing || !selectedCell) return;
+
+        copySelection();
+        e.preventDefault();
+        return;
+    }
+
     if (e.ctrlKey && e.code === "KeyV") {
         if (isEditing || !internalClipboard || !selectedCell) return;
 
-        const startRow = selectedCell.row;
-        const startCol = selectedCell.col;
-        pushHistory();
-
-        for (let r = 0; r < internalClipboard.length; r++) {
-            for (let c = 0; c < internalClipboard[r].length; c++) {
-                const targetRow = startRow + r;
-                const targetCol = startCol + c;
-
-                if (
-                    targetRow < rowCount &&
-                    targetCol < colCount
-                ) {
-                    tableData[targetRow][targetCol] = cloneCellData(internalClipboard[r][c]);
-                }
-            }
-        }
-        recalculateAll();
-        copiedRange = null;
-        renderTable();
-        focusSelectedCell();
+        pasteClipboard();
         e.preventDefault();
         return;
     }
@@ -1385,7 +2087,7 @@ window.addEventListener("keydown", (e) => {
             formula: null
         };
         recalculateAll();
-        copiedRange = null;
+        clearClipboardState();
         renderTable();
         focusSelectedCell();
         return;
@@ -1394,7 +2096,7 @@ window.addEventListener("keydown", (e) => {
     // SELECTION MODE → yazı ile edit'e gir
     if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
-        copiedRange = null;
+        clearClipboardState();
         enterEditMode(row, col, e.key);
         return;
     }
@@ -1435,7 +2137,6 @@ window.addEventListener("keydown", (e) => {
 
     if (newRow !== baseRow || newCol !== baseCol) {
         if (e.shiftKey) {
-            copiedRange = null;
             extraSelections = [];
             if (!selectionRange) {
                 selectionRange = {
@@ -1451,7 +2152,6 @@ window.addEventListener("keydown", (e) => {
             selectionRange = null;
             selectionMode = "cell";
             extraSelections = [];
-            copiedRange = null;
         }
         renderTable();
         focusSelectedCell();
@@ -1459,6 +2159,8 @@ window.addEventListener("keydown", (e) => {
 });
 // INIT
 initData();
+sheets = [createSheetState("Sayfa1")];
+renderSheetTabs();
 renderTable();
 
 //DRAW CHART
