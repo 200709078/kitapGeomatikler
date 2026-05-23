@@ -1,3 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-  <path d="M10 4h8M6 20h8M14.5 4 9.5 20" fill="none" stroke="#202124" stroke-width="2.2" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+  <path d="M9.4 6.2h5.7" stroke="#202124" stroke-width="1.8" stroke-linecap="round"/>
+  <text x="8" y="18" fill="#202124" font-family="Arial, sans-serif" font-size="19" font-weight="700" font-style="italic">I</text>
+  <path d="M6.9 18.8h5.7" stroke="#202124" stroke-width="1.8" stroke-linecap="round"/>
 </svg>

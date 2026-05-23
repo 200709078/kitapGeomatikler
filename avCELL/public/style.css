@@ -34,6 +34,7 @@ body.gridlines-hidden {
 }
 
 #app-shell {
+  position: relative;
   display: grid;
   grid-template-rows: 68px 36px minmax(0, 1fr) 34px;
   width: 100%;
@@ -904,6 +905,27 @@ td.chart-y {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+#made-signature {
+  position: fixed;
+  right: 44px;
+  bottom: 68px;
+  z-index: 2000;
+  color: #5f6368;
+  font: italic 600 13px "Segoe Script", "Bradley Hand ITC", "Comic Sans MS", cursive;
+  text-decoration: none;
+  letter-spacing: 0;
+  opacity: 0.72;
+}
+
+#made-signature:hover {
+  opacity: 1;
+  text-decoration: none;
+}
+
+#made-signature:hover .made-highlight {
+  color: var(--sheet-blue);
 }
 
 .status-summary-item {

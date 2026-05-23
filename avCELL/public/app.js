@@ -1,4 +1,4 @@
-//arama her zaman formül çubuğunun sağında gözüksün.
+//madematik konumunu değiştir.
 const table = document.getElementById("data-table");
 const addRowBtn = document.getElementById("add-row-btn");
 const removeRowBtn = document.getElementById("remove-row-btn");
