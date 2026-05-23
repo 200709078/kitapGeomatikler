@@ -1,5 +1,6 @@
 :root {
   --grid-border: #dadce0;
+  --cell-grid-border: #dadce0;
   --header-bg: #f8fafd;
   --header-active: #d2e3fc;
   --header-hover: #eef3f8;
@@ -28,6 +29,10 @@ body {
   overflow: hidden;
 }
 
+body.gridlines-hidden {
+  --cell-grid-border: transparent;
+}
+
 #app-shell {
   display: grid;
   grid-template-rows: 68px 36px minmax(0, 1fr) 34px;
@@ -35,12 +40,29 @@ body {
   height: 100vh;
 }
 
+body.toolbar-hidden #app-shell {
+  grid-template-rows: 30px 36px minmax(0, 1fr) 34px;
+}
+
+body.formula-hidden #app-shell {
+  grid-template-rows: 68px 0 minmax(0, 1fr) 34px;
+}
+
+body.toolbar-hidden.formula-hidden #app-shell {
+  grid-template-rows: 30px 0 minmax(0, 1fr) 34px;
+}
+
 #top-bar {
+  grid-row: 1;
   display: grid;
   grid-template-rows: 30px 38px;
   grid-template-columns: 116px minmax(0, 1fr);
   background: var(--toolbar-bg);
   border-bottom: 1px solid #edf0f2;
+}
+
+body.toolbar-hidden #top-bar {
+  grid-template-rows: 30px;
 }
 
 #top-bar > .app-logo {
@@ -54,10 +76,19 @@ body {
   line-height: 1;
 }
 
+body.toolbar-hidden #top-bar > .app-logo {
+  grid-row: 1;
+}
+
 #top-bar > .app-logo img {
   display: block;
   width: 54px;
   height: 54px;
+}
+
+body.toolbar-hidden #top-bar > .app-logo img {
+  width: 26px;
+  height: 26px;
 }
 
 #menu-bar {
@@ -65,6 +96,8 @@ body {
   grid-column: 2;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   padding: 4px 12px 0 0;
 }
 
@@ -94,6 +127,12 @@ body {
 .text-menu-popover button:hover {
   background: #f1f3f4;
   border-color: #e8eaed;
+}
+
+.text-menu > .menu-shell > button.active {
+  background: #e8f0fe;
+  border-color: #d2e3fc;
+  color: #174ea6;
 }
 
 .text-menu-popover button:disabled {
@@ -132,11 +171,33 @@ body {
   text-align: left;
 }
 
+.text-menu-popover span {
+  white-space: nowrap;
+}
+
+#format-menu {
+  min-width: 192px;
+}
+
 .text-menu-popover img {
   display: block;
   width: 16px;
   height: 16px;
   flex: 0 0 auto;
+}
+
+.menu-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  flex: 0 0 auto;
+  color: #188038;
+  font-weight: 700;
+}
+
+.menu-check.unchecked {
+  color: transparent;
 }
 
 .text-menu-popover hr {
@@ -151,14 +212,20 @@ body {
   grid-column: 2;
   display: flex;
   align-items: center;
+  width: 100%;
   padding: 3px 12px 5px 0;
   background: var(--toolbar-bg);
+}
+
+body.toolbar-hidden #control-panel {
+  display: none;
 }
 
 .toolbar-group {
   display: flex;
   align-items: center;
   gap: 0;
+  width: 100%;
 }
 
 .toolbar-cluster {
@@ -172,6 +239,14 @@ body {
 
 .toolbar-cluster:last-child {
   border-right: 0;
+}
+
+.find-menu-cluster {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  min-width: 0;
 }
 
 .icon-btn,
@@ -276,7 +351,7 @@ body {
 }
 
 #formula-bar {
-  position: relative;
+  grid-row: 2;
   display: grid;
   grid-template-columns: 72px minmax(0, 1fr);
   align-items: center;
@@ -286,11 +361,11 @@ body {
   border-bottom: 1px solid var(--grid-border);
 }
 
+body.formula-hidden #formula-bar {
+  display: none;
+}
+
 #find-panel {
-  position: absolute;
-  right: 10px;
-  top: 4px;
-  z-index: 20;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -306,8 +381,9 @@ body {
   display: none !important;
 }
 
-#find-input {
-  width: 180px;
+#find-input,
+#replace-input {
+  width: 132px;
   height: 22px;
   padding: 2px 6px;
   border: 1px solid transparent;
@@ -316,7 +392,8 @@ body {
   font: 13px Arial, sans-serif;
 }
 
-#find-input:focus {
+#find-input:focus,
+#replace-input:focus {
   border-color: var(--sheet-blue);
 }
 
@@ -333,6 +410,22 @@ body {
   padding: 0;
   font-size: 17px;
   line-height: 1;
+}
+
+.find-text-btn {
+  height: 24px;
+  padding: 0 7px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text);
+  font: 12px Arial, sans-serif;
+  cursor: default;
+}
+
+.find-text-btn:hover {
+  background: #f1f3f4;
+  border-color: #e0e3e7;
 }
 
 #cell-name {
@@ -395,6 +488,7 @@ body {
 }
 
 #table-area {
+  grid-row: 3;
   width: 100%;
   height: 100%;
   overflow: auto;
@@ -418,6 +512,11 @@ td {
   font-size: 13px;
   line-height: 20px;
   white-space: pre;
+}
+
+td {
+  border-right-color: var(--cell-grid-border);
+  border-bottom-color: var(--cell-grid-border);
 }
 
 th {
@@ -728,12 +827,14 @@ td.chart-y {
 }
 
 #sheet-tabs {
+  grid-row: 4;
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 0 10px;
   background: #f1f3f4;
   border-top: 1px solid var(--grid-border);
+  overflow: hidden;
 }
 
 .sheet-tab {
@@ -753,6 +854,15 @@ td.chart-y {
   color: #188038;
   font-weight: 600;
   background: #ffffff;
+}
+
+.sheet-tab.dragging {
+  opacity: 0.55;
+}
+
+.sheet-tab.drag-over {
+  background: #e8f0fe;
+  box-shadow: inset 2px 0 0 var(--sheet-blue);
 }
 
 .sheet-tab.active::after {
@@ -782,6 +892,31 @@ td.chart-y {
 
 .sheet-add-btn:hover {
   background: #e8eaed;
+}
+
+#status-summary {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  padding: 0 4px 0 16px;
+  color: #3c4043;
+  font: 12px Arial, sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.status-summary-item {
+  display: inline-flex;
+  align-items: center;
+}
+
+.status-summary-item + .status-summary-item::before {
+  content: "";
+  width: 1px;
+  height: 14px;
+  margin: 0 10px;
+  background: #c7cdd1;
 }
 
 .sheet-tab-editor {

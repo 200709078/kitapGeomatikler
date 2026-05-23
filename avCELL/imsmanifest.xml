@@ -35,9 +35,10 @@
 
       <file href="public/icons/addcolleft.svg" />
       <file href="public/icons/addgraph.svg" />
-      <file href="public/icons/addrowend.svg" />
+      <file href="public/icons/addrow.svg" />
       <file href="public/icons/align-bottom.svg" />
       <file href="public/icons/align-center.svg" />
+      <file href="public/icons/align-justify.svg" />
       <file href="public/icons/align-left.svg" />
       <file href="public/icons/align-middle.svg" />
       <file href="public/icons/align-right.svg" />
@@ -55,7 +56,7 @@
       <file href="public/icons/copy.svg" />
       <file href="public/icons/cut.svg" />
       <file href="public/icons/delcol.svg" />
-      <file href="public/icons/delrowend.svg" />
+      <file href="public/icons/delrow.svg" />
       <file href="public/icons/favicon.svg" />
       <file href="public/icons/fill-color.svg" />
       <file href="public/icons/logo.svg" />
@@ -66,6 +67,7 @@
       <file href="public/icons/rename.svg" />
       <file href="public/icons/save-as.svg" />
       <file href="public/icons/save.svg" />
+      <file href="public/icons/search.svg" />
       <file href="public/icons/sheet-add.svg" />
       <file href="public/icons/sheet-delete.svg" />
       <file href="public/icons/sheet-duplicate.svg" />
