@@ -60,10 +60,18 @@
       <file href="public/icons/copy.svg" />
       <file href="public/icons/cols.svg" />
       <file href="public/icons/cut.svg" />
+      <file href="public/icons/decimal-decrease.svg" />
+      <file href="public/icons/decimal-increase.svg" />
       <file href="public/icons/delcol.svg" />
       <file href="public/icons/delrow.svg" />
+      <file href="public/icons/eye.svg" />
+      <file href="public/icons/eye-off.svg" />
       <file href="public/icons/favicon.svg" />
+      <file href="public/icons/filter.svg" />
       <file href="public/icons/fill-color.svg" />
+      <file href="public/icons/format-currency.svg" />
+      <file href="public/icons/format-more.svg" />
+      <file href="public/icons/format-percent.svg" />
       <file href="public/icons/logo.svg" />
       <file href="public/icons/merge-cells.svg" />
       <file href="public/icons/new.svg" />
@@ -79,6 +87,8 @@
       <file href="public/icons/sheet-delete.svg" />
       <file href="public/icons/sheet-duplicate.svg" />
       <file href="public/icons/note.svg" />
+      <file href="public/icons/sort-asc.svg" />
+      <file href="public/icons/sort-desc.svg" />
       <file href="public/icons/text-bold.svg" />
       <file href="public/icons/text-color.svg" />
       <file href="public/icons/text-italic.svg" />

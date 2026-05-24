@@ -1,4 +1,3 @@
-//ide yerelde çalışsın ve yeşil ok hep gözüksün.
 const table = document.getElementById("data-table");
 const addRowBtn = document.getElementById("add-row-btn");
 const addRowDownBtn = document.getElementById("add-row-down-btn");
@@ -45,6 +44,16 @@ const insertMenuBtn = document.getElementById("insert-menu-btn");
 const insertMenu = document.getElementById("insert-menu");
 const menuInsertRowsBtn = document.getElementById("menu-insert-rows-btn");
 const menuInsertColsBtn = document.getElementById("menu-insert-cols-btn");
+const dataMenuBtn = document.getElementById("data-menu-btn");
+const dataMenu = document.getElementById("data-menu");
+const menuSortAscBtn = document.getElementById("menu-sort-asc-btn");
+const menuSortDescBtn = document.getElementById("menu-sort-desc-btn");
+const menuFilterBtn = document.getElementById("menu-filter-btn");
+const sortAscBtn = document.getElementById("sort-asc-btn");
+const sortDescBtn = document.getElementById("sort-desc-btn");
+const filterBtn = document.getElementById("filter-btn");
+const hideAxisBtn = document.getElementById("hide-axis-btn");
+const showAxisBtn = document.getElementById("show-axis-btn");
 const formatMenuBtn = document.getElementById("format-menu-btn");
 const formatMenu = document.getElementById("format-menu");
 const menuBoldBtn = document.getElementById("menu-bold-btn");
@@ -69,6 +78,13 @@ const contextMenu = document.getElementById("context-menu");
 const borderBtn = document.getElementById("border-btn");
 const borderMenu = document.getElementById("border-menu");
 const mergeBtn = document.getElementById("merge-btn");
+const zoomValueBtn = document.getElementById("zoom-value-btn");
+const zoomMenu = document.getElementById("zoom-menu");
+const currencyFormatBtn = document.getElementById("currency-format-btn");
+const percentFormatBtn = document.getElementById("percent-format-btn");
+const decimalDecreaseBtn = document.getElementById("decimal-decrease-btn");
+const decimalIncreaseBtn = document.getElementById("decimal-increase-btn");
+const numberFormatMoreBtn = document.getElementById("number-format-more-btn");
 const boldBtn = document.getElementById("bold-btn");
 const italicBtn = document.getElementById("italic-btn");
 const underlineBtn = document.getElementById("underline-btn");
@@ -87,6 +103,11 @@ const alignTopBtn = document.getElementById("align-top-btn");
 const alignMiddleBtn = document.getElementById("align-middle-btn");
 const alignBottomBtn = document.getElementById("align-bottom-btn");
 const sheetTabs = document.getElementById("sheet-tabs");
+const filterPopup = document.getElementById("filter-popup");
+const filterPopupTitle = document.getElementById("filter-popup-title");
+const filterPopupInput = document.getElementById("filter-popup-input");
+const filterPopupApplyBtn = document.getElementById("filter-popup-apply-btn");
+const filterPopupClearBtn = document.getElementById("filter-popup-clear-btn");
 const MIN_ROW_SIZE = 20;
 const MIN_COL_SIZE = 10;
 const DEFAULT_COL_WIDTH = 84;
@@ -96,6 +117,9 @@ const MIN_ROW_HEIGHT = 22;
 const DEFAULT_FONT_SIZE = 13;
 const MIN_FONT_SIZE = 8;
 const MAX_FONT_SIZE = 36;
+const MIN_ZOOM = 50;
+const MAX_ZOOM = 200;
+const ZOOM_LEVELS = [50, 75, 90, 100, 125, 150, 200];
 const SAVE_NAME_COUNTER_KEY = "avcell.nextSaveNumber";
 const VIEW_SETTINGS_KEY = "avcell.viewSettings";
 const AUTOSAVE_KEY = "avcell.autosaveWorkbook";
@@ -144,6 +168,8 @@ let currentWorkbookFileHandle = null;
 let tableData = [];
 let colWidths = [];
 let rowHeights = [];
+let hiddenRows = new Set();
+let hiddenCols = new Set();
 let isMouseSelecting = false;
 let mouseSelectionMoved = false;
 let headerSelectionState = null;
@@ -159,6 +185,8 @@ let autoSaveTimer = null;
 let isEditing = false;
 let editBackupValue = "";
 let formulaInputBackupValue = "";
+let activeFilter = null;
+let filterPopupColumn = null;
 let chartInstance = null;
 let chartConfig = null; // { xRange, yRange, type }
 const CHARTS_ENABLED = false;
@@ -233,6 +261,155 @@ function adjustFormulaReferences(formula, rowOffset, colOffset) {
     ));
 }
 
+function countIndexesBefore(indexes, position) {
+    return indexes.filter((index) => index < position).length;
+}
+
+function mapDeletedAxisPosition(position, deletedIndexes) {
+    if (deletedIndexes.includes(position)) return null;
+    return position - countIndexesBefore(deletedIndexes, position);
+}
+
+function adjustCellReferenceForGridChange(ref, change) {
+    const parsedRef = parseFormulaReference(ref);
+    if (!parsedRef) return ref;
+
+    const nextRef = { ...parsedRef };
+
+    if (change.mode === "insert") {
+        if (change.axis === "row" && parsedRef.row >= change.index) {
+            nextRef.row += change.count;
+        }
+        if (change.axis === "column" && parsedRef.col >= change.index) {
+            nextRef.col += change.count;
+        }
+        return formatFormulaReference(nextRef);
+    }
+
+    const deletedIndexes = change.indexes ?? [];
+    if (change.axis === "row") {
+        const mappedRow = mapDeletedAxisPosition(parsedRef.row, deletedIndexes);
+        if (mappedRow === null) return "#REF!";
+        nextRef.row = mappedRow;
+    }
+    if (change.axis === "column") {
+        const mappedCol = mapDeletedAxisPosition(parsedRef.col, deletedIndexes);
+        if (mappedCol === null) return "#REF!";
+        nextRef.col = mappedCol;
+    }
+
+    return formatFormulaReference(nextRef);
+}
+
+function getRemainingAxisBounds(minPosition, maxPosition, deletedIndexes) {
+    const remaining = [];
+
+    for (let position = minPosition; position <= maxPosition; position++) {
+        if (!deletedIndexes.includes(position)) remaining.push(position);
+    }
+
+    if (!remaining.length) return null;
+
+    return {
+        min: mapDeletedAxisPosition(remaining[0], deletedIndexes),
+        max: mapDeletedAxisPosition(remaining[remaining.length - 1], deletedIndexes)
+    };
+}
+
+function adjustFormulaRangeForGridChange(startRef, endRef, change) {
+    const start = parseFormulaReference(startRef);
+    const end = parseFormulaReference(endRef);
+    if (!start || !end) return `${startRef}:${endRef}`;
+
+    const nextStart = { ...start };
+    const nextEnd = { ...end };
+
+    if (change.mode === "insert") {
+        if (change.axis === "row") {
+            if (nextStart.row >= change.index) nextStart.row += change.count;
+            if (nextEnd.row >= change.index) nextEnd.row += change.count;
+        }
+        if (change.axis === "column") {
+            if (nextStart.col >= change.index) nextStart.col += change.count;
+            if (nextEnd.col >= change.index) nextEnd.col += change.count;
+        }
+
+        return `${formatFormulaReference(nextStart)}:${formatFormulaReference(nextEnd)}`;
+    }
+
+    const deletedIndexes = change.indexes ?? [];
+
+    if (change.axis === "row") {
+        const minRow = Math.min(start.row, end.row);
+        const maxRow = Math.max(start.row, end.row);
+        const remainingRows = getRemainingAxisBounds(minRow, maxRow, deletedIndexes);
+        if (!remainingRows) return "#REF!";
+
+        if (start.row <= end.row) {
+            nextStart.row = remainingRows.min;
+            nextEnd.row = remainingRows.max;
+        } else {
+            nextStart.row = remainingRows.max;
+            nextEnd.row = remainingRows.min;
+        }
+
+        nextStart.col = mapDeletedAxisPosition(start.col, []);
+        nextEnd.col = mapDeletedAxisPosition(end.col, []);
+    }
+
+    if (change.axis === "column") {
+        const minCol = Math.min(start.col, end.col);
+        const maxCol = Math.max(start.col, end.col);
+        const remainingCols = getRemainingAxisBounds(minCol, maxCol, deletedIndexes);
+        if (!remainingCols) return "#REF!";
+
+        if (start.col <= end.col) {
+            nextStart.col = remainingCols.min;
+            nextEnd.col = remainingCols.max;
+        } else {
+            nextStart.col = remainingCols.max;
+            nextEnd.col = remainingCols.min;
+        }
+    }
+
+    return `${formatFormulaReference(nextStart)}:${formatFormulaReference(nextEnd)}`;
+}
+
+function adjustFormulaForGridChange(formula, change) {
+    if (!formula) return formula;
+
+    const rangePlaceholders = [];
+    let nextFormula = formula.replace(
+        /(\$?[A-Z]+\$?\d+):(\$?[A-Z]+\$?\d+)/gi,
+        (match, startRef, endRef) => {
+            const placeholder = `@@AVCELL_RANGE_${rangePlaceholders.length}@@`;
+            rangePlaceholders.push(adjustFormulaRangeForGridChange(startRef, endRef, change));
+            return placeholder;
+        }
+    );
+
+    nextFormula = nextFormula.replace(/(^|[^A-Z0-9_])(\$?[A-Z]+\$?\d+)/gi, (match, prefix, ref) => (
+        `${prefix}${adjustCellReferenceForGridChange(ref, change)}`
+    ));
+
+    rangePlaceholders.forEach((range, index) => {
+        nextFormula = nextFormula.replace(`@@AVCELL_RANGE_${index}@@`, range);
+    });
+
+    return nextFormula;
+}
+
+function adjustAllFormulasForGridChange(change) {
+    for (let r = 0; r < rowCount; r++) {
+        for (let c = 0; c < colCount; c++) {
+            const cell = tableData[r]?.[c];
+            if (cell?.formula) {
+                cell.formula = adjustFormulaForGridChange(cell.formula, change);
+            }
+        }
+    }
+}
+
 function getCellEditValue(row, col) {
     if (!isCellWithinBounds(row, col)) return "";
 
@@ -274,6 +451,15 @@ function updateToolbarState() {
     removeColBtn.title = isColumnSelection ? `${selectedColCount} sütun sil` : "Sütun seç";
     undoBtn.disabled = undoStack.length === 0;
     redoBtn.disabled = redoStack.length === 0;
+    const canSort = canSortActiveRange();
+    const hasFilter = Boolean(activeFilter);
+    if (sortAscBtn) sortAscBtn.disabled = !canSort;
+    if (sortDescBtn) sortDescBtn.disabled = !canSort;
+    if (filterBtn) filterBtn.disabled = !canSort;
+    filterBtn?.classList.toggle("active", hasFilter);
+    if (filterBtn) {
+        filterBtn.title = hasFilter ? "Filtreyi kaldır" : "Filtre oluştur";
+    }
 
     [
         borderBtn,
@@ -285,6 +471,11 @@ function updateToolbarState() {
         fontSizeIncreaseBtn,
         textColorBtn,
         fillColorBtn,
+        currencyFormatBtn,
+        percentFormatBtn,
+        decimalDecreaseBtn,
+        decimalIncreaseBtn,
+        numberFormatMoreBtn,
         alignLeftBtn,
         alignCenterBtn,
         alignRightBtn,
@@ -313,6 +504,7 @@ function updateToolbarState() {
     if (fillColorInput) fillColorInput.value = normalizeColorValue(style.backgroundColor, "#fff2cc");
     updateEditMenuState();
     updateInsertMenuState();
+    updateDataMenuState();
     updateFormatMenuState();
 }
 
@@ -343,8 +535,27 @@ function getDefaultViewSettings() {
     return {
         toolbar: true,
         formulaBar: true,
-        gridlines: true
+        gridlines: true,
+        zoom: 100
     };
+}
+
+function normalizeZoom(value) {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) return 100;
+
+    const boundedValue = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, numericValue));
+    return ZOOM_LEVELS.reduce((closest, level) => (
+        Math.abs(level - boundedValue) < Math.abs(closest - boundedValue) ? level : closest
+    ), 100);
+}
+
+function getCurrentZoom() {
+    return normalizeZoom(loadViewSettings().zoom);
+}
+
+function getZoomScale() {
+    return getCurrentZoom() / 100;
 }
 
 function loadViewSettings() {
@@ -371,12 +582,22 @@ function updateViewMenuState(settings = loadViewSettings()) {
     setCheck(menuViewToolbarBtn, settings.toolbar);
     setCheck(menuViewFormulaBtn, settings.formulaBar);
     setCheck(menuViewGridlinesBtn, settings.gridlines);
+
+    const zoom = normalizeZoom(settings.zoom);
+    if (zoomValueBtn) zoomValueBtn.textContent = `${zoom}%`;
+    document.querySelectorAll("[data-zoom-value]").forEach((button) => {
+        const isActive = Number(button.dataset.zoomValue) === zoom;
+        button.classList.toggle("active", isActive);
+        const check = button.querySelector(".menu-check");
+        if (check) check.classList.toggle("unchecked", !isActive);
+    });
 }
 
 function applyViewSettings(settings = loadViewSettings(), shouldSave = false) {
     document.body.classList.toggle("toolbar-hidden", !settings.toolbar);
     document.body.classList.toggle("formula-hidden", !settings.formulaBar);
     document.body.classList.toggle("gridlines-hidden", !settings.gridlines);
+    settings.zoom = normalizeZoom(settings.zoom);
     updateViewMenuState(settings);
 
     if (shouldSave) {
@@ -388,6 +609,14 @@ function toggleViewSetting(key) {
     const settings = loadViewSettings();
     settings[key] = !settings[key];
     applyViewSettings(settings, true);
+}
+
+function setZoom(zoomValue) {
+    const settings = loadViewSettings();
+    settings.zoom = normalizeZoom(zoomValue);
+    applyViewSettings(settings, true);
+    renderTable();
+    focusSelectedCell();
 }
 
 function updateFormatMenuState() {
@@ -432,6 +661,45 @@ function updateInsertMenuState() {
     });
 }
 
+function canSortActiveRange() {
+    const range = getActiveRange();
+    if (!range || isEditing) return false;
+
+    return range.maxRow > range.minRow && range.maxCol >= range.minCol;
+}
+
+function updateDataMenuState() {
+    const canSort = canSortActiveRange();
+    const hasFilter = Boolean(activeFilter);
+    if (menuSortAscBtn) menuSortAscBtn.disabled = !canSort;
+    if (menuSortDescBtn) menuSortDescBtn.disabled = !canSort;
+    if (menuFilterBtn) {
+        menuFilterBtn.disabled = !canSort && !hasFilter;
+        const label = menuFilterBtn.querySelector("span");
+        if (label) label.textContent = hasFilter ? "Filtreyi kaldır" : "Filtre oluştur";
+    }
+    if (sortAscBtn) sortAscBtn.disabled = !canSort;
+    if (sortDescBtn) sortDescBtn.disabled = !canSort;
+    if (filterBtn) filterBtn.disabled = !canSort && !hasFilter;
+    filterBtn?.classList.toggle("active", hasFilter);
+    if (filterBtn) {
+        filterBtn.title = hasFilter ? "Filtreyi kaldır" : "Filtre oluştur";
+    }
+    const isRowSelection = selectionMode === "row" && getSelectedRowIndexes().length > 0;
+    const isColumnSelection = selectionMode === "column" && getSelectedColumnIndexes().length > 0;
+    if (hideAxisBtn) {
+        hideAxisBtn.disabled = !(isRowSelection || isColumnSelection) || isEditing;
+        hideAxisBtn.title = isRowSelection
+            ? "Seçili satırları gizle"
+            : isColumnSelection
+                ? "Seçili sütunları gizle"
+                : "Satır veya sütun seç";
+    }
+    if (showAxisBtn) {
+        showAxisBtn.disabled = (hiddenRows.size === 0 && hiddenCols.size === 0) || isEditing;
+    }
+}
+
 function enforceChartVisibility() {
     if (CHARTS_ENABLED) return;
 
@@ -455,11 +723,25 @@ function hideBorderMenu() {
     borderMenu.hidden = true;
 }
 
+function hideZoomMenu() {
+    if (!zoomMenu) return;
+
+    zoomMenu.hidden = true;
+}
+
+function hideFilterPopup() {
+    if (!filterPopup) return;
+
+    filterPopup.hidden = true;
+    filterPopupColumn = null;
+}
+
 function updateTextMenuActiveState() {
     fileMenuBtn?.classList.toggle("active", Boolean(fileMenu && !fileMenu.hidden));
     editMenuBtn?.classList.toggle("active", Boolean(editMenu && !editMenu.hidden));
     viewMenuBtn?.classList.toggle("active", Boolean(viewMenu && !viewMenu.hidden));
     insertMenuBtn?.classList.toggle("active", Boolean(insertMenu && !insertMenu.hidden));
+    dataMenuBtn?.classList.toggle("active", Boolean(dataMenu && !dataMenu.hidden));
     formatMenuBtn?.classList.toggle("active", Boolean(formatMenu && !formatMenu.hidden));
 }
 
@@ -469,6 +751,7 @@ function hasOpenTextMenu() {
         (editMenu && !editMenu.hidden) ||
         (viewMenu && !viewMenu.hidden) ||
         (insertMenu && !insertMenu.hidden) ||
+        (dataMenu && !dataMenu.hidden) ||
         (formatMenu && !formatMenu.hidden)
     );
 }
@@ -478,7 +761,9 @@ function openTextMenu(menuName) {
     hideEditMenu();
     hideViewMenu();
     hideInsertMenu();
+    hideDataMenu();
     hideFormatMenu();
+    hideZoomMenu();
     hideContextMenu();
     hideBorderMenu();
 
@@ -495,11 +780,14 @@ function openTextMenu(menuName) {
         updateInsertMenuState();
         insertMenu.hidden = false;
     }
+    if (menuName === "data" && dataMenu) {
+        updateDataMenuState();
+        dataMenu.hidden = false;
+    }
     if (menuName === "format" && formatMenu) {
         updateFormatMenuState();
         formatMenu.hidden = false;
     }
-
     updateTextMenuActiveState();
 }
 
@@ -531,6 +819,13 @@ function hideInsertMenu() {
     updateTextMenuActiveState();
 }
 
+function hideDataMenu() {
+    if (!dataMenu) return;
+
+    dataMenu.hidden = true;
+    updateTextMenuActiveState();
+}
+
 function hideFormatMenu() {
     if (!formatMenu) return;
 
@@ -549,6 +844,20 @@ function showBorderMenu(anchor = borderBtn) {
 
     borderMenu.style.left = `${Math.max(8, left)}px`;
     borderMenu.style.top = `${Math.max(8, top)}px`;
+}
+
+function showZoomMenu() {
+    if (!zoomMenu || !zoomValueBtn) return;
+
+    const buttonRect = zoomValueBtn.getBoundingClientRect();
+    zoomMenu.hidden = false;
+    updateViewMenuState();
+    const menuRect = zoomMenu.getBoundingClientRect();
+    const left = Math.min(buttonRect.left, window.innerWidth - menuRect.width - 8);
+    const top = Math.min(buttonRect.bottom + 4, window.innerHeight - menuRect.height - 8);
+
+    zoomMenu.style.left = `${Math.max(8, left)}px`;
+    zoomMenu.style.top = `${Math.max(8, top)}px`;
 }
 
 function clearClipboardState(shouldRender = false, shouldFocus = true) {
@@ -585,8 +894,12 @@ function updateContextMenuState() {
         paste: hasSelection && Boolean(internalClipboard),
         "insert-row-above": isRowContext,
         "delete-row": isRowContext && rowDeleteCount > 0,
+        "hide-row": isRowContext,
+        "show-rows": hiddenRows.size > 0,
         "insert-col-left": isColumnContext,
         "delete-col": isColumnContext && colDeleteCount > 0,
+        "hide-col": isColumnContext,
+        "show-cols": hiddenCols.size > 0,
         "add-sheet": isSheetContext,
         "duplicate-sheet": isSheetContext,
         "rename-sheet": isSheetContext,
@@ -602,8 +915,10 @@ function updateContextMenuState() {
 
     setContextMenuLabel("insert-row-above", `Üste ${selectedRowCount} satır ekle`);
     setContextMenuLabel("delete-row", `${selectedRowCount} satır sil`);
+    setContextMenuLabel("hide-row", `${selectedRowCount} satır gizle`);
     setContextMenuLabel("insert-col-left", `Sola ${selectedColCount} sütun ekle`);
     setContextMenuLabel("delete-col", `${selectedColCount} sütun sil`);
+    setContextMenuLabel("hide-col", `${selectedColCount} sütun gizle`);
 }
 
 function setContextMenuLabel(action, label) {
@@ -990,6 +1305,27 @@ function setVerticalAlignment(value) {
     });
 }
 
+function setNumberFormat(format) {
+    return applyStyleToSelection((style) => {
+        style.numberFormat = format;
+        if (!Number.isInteger(Number(style.decimalPlaces))) {
+            style.decimalPlaces = format === "percent" ? 0 : 2;
+        }
+    });
+}
+
+function changeDecimalPlaces(delta) {
+    return applyStyleToSelection((style) => {
+        const currentPlaces = Number.isInteger(Number(style.decimalPlaces))
+            ? Number(style.decimalPlaces)
+            : 2;
+        style.decimalPlaces = Math.max(0, Math.min(8, currentPlaces + delta));
+        if (!["currency", "percent", "number"].includes(style.numberFormat)) {
+            style.numberFormat = "number";
+        }
+    });
+}
+
 function rangesIntersect(a, b) {
     return !(
         a.maxRow < b.minRow ||
@@ -1124,8 +1460,12 @@ function handleContextMenuAction(action) {
     if (action === "paste") pasteClipboard();
     if (action === "insert-row-above" && contextMenuTarget?.type === "row") insertRowsAboveSelection();
     if (action === "delete-row" && contextMenuTarget?.type === "row") deleteSelectedRows();
+    if (action === "hide-row" && contextMenuTarget?.type === "row") hideSelectedRowsOrColumns();
+    if (action === "show-rows") showHiddenRows();
     if (action === "insert-col-left" && contextMenuTarget?.type === "column") insertColsLeftOfSelection();
     if (action === "delete-col" && contextMenuTarget?.type === "column") deleteSelectedColumns();
+    if (action === "hide-col" && contextMenuTarget?.type === "column") hideSelectedRowsOrColumns();
+    if (action === "show-cols") showHiddenColumns();
     if (action === "add-sheet") addSheet();
     if (action === "duplicate-sheet") duplicateSheet();
     if (action === "rename-sheet") renameActiveSheet();
@@ -1650,7 +1990,9 @@ function createDefaultCellStyle() {
         color: "#202124",
         backgroundColor: "",
         horizontalAlign: "left",
-        verticalAlign: "middle"
+        verticalAlign: "middle",
+        numberFormat: "automatic",
+        decimalPlaces: 2
     };
 }
 
@@ -1674,12 +2016,52 @@ function hasNonDefaultStyle(cell) {
         style.color !== defaults.color ||
         style.backgroundColor !== defaults.backgroundColor ||
         style.horizontalAlign !== defaults.horizontalAlign ||
-        style.verticalAlign !== defaults.verticalAlign
+        style.verticalAlign !== defaults.verticalAlign ||
+        style.numberFormat !== defaults.numberFormat ||
+        (Number(style.decimalPlaces) || 0) !== defaults.decimalPlaces
     );
 }
 
 function normalizeColorValue(value, fallback) {
     return /^#[0-9a-f]{6}$/i.test(value ?? "") ? value : fallback;
+}
+
+function parseCellNumberForDisplay(cell) {
+    const value = cell?.formula ? cell.value : cell?.value;
+    if (value === null || value === undefined || String(value).trim() === "") return null;
+
+    const number = Number(String(value).trim().replace(",", "."));
+    return Number.isFinite(number) ? number : null;
+}
+
+function formatCellDisplayValue(cell) {
+    const style = getCellStyle(cell);
+    const number = parseCellNumberForDisplay(cell);
+    if (number === null) return cell?.value ?? "";
+
+    const decimalPlaces = Math.max(0, Math.min(8, Number(style.decimalPlaces) || 0));
+    if (style.numberFormat === "currency") {
+        return `${number.toLocaleString("tr-TR", {
+            minimumFractionDigits: decimalPlaces,
+            maximumFractionDigits: decimalPlaces
+        })} TL`;
+    }
+
+    if (style.numberFormat === "percent") {
+        return `${(number * 100).toLocaleString("tr-TR", {
+            minimumFractionDigits: decimalPlaces,
+            maximumFractionDigits: decimalPlaces
+        })}%`;
+    }
+
+    if (style.numberFormat === "number") {
+        return number.toLocaleString("tr-TR", {
+            minimumFractionDigits: decimalPlaces,
+            maximumFractionDigits: decimalPlaces
+        });
+    }
+
+    return cell?.value ?? "";
 }
 
 function createEmptyCell() {
@@ -1720,11 +2102,19 @@ function insertRowsAt(index, count) {
     const targetIndex = Math.max(0, Math.min(index, rowCount));
     rowCount += count;
     rowHeights.splice(targetIndex, 0, ...Array.from({ length: count }, () => DEFAULT_ROW_HEIGHT));
+    hiddenRows = new Set([...hiddenRows].map((row) => row >= targetIndex ? row + count : row));
     tableData.splice(
         targetIndex,
         0,
         ...Array.from({ length: count }, () => Array.from({ length: colCount }, createEmptyCell))
     );
+    adjustAllFormulasForGridChange({
+        mode: "insert",
+        axis: "row",
+        index: targetIndex,
+        count
+    });
+    recalculateAll();
     selectedCell = { row: targetIndex, col: selectedCell?.col ?? 0 };
     selectionRange = null;
     selectionMode = "cell";
@@ -1748,9 +2138,17 @@ function insertColsAt(index, count) {
     const targetIndex = Math.max(0, Math.min(index, colCount));
     colCount += count;
     colWidths.splice(targetIndex, 0, ...Array.from({ length: count }, () => DEFAULT_COL_WIDTH));
+    hiddenCols = new Set([...hiddenCols].map((col) => col >= targetIndex ? col + count : col));
     tableData.forEach((row) => {
         row.splice(targetIndex, 0, ...Array.from({ length: count }, createEmptyCell));
     });
+    adjustAllFormulasForGridChange({
+        mode: "insert",
+        axis: "column",
+        index: targetIndex,
+        count
+    });
+    recalculateAll();
     selectedCell = { row: selectedCell?.row ?? 0, col: targetIndex };
     selectionRange = null;
     selectionMode = "cell";
@@ -1776,11 +2174,20 @@ function deleteRowsAt(indexes) {
 
     const indexesToDelete = uniqueIndexes.slice(0, deleteCount);
     pushHistory();
+    const deletedRowsAscending = [...indexesToDelete].sort((a, b) => a - b);
     indexesToDelete.forEach((targetIndex) => {
         tableData.splice(targetIndex, 1);
         rowHeights.splice(targetIndex, 1);
     });
     rowCount -= indexesToDelete.length;
+    hiddenRows = new Set([...hiddenRows]
+        .map((row) => mapDeletedAxisPosition(row, deletedRowsAscending))
+        .filter((row) => row !== null && row >= 0 && row < rowCount));
+    adjustAllFormulasForGridChange({
+        mode: "delete",
+        axis: "row",
+        indexes: [...indexesToDelete].sort((a, b) => a - b)
+    });
     const topDeletedIndex = Math.min(...indexesToDelete);
     selectedCell = {
         row: Math.min(topDeletedIndex, rowCount - 1),
@@ -1811,6 +2218,7 @@ function deleteColsAt(indexes) {
 
     const indexesToDelete = uniqueIndexes.slice(0, deleteCount);
     pushHistory();
+    const deletedColsAscending = [...indexesToDelete].sort((a, b) => a - b);
     indexesToDelete.forEach((targetIndex) => {
         colWidths.splice(targetIndex, 1);
         tableData.forEach((row) => {
@@ -1818,6 +2226,14 @@ function deleteColsAt(indexes) {
         });
     });
     colCount -= indexesToDelete.length;
+    hiddenCols = new Set([...hiddenCols]
+        .map((col) => mapDeletedAxisPosition(col, deletedColsAscending))
+        .filter((col) => col !== null && col >= 0 && col < colCount));
+    adjustAllFormulasForGridChange({
+        mode: "delete",
+        axis: "column",
+        indexes: [...indexesToDelete].sort((a, b) => a - b)
+    });
     const leftDeletedIndex = Math.min(...indexesToDelete);
     selectedCell = {
         row: selectedCell?.row ?? 0,
@@ -1861,6 +2277,289 @@ function insertColsRightOfSelection() {
     const count = cols.length || 1;
     const targetIndex = cols.length ? Math.max(...cols) + 1 : (contextMenuTarget?.col ?? selectedCell?.col ?? 0) + 1;
     insertColsAt(targetIndex, count);
+}
+
+function getCellSortValue(cell) {
+    const rawValue = String(cell?.formula ? cell.value : cell?.value ?? "").trim();
+    if (rawValue === "") {
+        return { type: "blank", value: "" };
+    }
+
+    const normalizedNumber = rawValue.replace(",", ".");
+    const numberValue = Number(normalizedNumber);
+    if (Number.isFinite(numberValue)) {
+        return { type: "number", value: numberValue };
+    }
+
+    return { type: "text", value: rawValue.toLocaleLowerCase("tr-TR") };
+}
+
+function compareSortValues(a, b, direction) {
+    if (a.type === "blank" && b.type !== "blank") return 1;
+    if (a.type !== "blank" && b.type === "blank") return -1;
+    if (a.type === "blank" && b.type === "blank") return 0;
+
+    const typeOrder = { number: 0, text: 1 };
+    const orderDiff = typeOrder[a.type] - typeOrder[b.type];
+    if (orderDiff !== 0) return orderDiff * direction;
+
+    if (a.value < b.value) return -1 * direction;
+    if (a.value > b.value) return 1 * direction;
+    return 0;
+}
+
+function sortActiveRange(direction = "asc") {
+    const range = getActiveRange();
+    if (!range || !canSortActiveRange()) return false;
+
+    const directionMultiplier = direction === "desc" ? -1 : 1;
+    const rows = [];
+
+    for (let row = range.minRow; row <= range.maxRow; row++) {
+        rows.push({
+            row,
+            height: rowHeights[row],
+            cells: tableData[row]
+                .slice(range.minCol, range.maxCol + 1)
+                .map((cell) => cloneCellData(cell)),
+            sortValue: getCellSortValue(tableData[row][range.minCol])
+        });
+    }
+
+    rows.sort((a, b) => {
+        const valueDiff = compareSortValues(a.sortValue, b.sortValue, directionMultiplier);
+        return valueDiff || (a.row - b.row);
+    });
+
+    pushHistory();
+    rows.forEach((item, offset) => {
+        const targetRow = range.minRow + offset;
+        for (let col = range.minCol; col <= range.maxCol; col++) {
+            tableData[targetRow][col] = cloneCellData(item.cells[col - range.minCol]);
+        }
+        if (range.minCol === 0 && range.maxCol === colCount - 1) {
+            rowHeights[targetRow] = item.height;
+        }
+    });
+
+    recalculateAll();
+    renderTable();
+    focusSelectedCell();
+    return true;
+}
+
+function normalizeFilter(filter) {
+    if (!filter?.range || !Number.isInteger(filter.column)) return null;
+
+    const range = {
+        minRow: Math.max(0, Math.min(rowCount - 1, Number(filter.range.minRow) || 0)),
+        maxRow: Math.max(0, Math.min(rowCount - 1, Number(filter.range.maxRow) || 0)),
+        minCol: Math.max(0, Math.min(colCount - 1, Number(filter.range.minCol) || 0)),
+        maxCol: Math.max(0, Math.min(colCount - 1, Number(filter.range.maxCol) || 0))
+    };
+
+    if (range.maxRow <= range.minRow || range.maxCol < range.minCol) return null;
+
+    return {
+        range,
+        column: Math.max(range.minCol, Math.min(range.maxCol, filter.column)),
+        query: String(filter.query || "")
+    };
+}
+
+function isRowHiddenByFilter(row) {
+    const filter = normalizeFilter(activeFilter);
+    if (!filter) return false;
+    if (row <= filter.range.minRow || row > filter.range.maxRow) return false;
+    if (!filter.query.trim()) return false;
+
+    const cellText = getCellEditableText(row, filter.column).toLocaleLowerCase("tr-TR");
+    return !cellText.includes(filter.query.toLocaleLowerCase("tr-TR"));
+}
+
+function createFilterFromSelection() {
+    const range = getActiveRange();
+    if (!range || !canSortActiveRange()) return false;
+
+    activeFilter = {
+        range: { ...range },
+        column: range.minCol,
+        query: ""
+    };
+    selectedCell = { row: range.minRow, col: range.minCol };
+
+    renderTable();
+    focusSelectedCell();
+    updateToolbarState();
+    scheduleAutoSave();
+    return true;
+}
+
+function hideSelectedRowsOrColumns() {
+    const rows = getSelectedRowIndexes();
+    const cols = getSelectedColumnIndexes();
+
+    if (selectionMode === "row" && rows.length) {
+        pushHistory();
+        rows.forEach((row) => hiddenRows.add(row));
+        renderTable();
+        focusSelectedCell();
+        updateToolbarState();
+        scheduleAutoSave();
+        return true;
+    }
+
+    if (selectionMode === "column" && cols.length) {
+        pushHistory();
+        cols.forEach((col) => hiddenCols.add(col));
+        renderTable();
+        focusSelectedCell();
+        updateToolbarState();
+        scheduleAutoSave();
+        return true;
+    }
+
+    return false;
+}
+
+function showHiddenRows() {
+    if (hiddenRows.size === 0) return false;
+
+    pushHistory();
+    hiddenRows.clear();
+    renderTable();
+    focusSelectedCell();
+    updateToolbarState();
+    scheduleAutoSave();
+    return true;
+}
+
+function showHiddenColumns() {
+    if (hiddenCols.size === 0) return false;
+
+    pushHistory();
+    hiddenCols.clear();
+    renderTable();
+    focusSelectedCell();
+    updateToolbarState();
+    scheduleAutoSave();
+    return true;
+}
+
+function showHiddenRowsAndColumns() {
+    if (hiddenRows.size === 0 && hiddenCols.size === 0) return false;
+
+    pushHistory();
+    hiddenRows.clear();
+    hiddenCols.clear();
+    renderTable();
+    focusSelectedCell();
+    updateToolbarState();
+    scheduleAutoSave();
+    return true;
+}
+
+function hasHiddenRowAfter(row) {
+    if (row < 0 || row >= rowCount - 1) return false;
+    if (!hiddenRows.has(row + 1)) return false;
+
+    for (let nextRow = row + 2; nextRow < rowCount; nextRow++) {
+        if (!hiddenRows.has(nextRow)) return !isRowHiddenByFilter(nextRow);
+    }
+
+    return false;
+}
+
+function hasHiddenRowBefore(row) {
+    if (row <= 0 || row >= rowCount) return false;
+    if (!hiddenRows.has(row - 1)) return false;
+
+    for (let prevRow = row - 2; prevRow >= 0; prevRow--) {
+        if (!hiddenRows.has(prevRow)) return !isRowHiddenByFilter(prevRow);
+    }
+
+    return false;
+}
+
+function hasHiddenColAfter(col) {
+    if (col < 0 || col >= colCount - 1) return false;
+    if (!hiddenCols.has(col + 1)) return false;
+
+    for (let nextCol = col + 2; nextCol < colCount; nextCol++) {
+        if (!hiddenCols.has(nextCol)) return true;
+    }
+
+    return false;
+}
+
+function hasHiddenColBefore(col) {
+    if (col <= 0 || col >= colCount) return false;
+    if (!hiddenCols.has(col - 1)) return false;
+
+    for (let prevCol = col - 2; prevCol >= 0; prevCol--) {
+        if (!hiddenCols.has(prevCol)) return true;
+    }
+
+    return false;
+}
+
+function toggleFilterFromSelection() {
+    if (activeFilter) {
+        return clearActiveFilter();
+    }
+
+    return createFilterFromSelection();
+}
+
+function applyFilterValue(column, query) {
+    const filter = normalizeFilter(activeFilter);
+    if (!filter || column < filter.range.minCol || column > filter.range.maxCol) return false;
+
+    activeFilter = {
+        ...filter,
+        column,
+        query: String(query || "").trim()
+    };
+    selectedCell = { row: filter.range.minRow, col: column };
+    hideFilterPopup();
+    renderTable();
+    focusSelectedCell();
+    updateToolbarState();
+    scheduleAutoSave();
+    return true;
+}
+
+function showFilterPopup(anchor, column) {
+    const filter = normalizeFilter(activeFilter);
+    if (!filter || !filterPopup || !filterPopupInput) return false;
+
+    filterPopupColumn = column;
+    const headerName = getCellEditableText(filter.range.minRow, column) || getCellName(filter.range.minRow, column);
+    if (filterPopupTitle) filterPopupTitle.textContent = `${headerName} filtresi`;
+    filterPopupInput.value = column === filter.column ? filter.query : "";
+
+    const anchorRect = anchor.getBoundingClientRect();
+    filterPopup.hidden = false;
+    const popupRect = filterPopup.getBoundingClientRect();
+    const left = Math.min(anchorRect.left, window.innerWidth - popupRect.width - 8);
+    const top = Math.min(anchorRect.bottom + 6, window.innerHeight - popupRect.height - 8);
+
+    filterPopup.style.left = `${Math.max(8, left)}px`;
+    filterPopup.style.top = `${Math.max(8, top)}px`;
+    filterPopupInput.focus();
+    filterPopupInput.select();
+    return true;
+}
+
+function clearActiveFilter() {
+    if (!activeFilter) return false;
+
+    activeFilter = null;
+    renderTable();
+    focusSelectedCell();
+    updateToolbarState();
+    scheduleAutoSave();
+    return true;
 }
 
 function deleteSelectedRows() {
@@ -2254,6 +2953,16 @@ function cloneRange(range) {
     };
 }
 
+function cloneFilter(filter) {
+    if (!filter) return null;
+
+    return {
+        range: { ...filter.range },
+        column: filter.column,
+        query: filter.query
+    };
+}
+
 function cloneTableData(data) {
     return data.map((row) => row.map((cell) => cloneCellData(cell)));
 }
@@ -2272,9 +2981,12 @@ function createSheetState(name) {
         selectedCell: selectedCell ? { ...selectedCell } : { row: 0, col: 0 },
         selectionRange: cloneRange(selectionRange),
         selectionMode,
+        activeFilter: cloneFilter(activeFilter),
         tableData: cloneTableData(tableData),
         colWidths: [...colWidths],
-        rowHeights: [...rowHeights]
+        rowHeights: [...rowHeights],
+        hiddenRows: [...hiddenRows],
+        hiddenCols: [...hiddenCols]
     };
 }
 
@@ -2286,9 +2998,12 @@ function createBlankSheetState(name) {
         selectedCell: { row: 0, col: 0 },
         selectionRange: null,
         selectionMode: "cell",
+        activeFilter: null,
         tableData: createBlankTableData(100, 26),
         colWidths: Array.from({ length: 26 }, () => DEFAULT_COL_WIDTH),
-        rowHeights: Array.from({ length: 100 }, () => DEFAULT_ROW_HEIGHT)
+        rowHeights: Array.from({ length: 100 }, () => DEFAULT_ROW_HEIGHT),
+        hiddenRows: [],
+        hiddenCols: []
     };
 }
 
@@ -2300,9 +3015,12 @@ function cloneSheetState(sheet, name) {
         selectedCell: sheet.selectedCell ? { ...sheet.selectedCell } : { row: 0, col: 0 },
         selectionRange: cloneRange(sheet.selectionRange),
         selectionMode: sheet.selectionMode,
+        activeFilter: cloneFilter(sheet.activeFilter),
         tableData: cloneTableData(sheet.tableData),
         colWidths: [...sheet.colWidths],
-        rowHeights: [...sheet.rowHeights]
+        rowHeights: [...sheet.rowHeights],
+        hiddenRows: [...(sheet.hiddenRows ?? [])],
+        hiddenCols: [...(sheet.hiddenCols ?? [])]
     };
 }
 
@@ -2318,9 +3036,12 @@ function applySheetState(sheet) {
     selectedCell = sheet.selectedCell ? { ...sheet.selectedCell } : { row: 0, col: 0 };
     selectionRange = cloneRange(sheet.selectionRange);
     selectionMode = sheet.selectionMode;
+    activeFilter = cloneFilter(sheet.activeFilter);
     tableData = cloneTableData(sheet.tableData);
     colWidths = [...sheet.colWidths];
     rowHeights = [...sheet.rowHeights];
+    hiddenRows = new Set(sheet.hiddenRows ?? []);
+    hiddenCols = new Set(sheet.hiddenCols ?? []);
     extraSelections = [];
     copiedRange = null;
     internalClipboard = null;
@@ -2658,6 +3379,9 @@ function createNewWorkbook() {
     contextMenuTarget = null;
     findResults = [];
     findResultIndex = -1;
+    activeFilter = null;
+    hiddenRows = new Set();
+    hiddenCols = new Set();
     activeSheetIndex = 0;
     renamingSheetIndex = null;
     undoStack = [];
@@ -2697,9 +3421,12 @@ function createSavePayload() {
             ...sheet,
             selectedCell: sheet.selectedCell ? { ...sheet.selectedCell } : { row: 0, col: 0 },
             selectionRange: cloneRange(sheet.selectionRange),
+            activeFilter: cloneFilter(sheet.activeFilter),
             tableData: cloneTableData(sheet.tableData),
             colWidths: [...sheet.colWidths],
-            rowHeights: [...sheet.rowHeights]
+            rowHeights: [...sheet.rowHeights],
+            hiddenRows: [...(sheet.hiddenRows ?? [])],
+            hiddenCols: [...(sheet.hiddenCols ?? [])]
         }))
     };
 }
@@ -2763,6 +3490,25 @@ function normalizeImportedRange(range, rowCountValue, colCountValue) {
     };
 }
 
+function normalizeImportedFilter(filter, rowCountValue, colCountValue) {
+    if (!filter?.range) return null;
+
+    const range = {
+        minRow: Math.max(0, Math.min(rowCountValue - 1, Number(filter.range.minRow) || 0)),
+        maxRow: Math.max(0, Math.min(rowCountValue - 1, Number(filter.range.maxRow) || 0)),
+        minCol: Math.max(0, Math.min(colCountValue - 1, Number(filter.range.minCol) || 0)),
+        maxCol: Math.max(0, Math.min(colCountValue - 1, Number(filter.range.maxCol) || 0))
+    };
+
+    if (range.maxRow <= range.minRow || range.maxCol < range.minCol) return null;
+
+    return {
+        range,
+        column: Math.max(range.minCol, Math.min(range.maxCol, Number(filter.column) || range.minCol)),
+        query: String(filter.query || "")
+    };
+}
+
 function normalizeImportedSheet(sheet, index) {
     const safeRowCount = Math.max(MIN_ROW_SIZE, Number(sheet?.rowCount) || 100);
     const safeColCount = Math.max(MIN_COL_SIZE, Number(sheet?.colCount) || 26);
@@ -2788,13 +3534,24 @@ function normalizeImportedSheet(sheet, index) {
         selectionMode: ["cell", "range", "row", "column", "all"].includes(sheet?.selectionMode)
             ? sheet.selectionMode
             : "cell",
+        activeFilter: normalizeImportedFilter(sheet?.activeFilter, safeRowCount, safeColCount),
         tableData: safeTableData,
         colWidths: Array.from({ length: safeColCount }, (_, col) =>
             Math.max(MIN_COL_WIDTH, Number(sheet?.colWidths?.[col]) || DEFAULT_COL_WIDTH)
         ),
         rowHeights: Array.from({ length: safeRowCount }, (_, row) =>
             Math.max(MIN_ROW_HEIGHT, Number(sheet?.rowHeights?.[row]) || DEFAULT_ROW_HEIGHT)
-        )
+        ),
+        hiddenRows: Array.isArray(sheet?.hiddenRows)
+            ? sheet.hiddenRows
+                .map((row) => Number(row))
+                .filter((row) => Number.isInteger(row) && row >= 0 && row < safeRowCount)
+            : [],
+        hiddenCols: Array.isArray(sheet?.hiddenCols)
+            ? sheet.hiddenCols
+                .map((col) => Number(col))
+                .filter((col) => Number.isInteger(col) && col >= 0 && col < safeColCount)
+            : []
     };
 }
 
@@ -3331,9 +4088,12 @@ function createHistorySnapshot() {
         selectedCell: selectedCell ? { ...selectedCell } : null,
         selectionRange: cloneRange(selectionRange),
         selectionMode,
+        activeFilter: cloneFilter(activeFilter),
         tableData: cloneTableData(tableData),
         colWidths: [...colWidths],
-        rowHeights: [...rowHeights]
+        rowHeights: [...rowHeights],
+        hiddenRows: [...hiddenRows],
+        hiddenCols: [...hiddenCols]
     };
 }
 
@@ -3345,9 +4105,12 @@ function restoreHistorySnapshot(snapshot) {
     selectedCell = snapshot.selectedCell ? { ...snapshot.selectedCell } : { row: 0, col: 0 };
     selectionRange = cloneRange(snapshot.selectionRange);
     selectionMode = snapshot.selectionMode;
+    activeFilter = cloneFilter(snapshot.activeFilter);
     tableData = cloneTableData(snapshot.tableData);
     colWidths = [...snapshot.colWidths];
     rowHeights = [...snapshot.rowHeights];
+    hiddenRows = new Set(snapshot.hiddenRows ?? []);
+    hiddenCols = new Set(snapshot.hiddenCols ?? []);
     extraSelections = [];
     copiedRange = null;
     internalClipboard = null;
@@ -3390,14 +4153,14 @@ function redo() {
 }
 
 function setColumnWidth(element, col) {
-    const width = colWidths[col] ?? DEFAULT_COL_WIDTH;
+    const width = Math.max(24, Math.round((colWidths[col] ?? DEFAULT_COL_WIDTH) * getZoomScale()));
     element.style.width = `${width}px`;
     element.style.minWidth = `${width}px`;
     element.style.maxWidth = `${width}px`;
 }
 
 function setRowHeight(element, row) {
-    const height = rowHeights[row] ?? DEFAULT_ROW_HEIGHT;
+    const height = Math.max(18, Math.round((rowHeights[row] ?? DEFAULT_ROW_HEIGHT) * getZoomScale()));
     element.style.height = `${height}px`;
 }
 
@@ -3556,6 +4319,8 @@ function renderTable() {
     headerRow.appendChild(cornerHeader);
 
     for (let c = 0; c < colCount; c++) {
+        if (hiddenCols.has(c)) continue;
+
         const th = document.createElement("th");
         th.classList.add("column-header");
         th.dataset.col = c;
@@ -3580,6 +4345,12 @@ function renderTable() {
         }
         if (moveSelectionState?.type === "column" && moveSelectionState.targetIndex === c) {
             th.classList.add("move-target-header");
+        }
+        if (hasHiddenColAfter(c)) {
+            th.classList.add("hidden-col-after");
+        }
+        if (hasHiddenColBefore(c)) {
+            th.classList.add("hidden-col-before");
         }
         th.addEventListener("mousedown", (e) => {
             if (e.button !== 0 || resizeState || e.shiftKey || e.ctrlKey || e.metaKey) return;
@@ -3628,6 +4399,9 @@ function renderTable() {
 
     // ROWS
     for (let r = 0; r < rowCount; r++) {
+        if (hiddenRows.has(r)) continue;
+        if (isRowHiddenByFilter(r)) continue;
+
         const tr = document.createElement("tr");
 
         const rowHeader = document.createElement("th");
@@ -3654,6 +4428,12 @@ function renderTable() {
         }
         if (moveSelectionState?.type === "row" && moveSelectionState.targetIndex === r) {
             rowHeader.classList.add("move-target-header");
+        }
+        if (hasHiddenRowAfter(r)) {
+            rowHeader.classList.add("hidden-row-after");
+        }
+        if (hasHiddenRowBefore(r)) {
+            rowHeader.classList.add("hidden-row-before");
         }
         rowHeader.addEventListener("mousedown", (e) => {
             if (e.button !== 0 || resizeState || e.shiftKey || e.ctrlKey || e.metaKey) return;
@@ -3699,6 +4479,7 @@ function renderTable() {
         tr.appendChild(rowHeader);
 
         for (let c = 0; c < colCount; c++) {
+            if (hiddenCols.has(c)) continue;
             if (tableData[r][c].mergedTo) continue;
 
             const td = document.createElement("td");
@@ -3716,16 +4497,18 @@ function renderTable() {
                 const height = rowHeights
                     .slice(r, r + merge.rowspan)
                     .reduce((sum, value) => sum + (value ?? DEFAULT_ROW_HEIGHT), 0);
-                td.style.width = `${width}px`;
-                td.style.minWidth = `${width}px`;
-                td.style.maxWidth = `${width}px`;
-                td.style.height = `${height}px`;
+                const zoomedWidth = Math.max(24, Math.round(width * getZoomScale()));
+                const zoomedHeight = Math.max(18, Math.round(height * getZoomScale()));
+                td.style.width = `${zoomedWidth}px`;
+                td.style.minWidth = `${zoomedWidth}px`;
+                td.style.maxWidth = `${zoomedWidth}px`;
+                td.style.height = `${zoomedHeight}px`;
             } else {
                 setColumnWidth(td, c);
                 setRowHeight(td, r);
             }
 
-            td.textContent = tableData[r][c].value;
+            td.textContent = formatCellDisplayValue(tableData[r][c]);
             td.contentEditable = false;
             td.tabIndex = -1;
             const cellStyle = getCellStyle(tableData[r][c]);
@@ -3735,12 +4518,38 @@ function renderTable() {
             if (cellStyle.underline) textDecorations.push("underline");
             if (cellStyle.strikeThrough) textDecorations.push("line-through");
             td.style.textDecoration = textDecorations.length ? textDecorations.join(" ") : "none";
-            td.style.fontSize = `${Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, Number(cellStyle.fontSize) || DEFAULT_FONT_SIZE))}px`;
+            td.style.fontSize = `${Math.max(6, Math.round(Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, Number(cellStyle.fontSize) || DEFAULT_FONT_SIZE)) * getZoomScale()))}px`;
             td.style.color = normalizeColorValue(cellStyle.color, "#202124");
             td.style.textAlign = cellStyle.horizontalAlign;
             td.style.verticalAlign = cellStyle.verticalAlign;
             if (cellStyle.backgroundColor) {
                 td.style.backgroundColor = normalizeColorValue(cellStyle.backgroundColor, "#fff2cc");
+            }
+            if (
+                activeFilter &&
+                r === activeFilter.range.minRow &&
+                c >= activeFilter.range.minCol &&
+                c <= activeFilter.range.maxCol
+            ) {
+                td.classList.add("filter-header-cell");
+                if (c === activeFilter.column && activeFilter.query) {
+                    td.classList.add("filter-active-cell");
+                }
+                const filterButton = document.createElement("button");
+                filterButton.type = "button";
+                filterButton.className = "cell-filter-btn";
+                filterButton.title = "Filtre seçenekleri";
+                filterButton.innerHTML = '<img src="icons/filter.svg" alt="" />';
+                filterButton.addEventListener("mousedown", (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                });
+                filterButton.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    showFilterPopup(filterButton, c);
+                });
+                td.appendChild(filterButton);
             }
             const borders = getCellBorders(tableData[r][c]);
             if (borders.top) td.classList.add("cell-border-top");
@@ -3957,13 +4766,34 @@ function renderTable() {
 undoBtn.addEventListener("click", undo);
 redoBtn.addEventListener("click", redo);
 
+zoomValueBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    hideContextMenu();
+    hideBorderMenu();
+    hideFilterPopup();
+    hideFileMenu();
+    hideEditMenu();
+    hideViewMenu();
+    hideInsertMenu();
+    hideDataMenu();
+    hideFormatMenu();
+
+    if (zoomMenu?.hidden) {
+        showZoomMenu();
+    } else {
+        hideZoomMenu();
+    }
+});
+
 fileMenuBtn?.addEventListener("click", (e) => {
     e.stopPropagation();
     hideContextMenu();
     hideBorderMenu();
+    hideFilterPopup();
     hideEditMenu();
     hideViewMenu();
     hideInsertMenu();
+    hideDataMenu();
     hideFormatMenu();
     if (fileMenu) {
         fileMenu.hidden = !fileMenu.hidden;
@@ -4016,9 +4846,11 @@ editMenuBtn?.addEventListener("click", (e) => {
     e.stopPropagation();
     hideContextMenu();
     hideBorderMenu();
+    hideFilterPopup();
     hideFileMenu();
     hideViewMenu();
     hideInsertMenu();
+    hideDataMenu();
     hideFormatMenu();
     updateEditMenuState();
     if (editMenu) {
@@ -4078,8 +4910,10 @@ viewMenuBtn?.addEventListener("click", (e) => {
     e.stopPropagation();
     hideContextMenu();
     hideBorderMenu();
+    hideFilterPopup();
     hideFileMenu();
     hideEditMenu();
+    hideDataMenu();
     hideInsertMenu();
     hideFormatMenu();
     updateViewMenuState();
@@ -4112,10 +4946,12 @@ formatMenuBtn?.addEventListener("click", (e) => {
     e.stopPropagation();
     hideContextMenu();
     hideBorderMenu();
+    hideFilterPopup();
     hideFileMenu();
     hideEditMenu();
     hideViewMenu();
     hideInsertMenu();
+    hideDataMenu();
     updateFormatMenuState();
     if (formatMenu) {
         formatMenu.hidden = !formatMenu.hidden;
@@ -4132,10 +4968,12 @@ insertMenuBtn?.addEventListener("click", (e) => {
     const wasOpen = Boolean(insertMenu && !insertMenu.hidden);
     hideContextMenu();
     hideBorderMenu();
+    hideFilterPopup();
     hideFileMenu();
     hideEditMenu();
     hideViewMenu();
     hideInsertMenu();
+    hideDataMenu();
     hideFormatMenu();
     updateInsertMenuState();
     if (insertMenu) {
@@ -4162,6 +5000,128 @@ insertMenu?.addEventListener("click", (e) => {
     if (button.dataset.insertAction === "sheet") addSheet();
 });
 
+dataMenuBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const wasOpen = Boolean(dataMenu && !dataMenu.hidden);
+    hideContextMenu();
+    hideBorderMenu();
+    hideFileMenu();
+    hideEditMenu();
+    hideViewMenu();
+    hideInsertMenu();
+    hideDataMenu();
+    hideFormatMenu();
+    updateDataMenuState();
+    if (dataMenu) {
+        dataMenu.hidden = wasOpen;
+        updateTextMenuActiveState();
+    }
+});
+
+dataMenuBtn?.addEventListener("mouseenter", () => {
+    if (hasOpenTextMenu()) openTextMenu("data");
+});
+
+function handleZoomChoice(button, shouldHideViewMenu = false) {
+    if (!button) return false;
+
+    const value = Number(button.dataset.zoomValue);
+    if (!ZOOM_LEVELS.includes(value)) return false;
+
+    setZoom(value);
+    hideZoomMenu();
+    if (shouldHideViewMenu) hideViewMenu();
+    return true;
+}
+
+viewMenu?.addEventListener("click", (e) => {
+    const zoomButton = e.target.closest("[data-zoom-value]");
+    if (zoomButton) {
+        e.stopPropagation();
+        handleZoomChoice(zoomButton, true);
+    }
+});
+
+zoomMenu?.addEventListener("click", (e) => {
+    const zoomButton = e.target.closest("[data-zoom-value]");
+    if (zoomButton) {
+        e.stopPropagation();
+        handleZoomChoice(zoomButton);
+    }
+});
+
+menuSortAscBtn?.addEventListener("click", () => {
+    hideDataMenu();
+    sortActiveRange("asc");
+});
+
+menuSortDescBtn?.addEventListener("click", () => {
+    hideDataMenu();
+    sortActiveRange("desc");
+});
+
+menuFilterBtn?.addEventListener("click", () => {
+    hideDataMenu();
+    toggleFilterFromSelection();
+});
+
+sortAscBtn?.addEventListener("click", () => {
+    hideContextMenu();
+    hideBorderMenu();
+    sortActiveRange("asc");
+});
+
+sortDescBtn?.addEventListener("click", () => {
+    hideContextMenu();
+    hideBorderMenu();
+    sortActiveRange("desc");
+});
+
+filterBtn?.addEventListener("click", () => {
+    hideContextMenu();
+    hideBorderMenu();
+    hideFilterPopup();
+    toggleFilterFromSelection();
+});
+
+hideAxisBtn?.addEventListener("click", () => {
+    hideContextMenu();
+    hideBorderMenu();
+    hideFilterPopup();
+    hideSelectedRowsOrColumns();
+});
+
+showAxisBtn?.addEventListener("click", () => {
+    hideContextMenu();
+    hideBorderMenu();
+    hideFilterPopup();
+    showHiddenRowsAndColumns();
+});
+
+filterPopupApplyBtn?.addEventListener("click", () => {
+    if (filterPopupColumn === null) return;
+    applyFilterValue(filterPopupColumn, filterPopupInput?.value ?? "");
+});
+
+filterPopupClearBtn?.addEventListener("click", () => {
+    if (filterPopupColumn === null) return;
+    applyFilterValue(filterPopupColumn, "");
+});
+
+filterPopupInput?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+        e.preventDefault();
+        if (filterPopupColumn !== null) {
+            applyFilterValue(filterPopupColumn, filterPopupInput.value);
+        }
+    }
+    if (e.key === "Escape") {
+        e.preventDefault();
+        hideFilterPopup();
+        focusSelectedCell();
+    }
+});
+
 document.querySelectorAll(".text-menu > button").forEach((button) => {
     button.addEventListener("mouseenter", () => {
         if (!hasOpenTextMenu()) return;
@@ -4170,6 +5130,7 @@ document.querySelectorAll(".text-menu > button").forEach((button) => {
         hideEditMenu();
         hideViewMenu();
         hideInsertMenu();
+        hideDataMenu();
         hideFormatMenu();
     });
 });
@@ -4313,6 +5274,35 @@ fillColorBtn?.addEventListener("click", () => {
     hideContextMenu();
     hideBorderMenu();
     fillColorInput?.click();
+});
+
+currencyFormatBtn?.addEventListener("click", () => {
+    hideContextMenu();
+    hideBorderMenu();
+    setNumberFormat("currency");
+});
+
+percentFormatBtn?.addEventListener("click", () => {
+    hideContextMenu();
+    hideBorderMenu();
+    setNumberFormat("percent");
+});
+
+decimalDecreaseBtn?.addEventListener("click", () => {
+    hideContextMenu();
+    hideBorderMenu();
+    changeDecimalPlaces(-1);
+});
+
+decimalIncreaseBtn?.addEventListener("click", () => {
+    hideContextMenu();
+    hideBorderMenu();
+    changeDecimalPlaces(1);
+});
+
+numberFormatMoreBtn?.addEventListener("click", () => {
+    hideContextMenu();
+    hideBorderMenu();
 });
 
 textColorInput?.addEventListener("input", () => {
@@ -4941,12 +5931,40 @@ formulaInput.addEventListener("blur", () => {
     }
 });
 
+window.addEventListener("pointerdown", (e) => {
+    const isTextMenuTarget =
+        fileMenu?.contains(e.target) ||
+        fileMenuBtn?.contains(e.target) ||
+        editMenu?.contains(e.target) ||
+        editMenuBtn?.contains(e.target) ||
+        viewMenu?.contains(e.target) ||
+        viewMenuBtn?.contains(e.target) ||
+        insertMenu?.contains(e.target) ||
+        insertMenuBtn?.contains(e.target) ||
+        dataMenu?.contains(e.target) ||
+        dataMenuBtn?.contains(e.target) ||
+        formatMenu?.contains(e.target) ||
+        formatMenuBtn?.contains(e.target);
+
+    if (!isTextMenuTarget) {
+        hideFileMenu();
+        hideEditMenu();
+        hideViewMenu();
+        hideInsertMenu();
+        hideDataMenu();
+        hideFormatMenu();
+    }
+}, true);
+
 window.addEventListener("click", (e) => {
     if (contextMenu && !contextMenu.contains(e.target)) {
         hideContextMenu();
     }
     if (borderMenu && !borderMenu.contains(e.target) && !borderBtn?.contains(e.target)) {
         hideBorderMenu();
+    }
+    if (zoomMenu && !zoomMenu.contains(e.target) && !zoomValueBtn?.contains(e.target)) {
+        hideZoomMenu();
     }
     if (fileMenu && !fileMenu.contains(e.target) && !fileMenuBtn?.contains(e.target)) {
         hideFileMenu();
@@ -4960,8 +5978,18 @@ window.addEventListener("click", (e) => {
     if (insertMenu && !insertMenu.contains(e.target) && !insertMenuBtn?.contains(e.target)) {
         hideInsertMenu();
     }
+    if (dataMenu && !dataMenu.contains(e.target) && !dataMenuBtn?.contains(e.target)) {
+        hideDataMenu();
+    }
     if (formatMenu && !formatMenu.contains(e.target) && !formatMenuBtn?.contains(e.target)) {
         hideFormatMenu();
+    }
+    if (
+        filterPopup &&
+        !filterPopup.contains(e.target) &&
+        !e.target.closest(".cell-filter-btn")
+    ) {
+        hideFilterPopup();
     }
 });
 
@@ -4984,6 +6012,8 @@ window.addEventListener("contextmenu", (e) => {
 
 window.addEventListener("scroll", hideContextMenu, true);
 window.addEventListener("scroll", hideBorderMenu, true);
+window.addEventListener("scroll", hideFilterPopup, true);
+window.addEventListener("scroll", hideZoomMenu, true);
 window.addEventListener("scroll", hideFileMenu, true);
 window.addEventListener("scroll", hideEditMenu, true);
 window.addEventListener("scroll", hideViewMenu, true);

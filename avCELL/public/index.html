@@ -115,6 +115,14 @@
                                 <span class="menu-check" aria-hidden="true">✓</span>
                                 <span>Kılavuz çizgileri</span>
                             </button>
+                            <hr>
+                            <button type="button" data-zoom-value="50"><span class="menu-check" aria-hidden="true"></span><span>50%</span></button>
+                            <button type="button" data-zoom-value="75"><span class="menu-check" aria-hidden="true"></span><span>75%</span></button>
+                            <button type="button" data-zoom-value="90"><span class="menu-check" aria-hidden="true"></span><span>90%</span></button>
+                            <button type="button" data-zoom-value="100"><span class="menu-check" aria-hidden="true"></span><span>100%</span></button>
+                            <button type="button" data-zoom-value="125"><span class="menu-check" aria-hidden="true"></span><span>125%</span></button>
+                            <button type="button" data-zoom-value="150"><span class="menu-check" aria-hidden="true"></span><span>150%</span></button>
+                            <button type="button" data-zoom-value="200"><span class="menu-check" aria-hidden="true"></span><span>200%</span></button>
                         </div>
                     </div>
                     <div class="menu-shell">
@@ -158,6 +166,24 @@
                             <button id="menu-insert-sheet-btn" type="button" data-insert-action="sheet">
                                 <img src="icons/sheet-add.svg" alt="" />
                                 <span>Sayfa ekle</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="menu-shell">
+                        <button id="data-menu-btn" type="button">Veri</button>
+                        <div id="data-menu" class="text-menu-popover" hidden>
+                            <button id="menu-sort-asc-btn" type="button">
+                                <img src="icons/sort-asc.svg" alt="" />
+                                <span>A-Z Sırala</span>
+                            </button>
+                            <button id="menu-sort-desc-btn" type="button">
+                                <img src="icons/sort-desc.svg" alt="" />
+                                <span>Z-A Sırala</span>
+                            </button>
+                            <hr>
+                            <button id="menu-filter-btn" type="button" disabled>
+                                <img src="icons/filter.svg" alt="" />
+                                <span>Filtre oluştur</span>
                             </button>
                         </div>
                     </div>
@@ -284,7 +310,6 @@
                             </button>
                         </div>
                     </div>
-                    <button type="button">Veri</button>
                     <button type="button">Araçlar</button>
                     <button type="button">Yardım</button>
                 </nav>
@@ -324,6 +349,9 @@
                             <img src="icons/redo.svg" alt="" />
                         </button>
                     </div>
+                    <div class="toolbar-cluster zoom-cluster">
+                        <button id="zoom-value-btn" class="zoom-value-btn" title="Yakınlaştırma seç">100%</button>
+                    </div>
                     <div class="toolbar-cluster">
                         <button id="add-row-btn" class="icon-btn" title="Üste Satır Ekle">
                             <img src="icons/addrowup.svg" alt="" />
@@ -347,11 +375,47 @@
                         </button>
                     </div>
                     <div class="toolbar-cluster">
+                        <button id="sort-asc-btn" class="icon-btn" title="A-Z Sırala">
+                            <img src="icons/sort-asc.svg" alt="" />
+                        </button>
+                        <button id="sort-desc-btn" class="icon-btn" title="Z-A Sırala">
+                            <img src="icons/sort-desc.svg" alt="" />
+                        </button>
+                        <button id="filter-btn" class="icon-btn" title="Filtre oluştur">
+                            <img src="icons/filter.svg" alt="" />
+                        </button>
+                    </div>
+                    <div class="toolbar-cluster">
+                        <button id="hide-axis-btn" class="icon-btn" title="Seçili satır/sütunu gizle">
+                            <img src="icons/eye-off.svg" alt="" />
+                        </button>
+                        <button id="show-axis-btn" class="icon-btn" title="Gizli satır/sütunları göster">
+                            <img src="icons/eye.svg" alt="" />
+                        </button>
+                    </div>
+                    <div class="toolbar-cluster">
                         <button id="border-btn" class="icon-btn" title="Kenarlıklar">
                             <img src="icons/border-menu.svg" alt="" />
                         </button>
                         <button id="merge-btn" class="icon-btn" title="Hücreleri birleştir">
                             <img src="icons/merge-cells.svg" alt="" />
+                        </button>
+                    </div>
+                    <div class="toolbar-cluster">
+                        <button id="currency-format-btn" class="icon-btn" title="Para biçimi">
+                            <img src="icons/format-currency.svg" alt="" />
+                        </button>
+                        <button id="percent-format-btn" class="icon-btn" title="Yüzde biçimi">
+                            <img src="icons/format-percent.svg" alt="" />
+                        </button>
+                        <button id="decimal-decrease-btn" class="icon-btn" title="Ondalık basamak sayısını azalt">
+                            <img src="icons/decimal-decrease.svg" alt="" />
+                        </button>
+                        <button id="decimal-increase-btn" class="icon-btn" title="Ondalık basamak sayısını arttır">
+                            <img src="icons/decimal-increase.svg" alt="" />
+                        </button>
+                        <button id="number-format-more-btn" class="icon-btn" title="Diğer biçimlendirmeler">
+                            <img src="icons/format-more.svg" alt="" />
                         </button>
                     </div>
                     <div class="toolbar-cluster">
@@ -489,6 +553,14 @@
             <img src="icons/delrow.svg" alt="" />
             <span>Satır sil</span>
         </button>
+        <button type="button" data-action="hide-row">
+            <img src="icons/eye-off.svg" alt="" />
+            <span>Satırı gizle</span>
+        </button>
+        <button type="button" data-action="show-rows">
+            <img src="icons/eye.svg" alt="" />
+            <span>Gizli satırları göster</span>
+        </button>
         <button type="button" data-action="insert-col-left">
             <img src="icons/addcolleft.svg" alt="" />
             <span>Sola sütun ekle</span>
@@ -496,6 +568,14 @@
         <button type="button" data-action="delete-col">
             <img src="icons/delcol.svg" alt="" />
             <span>Sütun sil</span>
+        </button>
+        <button type="button" data-action="hide-col">
+            <img src="icons/eye-off.svg" alt="" />
+            <span>Sütunu gizle</span>
+        </button>
+        <button type="button" data-action="show-cols">
+            <img src="icons/eye.svg" alt="" />
+            <span>Gizli sütunları göster</span>
         </button>
         <hr>
         <button type="button" data-action="add-sheet">
@@ -550,6 +630,25 @@
         <button type="button" data-border-action="clear" title="Kenarlıkları temizle">
             <img src="icons/border-clear.svg" alt="" />
         </button>
+    </div>
+
+    <div id="zoom-menu" class="zoom-menu" hidden>
+        <button type="button" data-zoom-value="50">50%</button>
+        <button type="button" data-zoom-value="75">75%</button>
+        <button type="button" data-zoom-value="90">90%</button>
+        <button type="button" data-zoom-value="100">100%</button>
+        <button type="button" data-zoom-value="125">125%</button>
+        <button type="button" data-zoom-value="150">150%</button>
+        <button type="button" data-zoom-value="200">200%</button>
+    </div>
+
+    <div id="filter-popup" class="filter-popup" hidden>
+        <div id="filter-popup-title" class="filter-popup-title">Filtre</div>
+        <input id="filter-popup-input" type="search" placeholder="Değer gir" autocomplete="off" />
+        <div class="filter-popup-actions">
+            <button id="filter-popup-clear-btn" type="button">Temizle</button>
+            <button id="filter-popup-apply-btn" type="button">Tamam</button>
+        </div>
     </div>
 
     <script src="vendor/chart.js"></script>
