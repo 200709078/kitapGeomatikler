@@ -172,6 +172,40 @@ body.toolbar-hidden #top-bar > .app-logo img {
   text-align: left;
 }
 
+.format-submenu-shell {
+  position: relative;
+}
+
+.format-submenu-shell > button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 28px;
+  text-align: left;
+}
+
+.format-submenu {
+  display: none;
+  top: -6px;
+  left: calc(100% - 2px);
+  min-width: 176px;
+}
+
+.format-submenu-shell:hover > .format-submenu,
+.format-submenu-shell:focus-within > .format-submenu {
+  display: block;
+}
+
+.format-submenu-shell > button:disabled + .format-submenu {
+  display: none !important;
+}
+
+.submenu-arrow {
+  margin-left: auto;
+  color: var(--muted);
+}
+
 .text-menu-popover span {
   white-space: nowrap;
 }
@@ -909,8 +943,8 @@ td.chart-y {
 
 #made-signature {
   position: fixed;
-  right: 44px;
-  bottom: 68px;
+  left: 44px;
+  bottom: 56px;
   z-index: 2000;
   color: #5f6368;
   font: italic 600 13px "Segoe Script", "Bradley Hand ITC", "Comic Sans MS", cursive;

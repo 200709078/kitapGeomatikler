@@ -1,4 +1,4 @@
-* {
+﻿* {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -174,8 +174,8 @@ body.webgl-error-page {
 
 #made-signature {
   position: fixed;
-  right: 44px;
-  bottom: 68px;
+  left: 44px;
+  bottom: 56px;
   z-index: 2000;
   color: #5f6368;
   font: italic 600 13px "Segoe Script", "Bradley Hand ITC", "Comic Sans MS", cursive;

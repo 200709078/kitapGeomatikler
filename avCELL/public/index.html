@@ -24,6 +24,10 @@
                     <div class="menu-shell">
                         <button id="file-menu-btn" type="button">Dosya</button>
                         <div id="file-menu" class="text-menu-popover" hidden>
+                            <button id="new-file-btn" type="button">
+                                <img src="icons/new.svg" alt="" />
+                                <span>Yeni</span>
+                            </button>
                             <button id="open-file-btn" type="button">
                                 <img src="icons/open.svg" alt="" />
                                 <span>Aç</span>
@@ -64,6 +68,32 @@
                                 <span>Yapıştır</span>
                             </button>
                             <hr>
+                            <div class="format-submenu-shell">
+                                <button id="menu-delete-btn" type="button">
+                                    <img src="icons/trash.svg" alt="" />
+                                    <span>Sil</span>
+                                    <span class="submenu-arrow" aria-hidden="true">›</span>
+                                </button>
+                                <div class="text-menu-popover format-submenu">
+                                    <button type="button" data-delete-action="row">
+                                        <img src="icons/delrow.svg" alt="" />
+                                        <span>Satır sil</span>
+                                    </button>
+                                    <button type="button" data-delete-action="column">
+                                        <img src="icons/delcol.svg" alt="" />
+                                        <span>Sütun sil</span>
+                                    </button>
+                                    <button type="button" data-delete-action="sheet">
+                                        <img src="icons/sheet-delete.svg" alt="" />
+                                        <span>Sayfa sil</span>
+                                    </button>
+                                    <button type="button" data-delete-action="clear">
+                                        <img src="icons/clear.svg" alt="" />
+                                        <span>Hücre temizle</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <hr>
                             <button id="menu-find-btn" type="button">
                                 <img src="icons/search.svg" alt="" />
                                 <span>Arama</span>
@@ -87,7 +117,50 @@
                             </button>
                         </div>
                     </div>
-                    <button type="button">Ekle</button>
+                    <div class="menu-shell">
+                        <button id="insert-menu-btn" type="button">Ekle</button>
+                        <div id="insert-menu" class="text-menu-popover" hidden>
+                            <div class="format-submenu-shell">
+                                <button id="menu-insert-rows-btn" type="button">
+                                    <img src="icons/rows.svg" alt="" />
+                                    <span>Satırlar</span>
+                                    <span class="submenu-arrow" aria-hidden="true">›</span>
+                                </button>
+                                <div class="text-menu-popover format-submenu">
+                                    <button type="button" data-insert-action="row-above">
+                                        <img src="icons/addrowup.svg" alt="" />
+                                        <span>Üste satır ekle</span>
+                                    </button>
+                                    <button type="button" data-insert-action="row-below">
+                                        <img src="icons/addrowdown.svg" alt="" />
+                                        <span>Alta satır ekle</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="format-submenu-shell">
+                                <button id="menu-insert-cols-btn" type="button">
+                                    <img src="icons/cols.svg" alt="" />
+                                    <span>Sütunlar</span>
+                                    <span class="submenu-arrow" aria-hidden="true">›</span>
+                                </button>
+                                <div class="text-menu-popover format-submenu">
+                                    <button type="button" data-insert-action="col-left">
+                                        <img src="icons/addcolleft.svg" alt="" />
+                                        <span>Sola sütun ekle</span>
+                                    </button>
+                                    <button type="button" data-insert-action="col-right">
+                                        <img src="icons/addcolright.svg" alt="" />
+                                        <span>Sağa sütun ekle</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <hr>
+                            <button id="menu-insert-sheet-btn" type="button" data-insert-action="sheet">
+                                <img src="icons/sheet-add.svg" alt="" />
+                                <span>Sayfa ekle</span>
+                            </button>
+                        </div>
+                    </div>
                     <div class="menu-shell">
                         <button id="format-menu-btn" type="button">Biçim</button>
                         <div id="format-menu" class="text-menu-popover" hidden>
@@ -102,6 +175,10 @@
                             <button id="menu-underline-btn" type="button">
                                 <img src="icons/text-underline.svg" alt="" />
                                 <span>Altı çizili</span>
+                            </button>
+                            <button id="menu-strikethrough-btn" type="button">
+                                <img src="icons/text-strikethrough.svg" alt="" />
+                                <span>Üstü çizili</span>
                             </button>
                             <hr>
                             <button id="menu-font-size-increase-btn" type="button">
@@ -121,39 +198,86 @@
                                 <span>Dolgu rengi</span>
                             </button>
                             <hr>
-                            <button id="menu-align-left-btn" type="button">
-                                <img src="icons/align-left.svg" alt="" />
-                                <span>Sola hizala</span>
-                            </button>
-                            <button id="menu-align-center-btn" type="button">
-                                <img src="icons/align-center.svg" alt="" />
-                                <span>Ortaya hizala</span>
-                            </button>
-                            <button id="menu-align-right-btn" type="button">
-                                <img src="icons/align-right.svg" alt="" />
-                                <span>Sağa hizala</span>
-                            </button>
-                            <button id="menu-align-justify-btn" type="button">
-                                <img src="icons/align-justify.svg" alt="" />
-                                <span>İki yana yasla</span>
-                            </button>
-                            <button id="menu-align-top-btn" type="button">
-                                <img src="icons/align-top.svg" alt="" />
-                                <span>Üste hizala</span>
-                            </button>
-                            <button id="menu-align-middle-btn" type="button">
-                                <img src="icons/align-middle.svg" alt="" />
-                                <span>Dikey ortala</span>
-                            </button>
-                            <button id="menu-align-bottom-btn" type="button">
-                                <img src="icons/align-bottom.svg" alt="" />
-                                <span>Alta hizala</span>
-                            </button>
+                            <div class="format-submenu-shell">
+                                <button id="menu-align-btn" type="button">
+                                    <img src="icons/align-left.svg" alt="" />
+                                    <span>Hizala</span>
+                                    <span class="submenu-arrow" aria-hidden="true">›</span>
+                                </button>
+                                <div class="text-menu-popover format-submenu">
+                                    <button type="button" data-format-action="align-left">
+                                        <img src="icons/align-left.svg" alt="" />
+                                        <span>Sola hizala</span>
+                                    </button>
+                                    <button type="button" data-format-action="align-center">
+                                        <img src="icons/align-center.svg" alt="" />
+                                        <span>Ortaya hizala</span>
+                                    </button>
+                                    <button type="button" data-format-action="align-right">
+                                        <img src="icons/align-right.svg" alt="" />
+                                        <span>Sağa hizala</span>
+                                    </button>
+                                    <button type="button" data-format-action="align-justify">
+                                        <img src="icons/align-justify.svg" alt="" />
+                                        <span>İki yana yasla</span>
+                                    </button>
+                                    <hr>
+                                    <button type="button" data-format-action="align-top">
+                                        <img src="icons/align-top.svg" alt="" />
+                                        <span>Üste hizala</span>
+                                    </button>
+                                    <button type="button" data-format-action="align-middle">
+                                        <img src="icons/align-middle.svg" alt="" />
+                                        <span>Dikey ortala</span>
+                                    </button>
+                                    <button type="button" data-format-action="align-bottom">
+                                        <img src="icons/align-bottom.svg" alt="" />
+                                        <span>Alta hizala</span>
+                                    </button>
+                                </div>
+                            </div>
                             <hr>
-                            <button id="menu-border-btn" type="button">
-                                <img src="icons/border-menu.svg" alt="" />
-                                <span>Kenarlıklar</span>
-                            </button>
+                            <div class="format-submenu-shell">
+                                <button id="menu-border-btn" type="button">
+                                    <img src="icons/border-menu.svg" alt="" />
+                                    <span>Kenarlıklar</span>
+                                    <span class="submenu-arrow" aria-hidden="true">›</span>
+                                </button>
+                                <div class="text-menu-popover format-submenu">
+                                    <button type="button" data-border-action="all">
+                                        <img src="icons/border-all.svg" alt="" />
+                                        <span>Tüm kenarlıklar</span>
+                                    </button>
+                                    <button type="button" data-border-action="outer">
+                                        <img src="icons/border-outer.svg" alt="" />
+                                        <span>Dış kenarlık</span>
+                                    </button>
+                                    <button type="button" data-border-action="inner">
+                                        <img src="icons/border-inner.svg" alt="" />
+                                        <span>İç kenarlık</span>
+                                    </button>
+                                    <button type="button" data-border-action="top">
+                                        <img src="icons/border-top.svg" alt="" />
+                                        <span>Üst kenarlık</span>
+                                    </button>
+                                    <button type="button" data-border-action="bottom">
+                                        <img src="icons/border-bottom.svg" alt="" />
+                                        <span>Alt kenarlık</span>
+                                    </button>
+                                    <button type="button" data-border-action="left">
+                                        <img src="icons/border-left.svg" alt="" />
+                                        <span>Sol kenarlık</span>
+                                    </button>
+                                    <button type="button" data-border-action="right">
+                                        <img src="icons/border-right.svg" alt="" />
+                                        <span>Sağ kenarlık</span>
+                                    </button>
+                                    <button type="button" data-border-action="clear">
+                                        <img src="icons/border-clear.svg" alt="" />
+                                        <span>Kenarlık yok</span>
+                                    </button>
+                                </div>
+                            </div>
                             <button id="menu-merge-btn" type="button">
                                 <img src="icons/merge-cells.svg" alt="" />
                                 <span>Hücreleri birleştir</span>
@@ -177,9 +301,12 @@
                         <button id="find-next-btn" class="icon-btn" type="button" title="Sonraki">
                             <span>›</span>
                         </button>
-                        <input id="replace-input" type="search" aria-label="Değiştir" placeholder="Değiştir" autocomplete="off" />
-                        <button id="replace-btn" class="find-text-btn" type="button" title="Geçerli sonucu değiştir">Değiştir</button>
-                        <button id="replace-all-btn" class="find-text-btn" type="button" title="Tüm sonuçları değiştir">Tümü</button>
+                        <input id="replace-input" type="search" aria-label="Değiştir" placeholder="Değiştir"
+                            autocomplete="off" />
+                        <button id="replace-btn" class="find-text-btn" type="button"
+                            title="Geçerli sonucu değiştir">Değiştir</button>
+                        <button id="replace-all-btn" class="find-text-btn" type="button"
+                            title="Tüm sonuçları değiştir">Tümü</button>
                         <button id="find-close-btn" class="icon-btn" type="button" title="Kapat">
                             <span>×</span>
                         </button>
@@ -199,7 +326,10 @@
                     </div>
                     <div class="toolbar-cluster">
                         <button id="add-row-btn" class="icon-btn" title="Üste Satır Ekle">
-                            <img src="icons/addrow.svg" alt="" />
+                            <img src="icons/addrowup.svg" alt="" />
+                        </button>
+                        <button id="add-row-down-btn" class="icon-btn" title="Alta Satır Ekle">
+                            <img src="icons/addrowdown.svg" alt="" />
                         </button>
                         <button id="remove-row-btn" class="icon-btn" title="Satır Sil">
                             <img src="icons/delrow.svg" alt="" />
@@ -208,6 +338,9 @@
                     <div class="toolbar-cluster">
                         <button id="add-col-btn" class="icon-btn" title="Sola Sütun Ekle">
                             <img src="icons/addcolleft.svg" alt="" />
+                        </button>
+                        <button id="add-col-right-btn" class="icon-btn" title="Sağa Sütun Ekle">
+                            <img src="icons/addcolright.svg" alt="" />
                         </button>
                         <button id="remove-col-btn" class="icon-btn" title="Sütun Sil">
                             <img src="icons/delcol.svg" alt="" />
@@ -230,6 +363,9 @@
                         </button>
                         <button id="underline-btn" class="icon-btn" title="Altı çizili">
                             <img src="icons/text-underline.svg" alt="" />
+                        </button>
+                        <button id="strikethrough-btn" class="icon-btn" title="Üstü çizili">
+                            <img src="icons/text-strikethrough.svg" alt="" />
                         </button>
                         <button id="font-size-decrease-btn" class="icon-btn" title="Yazı boyutunu azalt">
                             <img src="icons/text-size-decrease.svg" alt="" />
@@ -346,7 +482,7 @@
         </button>
         <hr>
         <button type="button" data-action="insert-row-above">
-            <img src="icons/addrow.svg" alt="" />
+            <img src="icons/addrowup.svg" alt="" />
             <span>Üste satır ekle</span>
         </button>
         <button type="button" data-action="delete-row">
@@ -416,7 +552,7 @@
         </button>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="vendor/chart.js"></script>
     <script src="app.js"></script>
 </body>
 

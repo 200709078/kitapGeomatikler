@@ -1,8 +1,10 @@
-//madematik konumunu değiştir.
+//ide yerelde çalışsın ve yeşil ok hep gözüksün.
 const table = document.getElementById("data-table");
 const addRowBtn = document.getElementById("add-row-btn");
+const addRowDownBtn = document.getElementById("add-row-down-btn");
 const removeRowBtn = document.getElementById("remove-row-btn");
 const addColBtn = document.getElementById("add-col-btn");
+const addColRightBtn = document.getElementById("add-col-right-btn");
 const removeColBtn = document.getElementById("remove-col-btn");
 const undoBtn = document.getElementById("undo-btn");
 const redoBtn = document.getElementById("redo-btn");
@@ -20,6 +22,7 @@ const replaceAllBtn = document.getElementById("replace-all-btn");
 const findCloseBtn = document.getElementById("find-close-btn");
 const fileMenuBtn = document.getElementById("file-menu-btn");
 const fileMenu = document.getElementById("file-menu");
+const newFileBtn = document.getElementById("new-file-btn");
 const openFileBtn = document.getElementById("open-file-btn");
 const openFileInput = document.getElementById("open-file-input");
 const saveFileBtn = document.getElementById("save-file-btn");
@@ -31,21 +34,28 @@ const menuRedoBtn = document.getElementById("menu-redo-btn");
 const menuCutBtn = document.getElementById("menu-cut-btn");
 const menuCopyBtn = document.getElementById("menu-copy-btn");
 const menuPasteBtn = document.getElementById("menu-paste-btn");
+const menuDeleteBtn = document.getElementById("menu-delete-btn");
 const menuFindBtn = document.getElementById("menu-find-btn");
 const viewMenuBtn = document.getElementById("view-menu-btn");
 const viewMenu = document.getElementById("view-menu");
 const menuViewToolbarBtn = document.getElementById("menu-view-toolbar-btn");
 const menuViewFormulaBtn = document.getElementById("menu-view-formula-btn");
 const menuViewGridlinesBtn = document.getElementById("menu-view-gridlines-btn");
+const insertMenuBtn = document.getElementById("insert-menu-btn");
+const insertMenu = document.getElementById("insert-menu");
+const menuInsertRowsBtn = document.getElementById("menu-insert-rows-btn");
+const menuInsertColsBtn = document.getElementById("menu-insert-cols-btn");
 const formatMenuBtn = document.getElementById("format-menu-btn");
 const formatMenu = document.getElementById("format-menu");
 const menuBoldBtn = document.getElementById("menu-bold-btn");
 const menuItalicBtn = document.getElementById("menu-italic-btn");
 const menuUnderlineBtn = document.getElementById("menu-underline-btn");
+const menuStrikethroughBtn = document.getElementById("menu-strikethrough-btn");
 const menuFontSizeIncreaseBtn = document.getElementById("menu-font-size-increase-btn");
 const menuFontSizeDecreaseBtn = document.getElementById("menu-font-size-decrease-btn");
 const menuTextColorBtn = document.getElementById("menu-text-color-btn");
 const menuFillColorBtn = document.getElementById("menu-fill-color-btn");
+const menuAlignBtn = document.getElementById("menu-align-btn");
 const menuAlignLeftBtn = document.getElementById("menu-align-left-btn");
 const menuAlignCenterBtn = document.getElementById("menu-align-center-btn");
 const menuAlignRightBtn = document.getElementById("menu-align-right-btn");
@@ -62,6 +72,7 @@ const mergeBtn = document.getElementById("merge-btn");
 const boldBtn = document.getElementById("bold-btn");
 const italicBtn = document.getElementById("italic-btn");
 const underlineBtn = document.getElementById("underline-btn");
+const strikethroughBtn = document.getElementById("strikethrough-btn");
 const fontSizeDecreaseBtn = document.getElementById("font-size-decrease-btn");
 const fontSizeIncreaseBtn = document.getElementById("font-size-increase-btn");
 const textColorBtn = document.getElementById("text-color-btn");
@@ -87,6 +98,7 @@ const MIN_FONT_SIZE = 8;
 const MAX_FONT_SIZE = 36;
 const SAVE_NAME_COUNTER_KEY = "avcell.nextSaveNumber";
 const VIEW_SETTINGS_KEY = "avcell.viewSettings";
+const AUTOSAVE_KEY = "avcell.autosaveWorkbook";
 const AVC_FILE_TYPE = {
     description: "avCELL dosyası",
     accept: { "application/json": [".avc"] }
@@ -141,6 +153,9 @@ let resizeState = null;
 let undoStack = [];
 let redoStack = [];
 let isRestoringHistory = false;
+let isAppInitialized = false;
+let isLoadingWorkbook = false;
+let autoSaveTimer = null;
 let isEditing = false;
 let editBackupValue = "";
 let formulaInputBackupValue = "";
@@ -241,26 +256,31 @@ function updateToolbarState() {
     const selectedRowCount = getSelectedRowIndexes().length;
     const selectedColCount = getSelectedColumnIndexes().length;
     const canUseSelection = Boolean(selectedCell) && !isEditing;
+    const canMergeSelection = hasMultiCellActiveRange() && !isEditing;
     const canDeleteRows = isRowSelection && rowCount - selectedRowCount >= MIN_ROW_SIZE;
     const canDeleteCols = isColumnSelection && colCount - selectedColCount >= MIN_COL_SIZE;
 
     addRowBtn.disabled = !isRowSelection;
+    addRowDownBtn.disabled = !isRowSelection;
     removeRowBtn.disabled = !canDeleteRows;
     addColBtn.disabled = !isColumnSelection;
+    addColRightBtn.disabled = !isColumnSelection;
     removeColBtn.disabled = !canDeleteCols;
     addRowBtn.title = isRowSelection ? `Üste ${selectedRowCount} satır ekle` : "Satır seç";
+    addRowDownBtn.title = isRowSelection ? `Alta ${selectedRowCount} satır ekle` : "Satır seç";
     removeRowBtn.title = isRowSelection ? `${selectedRowCount} satır sil` : "Satır seç";
     addColBtn.title = isColumnSelection ? `Sola ${selectedColCount} sütun ekle` : "Sütun seç";
+    addColRightBtn.title = isColumnSelection ? `Sağa ${selectedColCount} sütun ekle` : "Sütun seç";
     removeColBtn.title = isColumnSelection ? `${selectedColCount} sütun sil` : "Sütun seç";
     undoBtn.disabled = undoStack.length === 0;
     redoBtn.disabled = redoStack.length === 0;
 
     [
         borderBtn,
-        mergeBtn,
         boldBtn,
         italicBtn,
         underlineBtn,
+        strikethroughBtn,
         fontSizeDecreaseBtn,
         fontSizeIncreaseBtn,
         textColorBtn,
@@ -275,11 +295,13 @@ function updateToolbarState() {
     ].forEach((button) => {
         if (button) button.disabled = !canUseSelection;
     });
+    if (mergeBtn) mergeBtn.disabled = !canMergeSelection;
 
     const style = selectedCell ? getCellStyle(tableData[selectedCell.row]?.[selectedCell.col]) : createDefaultCellStyle();
     boldBtn?.classList.toggle("active", Boolean(style.bold));
     italicBtn?.classList.toggle("active", Boolean(style.italic));
     underlineBtn?.classList.toggle("active", Boolean(style.underline));
+    strikethroughBtn?.classList.toggle("active", Boolean(style.strikeThrough));
     alignLeftBtn?.classList.toggle("active", style.horizontalAlign === "left");
     alignCenterBtn?.classList.toggle("active", style.horizontalAlign === "center");
     alignRightBtn?.classList.toggle("active", style.horizontalAlign === "right");
@@ -290,16 +312,31 @@ function updateToolbarState() {
     if (textColorInput) textColorInput.value = normalizeColorValue(style.color, "#202124");
     if (fillColorInput) fillColorInput.value = normalizeColorValue(style.backgroundColor, "#fff2cc");
     updateEditMenuState();
+    updateInsertMenuState();
     updateFormatMenuState();
 }
 
 function updateEditMenuState() {
     const canUseSelection = Boolean(selectedCell) && !isEditing;
+    const selectedRowCount = getSelectedRowIndexes().length;
+    const selectedColCount = getSelectedColumnIndexes().length;
+    const canDeleteRows = selectionMode === "row" && selectedRowCount > 0 && rowCount - selectedRowCount >= MIN_ROW_SIZE && !isEditing;
+    const canDeleteCols = selectionMode === "column" && selectedColCount > 0 && colCount - selectedColCount >= MIN_COL_SIZE && !isEditing;
+    const canDeleteSheet = sheets.length > 1 && !isEditing;
+    const canClearCells = canUseSelection && hasClearableContent();
     if (menuUndoBtn) menuUndoBtn.disabled = undoStack.length === 0;
     if (menuRedoBtn) menuRedoBtn.disabled = redoStack.length === 0;
     if (menuCutBtn) menuCutBtn.disabled = !canUseSelection;
     if (menuCopyBtn) menuCopyBtn.disabled = !canUseSelection;
     if (menuPasteBtn) menuPasteBtn.disabled = !canUseSelection || !internalClipboard;
+    if (menuDeleteBtn) menuDeleteBtn.disabled = false;
+    editMenu?.querySelectorAll("[data-delete-action]").forEach((button) => {
+        const action = button.dataset.deleteAction;
+        if (action === "row") button.disabled = !canDeleteRows;
+        if (action === "column") button.disabled = !canDeleteCols;
+        if (action === "sheet") button.disabled = !canDeleteSheet;
+        if (action === "clear") button.disabled = !canClearCells;
+    });
 }
 
 function getDefaultViewSettings() {
@@ -355,14 +392,17 @@ function toggleViewSetting(key) {
 
 function updateFormatMenuState() {
     const canUseSelection = Boolean(selectedCell) && !isEditing;
+    const canMergeSelection = hasMultiCellActiveRange() && !isEditing;
     [
         menuBoldBtn,
         menuItalicBtn,
         menuUnderlineBtn,
+        menuStrikethroughBtn,
         menuFontSizeIncreaseBtn,
         menuFontSizeDecreaseBtn,
         menuTextColorBtn,
         menuFillColorBtn,
+        menuAlignBtn,
         menuAlignLeftBtn,
         menuAlignCenterBtn,
         menuAlignRightBtn,
@@ -370,10 +410,25 @@ function updateFormatMenuState() {
         menuAlignTopBtn,
         menuAlignMiddleBtn,
         menuAlignBottomBtn,
-        menuBorderBtn,
-        menuMergeBtn
+        menuBorderBtn
     ].forEach((button) => {
         if (button) button.disabled = !canUseSelection;
+    });
+    if (menuMergeBtn) menuMergeBtn.disabled = !canMergeSelection;
+}
+
+function updateInsertMenuState() {
+    const isRowSelection = selectionMode === "row" && getSelectedRowIndexes().length > 0 && !isEditing;
+    const isColumnSelection = selectionMode === "column" && getSelectedColumnIndexes().length > 0 && !isEditing;
+
+    if (menuInsertRowsBtn) menuInsertRowsBtn.disabled = !isRowSelection;
+    if (menuInsertColsBtn) menuInsertColsBtn.disabled = !isColumnSelection;
+
+    insertMenu?.querySelectorAll("[data-insert-action='row-above'], [data-insert-action='row-below']").forEach((button) => {
+        button.disabled = !isRowSelection;
+    });
+    insertMenu?.querySelectorAll("[data-insert-action='col-left'], [data-insert-action='col-right']").forEach((button) => {
+        button.disabled = !isColumnSelection;
     });
 }
 
@@ -404,6 +459,7 @@ function updateTextMenuActiveState() {
     fileMenuBtn?.classList.toggle("active", Boolean(fileMenu && !fileMenu.hidden));
     editMenuBtn?.classList.toggle("active", Boolean(editMenu && !editMenu.hidden));
     viewMenuBtn?.classList.toggle("active", Boolean(viewMenu && !viewMenu.hidden));
+    insertMenuBtn?.classList.toggle("active", Boolean(insertMenu && !insertMenu.hidden));
     formatMenuBtn?.classList.toggle("active", Boolean(formatMenu && !formatMenu.hidden));
 }
 
@@ -412,6 +468,7 @@ function hasOpenTextMenu() {
         (fileMenu && !fileMenu.hidden) ||
         (editMenu && !editMenu.hidden) ||
         (viewMenu && !viewMenu.hidden) ||
+        (insertMenu && !insertMenu.hidden) ||
         (formatMenu && !formatMenu.hidden)
     );
 }
@@ -420,6 +477,7 @@ function openTextMenu(menuName) {
     hideFileMenu();
     hideEditMenu();
     hideViewMenu();
+    hideInsertMenu();
     hideFormatMenu();
     hideContextMenu();
     hideBorderMenu();
@@ -432,6 +490,10 @@ function openTextMenu(menuName) {
     if (menuName === "view" && viewMenu) {
         updateViewMenuState();
         viewMenu.hidden = false;
+    }
+    if (menuName === "insert" && insertMenu) {
+        updateInsertMenuState();
+        insertMenu.hidden = false;
     }
     if (menuName === "format" && formatMenu) {
         updateFormatMenuState();
@@ -459,6 +521,13 @@ function hideViewMenu() {
     if (!viewMenu) return;
 
     viewMenu.hidden = true;
+    updateTextMenuActiveState();
+}
+
+function hideInsertMenu() {
+    if (!insertMenu) return;
+
+    insertMenu.hidden = true;
     updateTextMenuActiveState();
 }
 
@@ -572,6 +641,13 @@ function getActiveRange() {
         minCol: selectedCell.col,
         maxCol: selectedCell.col
     };
+}
+
+function hasMultiCellActiveRange() {
+    const range = getActiveRange();
+    if (!range) return false;
+
+    return range.minRow !== range.maxRow || range.minCol !== range.maxCol;
 }
 
 function getActiveRanges() {
@@ -1569,6 +1645,7 @@ function createDefaultCellStyle() {
         bold: false,
         italic: false,
         underline: false,
+        strikeThrough: false,
         fontSize: DEFAULT_FONT_SIZE,
         color: "#202124",
         backgroundColor: "",
@@ -1592,6 +1669,7 @@ function hasNonDefaultStyle(cell) {
         style.bold !== defaults.bold ||
         style.italic !== defaults.italic ||
         style.underline !== defaults.underline ||
+        style.strikeThrough !== defaults.strikeThrough ||
         (Number(style.fontSize) || DEFAULT_FONT_SIZE) !== defaults.fontSize ||
         style.color !== defaults.color ||
         style.backgroundColor !== defaults.backgroundColor ||
@@ -1764,10 +1842,24 @@ function insertRowsAboveSelection() {
     insertRowsAt(targetIndex, count);
 }
 
+function insertRowsBelowSelection() {
+    const rows = getSelectedRowIndexes();
+    const count = rows.length || 1;
+    const targetIndex = rows.length ? Math.max(...rows) + 1 : (contextMenuTarget?.row ?? selectedCell?.row ?? 0) + 1;
+    insertRowsAt(targetIndex, count);
+}
+
 function insertColsLeftOfSelection() {
     const cols = getSelectedColumnIndexes();
     const count = cols.length || 1;
     const targetIndex = cols.length ? Math.min(...cols) : contextMenuTarget?.col ?? selectedCell?.col ?? 0;
+    insertColsAt(targetIndex, count);
+}
+
+function insertColsRightOfSelection() {
+    const cols = getSelectedColumnIndexes();
+    const count = cols.length || 1;
+    const targetIndex = cols.length ? Math.max(...cols) + 1 : (contextMenuTarget?.col ?? selectedCell?.col ?? 0) + 1;
     insertColsAt(targetIndex, count);
 }
 
@@ -2548,6 +2640,45 @@ function clearCurrentWorkbookFile() {
     document.title = "avCELL";
 }
 
+function createNewWorkbook() {
+    if (!confirm("Mevcut çalışma temizlenip boş bir avCELL dosyası oluşturulsun mu?")) {
+        return false;
+    }
+
+    isLoadingWorkbook = true;
+    rowCount = 100;
+    colCount = 26;
+    selectedCell = { row: 0, col: 0 };
+    selectionRange = null;
+    selectionMode = "cell";
+    extraSelections = [];
+    internalClipboard = null;
+    copiedRange = null;
+    clipboardMode = null;
+    contextMenuTarget = null;
+    findResults = [];
+    findResultIndex = -1;
+    activeSheetIndex = 0;
+    renamingSheetIndex = null;
+    undoStack = [];
+    redoStack = [];
+    isEditing = false;
+    editBackupValue = "";
+    formulaInputBackupValue = "";
+    clearCurrentWorkbookFile();
+    localStorage.removeItem(AUTOSAVE_KEY);
+
+    initData();
+    sheets = [createSheetState("Sayfa1")];
+    applySheetState(sheets[activeSheetIndex]);
+    renderSheetTabs();
+    renderTable();
+    focusSelectedCell();
+    isLoadingWorkbook = false;
+    saveAutoSavedWorkbook();
+    return true;
+}
+
 function getCurrentSaveBaseName() {
     return currentWorkbookFileName
         ? getFileBaseName(currentWorkbookFileName)
@@ -2571,6 +2702,39 @@ function createSavePayload() {
             rowHeights: [...sheet.rowHeights]
         }))
     };
+}
+
+function saveAutoSavedWorkbook() {
+    if (!isAppInitialized || isLoadingWorkbook) return;
+
+    try {
+        localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(createSavePayload()));
+    } catch {
+        // localStorage doluysa sessiz geç; normal dosyaya kaydetme çalışmaya devam eder.
+    }
+}
+
+function scheduleAutoSave() {
+    if (!isAppInitialized || isLoadingWorkbook) return;
+
+    window.clearTimeout(autoSaveTimer);
+    autoSaveTimer = window.setTimeout(saveAutoSavedWorkbook, 250);
+}
+
+function loadAutoSavedWorkbook() {
+    const storedPayload = localStorage.getItem(AUTOSAVE_KEY);
+    if (!storedPayload) return false;
+
+    try {
+        isLoadingWorkbook = true;
+        loadWorkbookPayload(JSON.parse(storedPayload));
+        return true;
+    } catch {
+        localStorage.removeItem(AUTOSAVE_KEY);
+        return false;
+    } finally {
+        isLoadingWorkbook = false;
+    }
 }
 
 function normalizeImportedCell(cell) {
@@ -2651,6 +2815,7 @@ function loadWorkbookPayload(payload) {
     renderSheetTabs();
     renderTable();
     focusSelectedCell();
+    scheduleAutoSave();
 }
 
 async function openWorkbookFile(file, handle = null) {
@@ -3566,7 +3731,10 @@ function renderTable() {
             const cellStyle = getCellStyle(tableData[r][c]);
             td.style.fontWeight = cellStyle.bold ? "700" : "400";
             td.style.fontStyle = cellStyle.italic ? "italic" : "normal";
-            td.style.textDecoration = cellStyle.underline ? "underline" : "none";
+            const textDecorations = [];
+            if (cellStyle.underline) textDecorations.push("underline");
+            if (cellStyle.strikeThrough) textDecorations.push("line-through");
+            td.style.textDecoration = textDecorations.length ? textDecorations.join(" ") : "none";
             td.style.fontSize = `${Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, Number(cellStyle.fontSize) || DEFAULT_FONT_SIZE))}px`;
             td.style.color = normalizeColorValue(cellStyle.color, "#202124");
             td.style.textAlign = cellStyle.horizontalAlign;
@@ -3783,6 +3951,7 @@ function renderTable() {
     updateToolbarState();
     updateStatusSummary();
     enforceChartVisibility();
+    scheduleAutoSave();
 }
 // === EVENTS ===
 undoBtn.addEventListener("click", undo);
@@ -3794,6 +3963,7 @@ fileMenuBtn?.addEventListener("click", (e) => {
     hideBorderMenu();
     hideEditMenu();
     hideViewMenu();
+    hideInsertMenu();
     hideFormatMenu();
     if (fileMenu) {
         fileMenu.hidden = !fileMenu.hidden;
@@ -3814,6 +3984,11 @@ openFileBtn?.addEventListener("click", async () => {
             alert(error?.message || "Dosya açılamadı.");
         }
     }
+});
+
+newFileBtn?.addEventListener("click", () => {
+    hideFileMenu();
+    createNewWorkbook();
 });
 
 openFileInput?.addEventListener("change", async () => {
@@ -3843,6 +4018,7 @@ editMenuBtn?.addEventListener("click", (e) => {
     hideBorderMenu();
     hideFileMenu();
     hideViewMenu();
+    hideInsertMenu();
     hideFormatMenu();
     updateEditMenuState();
     if (editMenu) {
@@ -3885,12 +4061,26 @@ menuFindBtn?.addEventListener("click", () => {
     openFindPanel();
 });
 
+editMenu?.addEventListener("click", (e) => {
+    const button = e.target.closest("[data-delete-action]");
+    if (!button || button.disabled) return;
+
+    e.stopPropagation();
+    hideEditMenu();
+
+    if (button.dataset.deleteAction === "row") deleteSelectedRows();
+    if (button.dataset.deleteAction === "column") deleteSelectedColumns();
+    if (button.dataset.deleteAction === "sheet") deleteActiveSheet();
+    if (button.dataset.deleteAction === "clear") clearSelection();
+});
+
 viewMenuBtn?.addEventListener("click", (e) => {
     e.stopPropagation();
     hideContextMenu();
     hideBorderMenu();
     hideFileMenu();
     hideEditMenu();
+    hideInsertMenu();
     hideFormatMenu();
     updateViewMenuState();
     if (viewMenu) {
@@ -3925,6 +4115,7 @@ formatMenuBtn?.addEventListener("click", (e) => {
     hideFileMenu();
     hideEditMenu();
     hideViewMenu();
+    hideInsertMenu();
     updateFormatMenuState();
     if (formatMenu) {
         formatMenu.hidden = !formatMenu.hidden;
@@ -3936,6 +4127,41 @@ formatMenuBtn?.addEventListener("mouseenter", () => {
     if (hasOpenTextMenu()) openTextMenu("format");
 });
 
+insertMenuBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const wasOpen = Boolean(insertMenu && !insertMenu.hidden);
+    hideContextMenu();
+    hideBorderMenu();
+    hideFileMenu();
+    hideEditMenu();
+    hideViewMenu();
+    hideInsertMenu();
+    hideFormatMenu();
+    updateInsertMenuState();
+    if (insertMenu) {
+        insertMenu.hidden = wasOpen;
+        updateTextMenuActiveState();
+    }
+});
+
+insertMenuBtn?.addEventListener("mouseenter", () => {
+    if (hasOpenTextMenu()) openTextMenu("insert");
+});
+
+insertMenu?.addEventListener("click", (e) => {
+    const button = e.target.closest("[data-insert-action]");
+    if (!button || button.disabled) return;
+
+    e.stopPropagation();
+    hideInsertMenu();
+
+    if (button.dataset.insertAction === "row-above") insertRowsAboveSelection();
+    if (button.dataset.insertAction === "row-below") insertRowsBelowSelection();
+    if (button.dataset.insertAction === "col-left") insertColsLeftOfSelection();
+    if (button.dataset.insertAction === "col-right") insertColsRightOfSelection();
+    if (button.dataset.insertAction === "sheet") addSheet();
+});
+
 document.querySelectorAll(".text-menu > button").forEach((button) => {
     button.addEventListener("mouseenter", () => {
         if (!hasOpenTextMenu()) return;
@@ -3943,6 +4169,7 @@ document.querySelectorAll(".text-menu > button").forEach((button) => {
         hideFileMenu();
         hideEditMenu();
         hideViewMenu();
+        hideInsertMenu();
         hideFormatMenu();
     });
 });
@@ -3957,6 +4184,7 @@ function runFormatMenuAction(action) {
     if (action === "bold") toggleStyleProperty("bold");
     if (action === "italic") toggleStyleProperty("italic");
     if (action === "underline") toggleStyleProperty("underline");
+    if (action === "strikethrough") toggleStyleProperty("strikeThrough");
     if (action === "font-size-increase") changeFontSize(1);
     if (action === "font-size-decrease") changeFontSize(-1);
     if (action === "text-color") textColorInput?.click();
@@ -3974,6 +4202,7 @@ function runFormatMenuAction(action) {
 menuBoldBtn?.addEventListener("click", () => runFormatMenuAction("bold"));
 menuItalicBtn?.addEventListener("click", () => runFormatMenuAction("italic"));
 menuUnderlineBtn?.addEventListener("click", () => runFormatMenuAction("underline"));
+menuStrikethroughBtn?.addEventListener("click", () => runFormatMenuAction("strikethrough"));
 menuFontSizeIncreaseBtn?.addEventListener("click", () => runFormatMenuAction("font-size-increase"));
 menuFontSizeDecreaseBtn?.addEventListener("click", () => runFormatMenuAction("font-size-decrease"));
 menuTextColorBtn?.addEventListener("click", () => runFormatMenuAction("text-color"));
@@ -3988,9 +4217,25 @@ menuAlignBottomBtn?.addEventListener("click", () => runFormatMenuAction("align-b
 menuMergeBtn?.addEventListener("click", () => runFormatMenuAction("merge"));
 menuBorderBtn?.addEventListener("click", (e) => {
     e.stopPropagation();
-    hideContextMenu();
-    showBorderMenu(menuBorderBtn);
-    hideFormatMenu();
+    e.preventDefault();
+});
+
+formatMenu?.addEventListener("click", (e) => {
+    const formatButton = e.target.closest("[data-format-action]");
+    if (formatButton && !formatButton.disabled) {
+        e.stopPropagation();
+        runFormatMenuAction(formatButton.dataset.formatAction);
+        return;
+    }
+
+    const borderButton = e.target.closest("[data-border-action]");
+    if (borderButton && !borderButton.disabled) {
+        e.stopPropagation();
+        hideFormatMenu();
+        hideContextMenu();
+        hideBorderMenu();
+        applyBorderToSelection(borderButton.dataset.borderAction);
+    }
 });
 
 borderBtn?.addEventListener("click", (e) => {
@@ -4038,6 +4283,12 @@ underlineBtn?.addEventListener("click", () => {
     hideContextMenu();
     hideBorderMenu();
     toggleStyleProperty("underline");
+});
+
+strikethroughBtn?.addEventListener("click", () => {
+    hideContextMenu();
+    hideBorderMenu();
+    toggleStyleProperty("strikeThrough");
 });
 
 fontSizeDecreaseBtn?.addEventListener("click", () => {
@@ -4180,6 +4431,10 @@ addRowBtn.addEventListener("click", () => {
     if (addRowBtn.disabled) return;
     insertRowsAboveSelection();
 });
+addRowDownBtn.addEventListener("click", () => {
+    if (addRowDownBtn.disabled) return;
+    insertRowsBelowSelection();
+});
 removeRowBtn.addEventListener("click", () => {
     if (removeRowBtn.disabled) return;
     deleteSelectedRows();
@@ -4187,6 +4442,10 @@ removeRowBtn.addEventListener("click", () => {
 addColBtn.addEventListener("click", () => {
     if (addColBtn.disabled) return;
     insertColsLeftOfSelection();
+});
+addColRightBtn.addEventListener("click", () => {
+    if (addColRightBtn.disabled) return;
+    insertColsRightOfSelection();
 });
 removeColBtn.addEventListener("click", () => {
     if (removeColBtn.disabled) return;
@@ -4698,6 +4957,9 @@ window.addEventListener("click", (e) => {
     if (viewMenu && !viewMenu.contains(e.target) && !viewMenuBtn?.contains(e.target)) {
         hideViewMenu();
     }
+    if (insertMenu && !insertMenu.contains(e.target) && !insertMenuBtn?.contains(e.target)) {
+        hideInsertMenu();
+    }
     if (formatMenu && !formatMenu.contains(e.target) && !formatMenuBtn?.contains(e.target)) {
         hideFormatMenu();
     }
@@ -4725,7 +4987,16 @@ window.addEventListener("scroll", hideBorderMenu, true);
 window.addEventListener("scroll", hideFileMenu, true);
 window.addEventListener("scroll", hideEditMenu, true);
 window.addEventListener("scroll", hideViewMenu, true);
+window.addEventListener("scroll", hideInsertMenu, true);
 window.addEventListener("scroll", hideFormatMenu, true);
+
+window.addEventListener("beforeunload", () => {
+    if (isEditing) {
+        exitEditMode(true);
+    }
+    window.clearTimeout(autoSaveTimer);
+    saveAutoSavedWorkbook();
+});
 
 contextMenu?.addEventListener("click", (e) => {
     e.stopPropagation();
@@ -4783,6 +5054,7 @@ window.addEventListener("keydown", (e) => {
         hideFileMenu();
         hideEditMenu();
         hideViewMenu();
+        hideInsertMenu();
         hideFormatMenu();
         if (!isEditing && clearClipboardState(true)) {
             e.preventDefault();
@@ -4947,10 +5219,14 @@ window.addEventListener("keydown", (e) => {
 });
 // INIT
 applyViewSettings();
-initData();
-sheets = [createSheetState("Sayfa1")];
-renderSheetTabs();
-renderTable();
+if (!loadAutoSavedWorkbook()) {
+    initData();
+    sheets = [createSheetState("Sayfa1")];
+    renderSheetTabs();
+    renderTable();
+}
+isAppInitialized = true;
+scheduleAutoSave();
 
 //DRAW CHART
 function getChartDataFromRange(range) {

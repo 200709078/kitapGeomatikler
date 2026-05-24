@@ -34,6 +34,10 @@
       <file href="renderer/css/styles.css" />
       <file href="renderer/css/toolbar.css" />
 
+      <file href="renderer/vendor/math.js" />
+      <file href="renderer/vendor/math.js.LICENSE.txt" />
+      <file href="renderer/vendor/math.js.map" />
+
       <file href="renderer/img/acordeon.svg" />
       <file href="renderer/img/angle.svg" />
       <file href="renderer/img/arcmeasure.svg" />
