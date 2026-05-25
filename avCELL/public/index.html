@@ -163,6 +163,11 @@
                                 </div>
                             </div>
                             <hr>
+                            <button id="menu-insert-chart-btn" type="button" data-insert-action="chart">
+                                <img src="icons/addgraph.svg" alt="" />
+                                <span>Grafik</span>
+                            </button>
+                            <hr>
                             <button id="menu-insert-sheet-btn" type="button" data-insert-action="sheet">
                                 <img src="icons/sheet-add.svg" alt="" />
                                 <span>Sayfa ekle</span>
@@ -310,8 +315,6 @@
                             </button>
                         </div>
                     </div>
-                    <button type="button">Araçlar</button>
-                    <button type="button">Yardım</button>
                 </nav>
                 <div class="find-menu-cluster">
                     <button id="find-toggle-btn" class="icon-btn" title="Arama (Ctrl+F)">
@@ -375,6 +378,11 @@
                         </button>
                     </div>
                     <div class="toolbar-cluster">
+                        <button id="insert-chart-btn" class="icon-btn" title="Grafik ekle">
+                            <img src="icons/addgraph.svg" alt="" />
+                        </button>
+                    </div>
+                    <div class="toolbar-cluster">
                         <button id="sort-asc-btn" class="icon-btn" title="A-Z Sırala">
                             <img src="icons/sort-asc.svg" alt="" />
                         </button>
@@ -402,10 +410,10 @@
                         </button>
                     </div>
                     <div class="toolbar-cluster">
-                        <button id="currency-format-btn" class="icon-btn" title="Para biçimi">
+                        <button id="currency-format-btn" class="icon-btn" title="Para Birimi">
                             <img src="icons/format-currency.svg" alt="" />
                         </button>
-                        <button id="percent-format-btn" class="icon-btn" title="Yüzde biçimi">
+                        <button id="percent-format-btn" class="icon-btn" title="Yüzde">
                             <img src="icons/format-percent.svg" alt="" />
                         </button>
                         <button id="decimal-decrease-btn" class="icon-btn" title="Ondalık basamak sayısını azalt">
@@ -414,7 +422,7 @@
                         <button id="decimal-increase-btn" class="icon-btn" title="Ondalık basamak sayısını arttır">
                             <img src="icons/decimal-increase.svg" alt="" />
                         </button>
-                        <button id="number-format-more-btn" class="icon-btn" title="Diğer biçimlendirmeler">
+                        <button id="number-format-more-btn" class="icon-btn" title="Diğer Biçimlendirmeler">
                             <img src="icons/format-more.svg" alt="" />
                         </button>
                     </div>
@@ -487,7 +495,71 @@
 
         <!-- TABLE AREA -->
         <section id="table-area">
-            <table id="data-table"></table>
+            <div id="sheet-scroll">
+                <table id="data-table"></table>
+                <div id="chart-windows"></div>
+            </div>
+            <aside id="chart-settings-panel" class="chart-settings-panel" hidden>
+                <div id="chart-settings-titlebar" class="chart-titlebar">
+                    <span id="chart-settings-title" class="chart-window-title">Grafik Ayarlar</span>
+                    <div class="chart-window-actions">
+                        <button id="chart-settings-close-btn" type="button" title="Kapat">×</button>
+                    </div>
+                </div>
+                <div class="chart-settings-body">
+                    <label class="chart-settings-field">
+                        <span>Grafik Başlığı</span>
+                        <input id="chart-settings-title-input" type="text" placeholder="Grafik başlığı" />
+                    </label>
+                    <div class="chart-settings-field">
+                        <span>Grafik Türü</span>
+                        <div id="chart-settings-type" class="chart-type-combobox">
+                            <button id="chart-settings-type-btn" class="chart-type-selected" type="button" aria-haspopup="listbox" aria-expanded="false">
+                                <img src="icons/addgraph.svg" alt="" />
+                                <span>Sütun</span>
+                            </button>
+                            <div id="chart-settings-type-menu" class="chart-type-menu" role="listbox" hidden>
+                                <button type="button" role="option" data-chart-type="bar">
+                                    <img src="icons/addgraph.svg" alt="" />
+                                    <span>Sütun</span>
+                                </button>
+                                <button type="button" role="option" data-chart-type="line">
+                                    <img src="icons/chart-line.svg" alt="" />
+                                    <span>Çizgi</span>
+                                </button>
+                                <button type="button" role="option" data-chart-type="pie">
+                                    <img src="icons/chart-pie.svg" alt="" />
+                                    <span>Pasta</span>
+                                </button>
+                                <button type="button" role="option" data-chart-type="horizontalBar">
+                                    <img src="icons/chart-bar-horizontal.svg" alt="" />
+                                    <span>Yatay Çubuk</span>
+                                </button>
+                                <button type="button" role="option" data-chart-type="area">
+                                    <img src="icons/chart-area.svg" alt="" />
+                                    <span>Alan</span>
+                                </button>
+                                <button type="button" role="option" data-chart-type="doughnut">
+                                    <img src="icons/chart-doughnut.svg" alt="" />
+                                    <span>Halka</span>
+                                </button>
+                                <button type="button" role="option" data-chart-type="radar">
+                                    <img src="icons/chart-radar.svg" alt="" />
+                                    <span>Radar</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <label class="chart-settings-field">
+                        <span>Etiket Alanı</span>
+                        <input id="chart-settings-label-range" type="text" placeholder="A1:A5" />
+                    </label>
+                    <label class="chart-settings-field">
+                        <span>Veri Alanı</span>
+                        <input id="chart-settings-value-range" type="text" placeholder="B1:B5" />
+                    </label>
+                </div>
+            </aside>
         </section>
 
         <section id="sheet-tabs">
@@ -500,36 +572,6 @@
     </main>
 
     <input id="open-file-input" class="hidden-file-input" type="file" accept=".avc,application/json" />
-
-    <!-- CHART INPUT PANEL: hidden for now, kept for later -->
-    <section id="chart-inputs" class="future-chart-panel" hidden>
-        <input id="chart-x-range" placeholder="Başlıklar (X): A1:A5" />
-        <input id="chart-y-range" placeholder="Veriler (Y): B1:B5" />
-        <button id="draw-chart-btn" type="button" title="Grafik Çiz">
-            <img src="icons/addgraph.svg" alt="" />
-        </button>
-        <button id="clear-chart-btn" type="button" title="Temizle">
-            <img src="icons/clear.svg" alt="" />
-        </button>
-    </section>
-
-    <!-- CHART TYPE SELECTION: hidden for now, kept for later -->
-    <section id="chart-type" class="future-chart-panel" hidden>
-        <label>
-            <input type="radio" name="chartType" value="bar" checked />Sütun
-        </label>
-        <label>
-            <input type="radio" name="chartType" value="pie" />Pasta
-        </label>
-        <label>
-            <input type="radio" name="chartType" value="line" />Doğru
-        </label>
-    </section>
-
-    <!-- CHART AREA: hidden for now, kept for later -->
-    <section id="chart-area" class="future-chart-panel" hidden>
-        <canvas id="chartCanvas"></canvas>
-    </section>
 
     <div id="context-menu" hidden>
         <button type="button" data-action="cut">
@@ -629,6 +671,28 @@
         </button>
         <button type="button" data-border-action="clear" title="Kenarlıkları temizle">
             <img src="icons/border-clear.svg" alt="" />
+        </button>
+    </div>
+
+    <div id="number-format-menu" class="number-format-menu" hidden>
+        <button type="button" data-number-format="automatic">
+            <span class="menu-check" aria-hidden="true">✓</span>
+            <span>Düz Metin</span>
+        </button>
+        <button type="button" data-number-format="number">
+            <span class="menu-check" aria-hidden="true">✓</span>
+            <span>Sayı</span>
+            <span class="number-format-example">123.00</span>
+        </button>
+        <button type="button" data-number-format="date">
+            <span class="menu-check" aria-hidden="true">✓</span>
+            <span>Tarih</span>
+            <span class="number-format-example">01.01.1900</span>
+        </button>
+        <button type="button" data-number-format="time">
+            <span class="menu-check" aria-hidden="true">✓</span>
+            <span>Saat</span>
+            <span class="number-format-example">19:59:00</span>
         </button>
     </div>
 
