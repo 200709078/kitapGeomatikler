@@ -1,3 +1,5 @@
+// Yazı rengi beyazda sorun var.
+// Hücre seçilince renk paletleri kapansın.
 const table = document.getElementById("data-table");
 const addRowBtn = document.getElementById("add-row-btn");
 const addRowDownBtn = document.getElementById("add-row-down-btn");
@@ -116,6 +118,8 @@ const chartSettingsTypeBtn = document.getElementById("chart-settings-type-btn");
 const chartSettingsTypeMenu = document.getElementById("chart-settings-type-menu");
 const chartSettingsLabelRangeInput = document.getElementById("chart-settings-label-range");
 const chartSettingsValueRangeInput = document.getElementById("chart-settings-value-range");
+const chartSettingsGridlinesInput = document.getElementById("chart-settings-gridlines");
+const chartSettingsGridlinesField = chartSettingsGridlinesInput?.closest(".chart-settings-check");
 const filterPopup = document.getElementById("filter-popup");
 const filterPopupTitle = document.getElementById("filter-popup-title");
 const filterPopupInput = document.getElementById("filter-popup-input");
@@ -207,6 +211,14 @@ let chartZIndex = 20;
 let chartDragState = null;
 let chartResizeState = null;
 const MAX_HISTORY_SIZE = 60;
+const CHART_TYPES = ["bar", "line", "pie", "horizontalBar", "area", "doughnut", "radar"];
+const COLOR_PALETTE = [
+    "#000000", "#434343", "#666666", "#999999", "#cccccc", "#ffffff",
+    "#d93025", "#f4511e", "#fbbc04", "#34a853", "#0f9d58", "#00acc1",
+    "#1a73e8", "#3f51b5", "#673ab7", "#9c27b0", "#e91e63", "#795548",
+    "#f4cccc", "#fce5cd", "#fff2cc", "#d9ead3", "#d0e0e3", "#cfe2f3",
+    "#c9daf8", "#d9d2e9", "#ead1dc", "#efefef", "#b7b7b7", "#202124"
+];
 
 
 function normalizeSelectedCell() {
@@ -516,12 +528,43 @@ function updateToolbarState() {
     alignTopBtn?.classList.toggle("active", style.verticalAlign === "top");
     alignMiddleBtn?.classList.toggle("active", style.verticalAlign === "middle");
     alignBottomBtn?.classList.toggle("active", style.verticalAlign === "bottom");
-    if (textColorInput) textColorInput.value = normalizeColorValue(style.color, "#202124");
-    if (fillColorInput) fillColorInput.value = normalizeColorValue(style.backgroundColor, "#fff2cc");
+    const activeTextColor = normalizeColorValue(style.color, "#202124");
+    if (textColorInput) textColorInput.value = activeTextColor;
+    updateTextColorIndicator(activeTextColor);
+    const activeFillColor = normalizeColorValue(style.backgroundColor, "#fff2cc");
+    if (fillColorInput) fillColorInput.value = activeFillColor;
+    updateFillColorIndicator(activeFillColor);
     updateEditMenuState();
     updateInsertMenuState();
     updateDataMenuState();
     updateFormatMenuState();
+}
+
+function updateTextColorIndicator(color) {
+    const normalizedColor = normalizeColorValue(color, "#202124");
+    const isLightColor = isLightHexColor(normalizedColor);
+    [textColorBtn, menuTextColorBtn].forEach((button) => {
+        button?.style.setProperty("--text-color-indicator", normalizedColor);
+        button?.querySelector(".text-color-icon-shell")?.classList.toggle("light-color", isLightColor);
+    });
+}
+
+function isLightHexColor(color) {
+    const match = String(color || "").match(/^#([0-9a-f]{6})$/i);
+    if (!match) return false;
+
+    const value = match[1];
+    const r = parseInt(value.slice(0, 2), 16);
+    const g = parseInt(value.slice(2, 4), 16);
+    const b = parseInt(value.slice(4, 6), 16);
+    return ((r * 299 + g * 587 + b * 114) / 1000) > 210;
+}
+
+function updateFillColorIndicator(color) {
+    const normalizedColor = normalizeColorValue(color, "#fff2cc");
+    [fillColorBtn, menuFillColorBtn].forEach((button) => {
+        button?.style.setProperty("--fill-color-indicator", normalizedColor);
+    });
 }
 
 function updateEditMenuState() {
@@ -741,6 +784,12 @@ function hideBorderMenu() {
     borderMenu.hidden = true;
 }
 
+function hideColorPaletteMenus() {
+    document.querySelectorAll(".color-palette-menu").forEach((menu) => {
+        menu.hidden = true;
+    });
+}
+
 function hideZoomMenu() {
     if (!zoomMenu) return;
 
@@ -798,6 +847,7 @@ function openTextMenu(menuName) {
     hideNumberFormatMenu();
     hideContextMenu();
     hideBorderMenu();
+    hideColorPaletteMenus();
 
     if (menuName === "file" && fileMenu) fileMenu.hidden = false;
     if (menuName === "edit" && editMenu) {
@@ -904,6 +954,74 @@ function showNumberFormatMenu() {
 
     numberFormatMenu.style.left = `${Math.max(8, left)}px`;
     numberFormatMenu.style.top = `${Math.max(8, top)}px`;
+}
+
+function createColorPaletteMenu(id, applyColor, resetLabel) {
+    const menu = document.createElement("div");
+    menu.id = id;
+    menu.className = "toolbar-menu color-palette-menu";
+    menu.hidden = true;
+
+    const resetButton = document.createElement("button");
+    resetButton.type = "button";
+    resetButton.className = "color-reset-btn";
+    resetButton.dataset.colorReset = "true";
+    resetButton.title = resetLabel;
+    resetButton.setAttribute("aria-label", resetLabel);
+    resetButton.innerHTML = `<span></span>`;
+    menu.appendChild(resetButton);
+
+    COLOR_PALETTE.forEach((color) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.dataset.color = color;
+        button.title = color;
+        button.style.backgroundColor = color;
+        button.setAttribute("aria-label", color);
+        menu.appendChild(button);
+    });
+
+    menu.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const button = e.target.closest("[data-color], [data-color-reset]");
+        if (!button) return;
+
+        applyColor(button.dataset.colorReset ? "" : button.dataset.color);
+    });
+
+    menu.addEventListener("dblclick", (e) => {
+        e.stopPropagation();
+        const button = e.target.closest("[data-color], [data-color-reset]");
+        if (!button) return;
+
+        applyColor(button.dataset.colorReset ? "" : button.dataset.color);
+        menu.hidden = true;
+    });
+
+    document.body.appendChild(menu);
+    return menu;
+}
+
+const textColorPaletteMenu = createColorPaletteMenu("text-color-palette-menu", setTextColor, "Otomatik");
+const fillColorPaletteMenu = createColorPaletteMenu("fill-color-palette-menu", setFillColor, "Dolgu yok");
+
+function showColorPaletteMenu(menu, anchor) {
+    if (!menu || !anchor) return;
+
+    hideColorPaletteMenus();
+    hideBorderMenu();
+    hideZoomMenu();
+    hideNumberFormatMenu();
+    hideFilterPopup();
+
+    const buttonRect = anchor.getBoundingClientRect();
+    menu.hidden = false;
+    const menuRect = menu.getBoundingClientRect();
+    const left = Math.min(buttonRect.left, window.innerWidth - menuRect.width - 8);
+    const top = Math.min(buttonRect.bottom + 4, window.innerHeight - menuRect.height - 8);
+
+    menu.style.left = `${Math.max(8, left)}px`;
+    menu.style.top = `${Math.max(8, top)}px`;
 }
 
 function clearClipboardState(shouldRender = false, shouldFocus = true) {
@@ -1334,14 +1452,24 @@ function changeFontSize(delta) {
 }
 
 function setTextColor(color) {
+    const hasCustomColor = /^#[0-9a-f]{6}$/i.test(color ?? "");
+    const normalizedColor = hasCustomColor ? normalizeColorValue(color, "#202124") : "";
+    const indicatorColor = normalizedColor || "#202124";
+    if (textColorInput) textColorInput.value = indicatorColor;
+    updateTextColorIndicator(indicatorColor);
     return applyStyleToSelection((style) => {
-        style.color = normalizeColorValue(color, "#202124");
+        style.color = normalizedColor;
     });
 }
 
 function setFillColor(color) {
+    const hasCustomColor = /^#[0-9a-f]{6}$/i.test(color ?? "");
+    const normalizedColor = hasCustomColor ? normalizeColorValue(color, "#fff2cc") : "";
+    const indicatorColor = normalizedColor || "#fff2cc";
+    if (fillColorInput) fillColorInput.value = indicatorColor;
+    updateFillColorIndicator(indicatorColor);
     return applyStyleToSelection((style) => {
-        style.backgroundColor = normalizeColorValue(color, "#fff2cc");
+        style.backgroundColor = normalizedColor;
     });
 }
 
@@ -3089,6 +3217,13 @@ function cloneRange(range) {
     };
 }
 
+function cloneChartRange(range) {
+    if (!range) return null;
+    if (Array.isArray(range)) return range.map(cloneChartRange).filter(Boolean);
+
+    return cloneRange(range);
+}
+
 function cloneFilter(filter) {
     if (!filter) return null;
 
@@ -3109,6 +3244,65 @@ function createBlankTableData(rows, cols) {
     );
 }
 
+function cloneChartConfig(config) {
+    if (!config) return null;
+
+    return {
+        xRange: cloneChartRange(config.xRange),
+        yRange: cloneChartRange(config.yRange),
+        type: CHART_TYPES.includes(config.type) ? config.type : "bar",
+        showGridlines: config.showGridlines ?? true
+    };
+}
+
+function getFiniteNumber(value, fallback) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : fallback;
+}
+
+function cloneChartState(chart) {
+    const elementLeft = Number.parseFloat(chart.element?.style.left);
+    const elementTop = Number.parseFloat(chart.element?.style.top);
+    const elementWidth = Number.parseFloat(chart.element?.style.width);
+    const elementHeight = Number.parseFloat(chart.element?.style.height);
+
+    return {
+        id: Number(chart.id) || 1,
+        title: String(chart.title || `Grafik ${Number(chart.id) || 1}`),
+        config: cloneChartConfig(chart.config),
+        settings: { ...(chart.settings ?? {}) },
+        color: chart.color ? { ...chart.color } : null,
+        dataColors: Array.isArray(chart.dataColors) ? chart.dataColors.map((color) => ({ ...color })) : [],
+        titleReference: chart.titleReference ? { ...chart.titleReference } : null,
+        left: Number.isFinite(elementLeft) ? elementLeft : getFiniteNumber(chart.element?.offsetLeft, 96),
+        top: Number.isFinite(elementTop) ? elementTop : getFiniteNumber(chart.element?.offsetTop, 64),
+        width: Number.isFinite(elementWidth) ? elementWidth : getFiniteNumber(chart.element?.offsetWidth, 420),
+        height: Number.isFinite(elementHeight) ? elementHeight : getFiniteNumber(chart.element?.offsetHeight, 280),
+        minimized: chart.element?.classList.contains("minimized") ?? false,
+        restoreState: chart.restoreState ? { ...chart.restoreState } : null
+    };
+}
+
+function cloneSavedChartState(chart) {
+    if (!chart) return null;
+
+    return {
+        id: Number(chart.id) || 1,
+        title: String(chart.title || `Grafik ${Number(chart.id) || 1}`),
+        config: cloneChartConfig(chart.config),
+        settings: { ...(chart.settings ?? {}) },
+        color: chart.color ? { ...chart.color } : null,
+        dataColors: Array.isArray(chart.dataColors) ? chart.dataColors.map((color) => ({ ...color })) : [],
+        titleReference: chart.titleReference ? { ...chart.titleReference } : null,
+        left: getFiniteNumber(chart.left, 96),
+        top: getFiniteNumber(chart.top, 64),
+        width: getFiniteNumber(chart.width, 420),
+        height: getFiniteNumber(chart.height, 280),
+        minimized: Boolean(chart.minimized),
+        restoreState: chart.restoreState ? { ...chart.restoreState } : null
+    };
+}
+
 function createSheetState(name) {
     return {
         name,
@@ -3122,7 +3316,10 @@ function createSheetState(name) {
         colWidths: [...colWidths],
         rowHeights: [...rowHeights],
         hiddenRows: [...hiddenRows],
-        hiddenCols: [...hiddenCols]
+        hiddenCols: [...hiddenCols],
+        charts: charts.map(cloneChartState).filter(Boolean),
+        nextChartNumber,
+        activeChartId: activeChart?.id ?? null
     };
 }
 
@@ -3139,7 +3336,10 @@ function createBlankSheetState(name) {
         colWidths: Array.from({ length: 26 }, () => DEFAULT_COL_WIDTH),
         rowHeights: Array.from({ length: 100 }, () => DEFAULT_ROW_HEIGHT),
         hiddenRows: [],
-        hiddenCols: []
+        hiddenCols: [],
+        charts: [],
+        nextChartNumber: 1,
+        activeChartId: null
     };
 }
 
@@ -3156,7 +3356,10 @@ function cloneSheetState(sheet, name) {
         colWidths: [...sheet.colWidths],
         rowHeights: [...sheet.rowHeights],
         hiddenRows: [...(sheet.hiddenRows ?? [])],
-        hiddenCols: [...(sheet.hiddenCols ?? [])]
+        hiddenCols: [...(sheet.hiddenCols ?? [])],
+        charts: Array.isArray(sheet.charts) ? sheet.charts.map(cloneSavedChartState).filter(Boolean) : [],
+        nextChartNumber: Math.max(1, Number(sheet.nextChartNumber) || 1),
+        activeChartId: sheet.activeChartId ?? null
     };
 }
 
@@ -3183,6 +3386,9 @@ function applySheetState(sheet) {
     internalClipboard = null;
     clipboardMode = null;
     isEditing = false;
+    clearChartWorkspace();
+    nextChartNumber = Math.max(1, Number(sheet.nextChartNumber) || 1);
+    restoreChartWorkspace(sheet.charts, sheet.activeChartId);
 }
 
 function updateSheetRenameInputWidth(input) {
@@ -3528,8 +3734,8 @@ function createNewWorkbook() {
     clearCurrentWorkbookFile();
     localStorage.removeItem(AUTOSAVE_KEY);
 
-    initData();
-    sheets = [createSheetState("Sayfa1")];
+    clearChartWorkspace();
+    sheets = [createBlankSheetState("Sayfa1")];
     applySheetState(sheets[activeSheetIndex]);
     renderSheetTabs();
     renderTable();
@@ -3562,7 +3768,10 @@ function createSavePayload() {
             colWidths: [...sheet.colWidths],
             rowHeights: [...sheet.rowHeights],
             hiddenRows: [...(sheet.hiddenRows ?? [])],
-            hiddenCols: [...(sheet.hiddenCols ?? [])]
+            hiddenCols: [...(sheet.hiddenCols ?? [])],
+            charts: Array.isArray(sheet.charts) ? sheet.charts.map(cloneSavedChartState).filter(Boolean) : [],
+            nextChartNumber: Math.max(1, Number(sheet.nextChartNumber) || 1),
+            activeChartId: sheet.activeChartId ?? null
         }))
     };
 }
@@ -3626,6 +3835,69 @@ function normalizeImportedRange(range, rowCountValue, colCountValue) {
     };
 }
 
+function normalizeImportedChartRange(range, rowCountValue, colCountValue) {
+    if (!range) return null;
+    if (Array.isArray(range)) {
+        const ranges = range
+            .map((item) => normalizeImportedChartRange(item, rowCountValue, colCountValue))
+            .filter(Boolean);
+        return ranges.length ? ranges : null;
+    }
+
+    return normalizeImportedRange(range, rowCountValue, colCountValue);
+}
+
+function isCellWithinImportedBounds(row, col, rowCountValue, colCountValue) {
+    return (
+        Number.isInteger(row) &&
+        Number.isInteger(col) &&
+        row >= 0 &&
+        row < rowCountValue &&
+        col >= 0 &&
+        col < colCountValue
+    );
+}
+
+function normalizeImportedChartState(chart, rowCountValue, colCountValue, index) {
+    if (!chart) return null;
+
+    const type = CHART_TYPES.includes(chart.config?.type) ? chart.config.type : "bar";
+    const xRange = normalizeImportedChartRange(chart.config?.xRange, rowCountValue, colCountValue);
+    const yRange = normalizeImportedChartRange(chart.config?.yRange, rowCountValue, colCountValue);
+    const id = Math.max(1, Number(chart.id) || index + 1);
+    const settings = {
+        ...(chart.settings ?? {}),
+        type: CHART_TYPES.includes(chart.settings?.type) ? chart.settings.type : type,
+        showGridlines: chart.settings?.showGridlines ?? chart.config?.showGridlines ?? true
+    };
+
+    return {
+        id,
+        title: String(chart.title || settings.title || `Grafik ${id}`),
+        config: yRange ? {
+            xRange,
+            yRange,
+            type,
+            showGridlines: chart.config?.showGridlines ?? settings.showGridlines
+        } : null,
+        settings,
+        color: chart.color ? { ...chart.color } : null,
+        dataColors: Array.isArray(chart.dataColors) ? chart.dataColors.map((color) => ({ ...color })) : [],
+        titleReference: chart.titleReference &&
+            Number.isInteger(chart.titleReference.row) &&
+            Number.isInteger(chart.titleReference.col) &&
+            isCellWithinImportedBounds(chart.titleReference.row, chart.titleReference.col, rowCountValue, colCountValue)
+            ? { row: chart.titleReference.row, col: chart.titleReference.col }
+            : null,
+        left: Math.max(0, getFiniteNumber(chart.left, 96)),
+        top: Math.max(0, getFiniteNumber(chart.top, 64)),
+        width: Math.max(220, getFiniteNumber(chart.width, 420)),
+        height: Math.max(32, getFiniteNumber(chart.height, 280)),
+        minimized: Boolean(chart.minimized),
+        restoreState: chart.restoreState ? { ...chart.restoreState } : null
+    };
+}
+
 function normalizeImportedFilter(filter, rowCountValue, colCountValue) {
     if (!filter?.range) return null;
 
@@ -3657,6 +3929,16 @@ function normalizeImportedSheet(sheet, index) {
         }
         safeTableData.push(row);
     }
+    const normalizedCharts = Array.isArray(sheet?.charts)
+        ? sheet.charts
+            .map((chart, chartIndex) => normalizeImportedChartState(chart, safeRowCount, safeColCount, chartIndex))
+            .filter(Boolean)
+        : [];
+    const nextImportedChartNumber = Math.max(
+        1,
+        Number(sheet?.nextChartNumber) || 1,
+        ...normalizedCharts.map((chart) => chart.id + 1)
+    );
 
     return {
         name: String(sheet?.name || `Sayfa${index + 1}`),
@@ -3687,7 +3969,10 @@ function normalizeImportedSheet(sheet, index) {
             ? sheet.hiddenCols
                 .map((col) => Number(col))
                 .filter((col) => Number.isInteger(col) && col >= 0 && col < safeColCount)
-            : []
+            : [],
+        charts: normalizedCharts,
+        nextChartNumber: nextImportedChartNumber,
+        activeChartId: sheet?.activeChartId ?? null
     };
 }
 
@@ -5266,6 +5551,7 @@ chartSettingsTypeMenu?.addEventListener("click", (e) => {
 });
 chartSettingsLabelRangeInput?.addEventListener("change", applyChartSettingsFromPanel);
 chartSettingsValueRangeInput?.addEventListener("change", applyChartSettingsFromPanel);
+chartSettingsGridlinesInput?.addEventListener("change", applyChartSettingsFromPanel);
 
 filterPopupApplyBtn?.addEventListener("click", () => {
     if (filterPopupColumn === null) return;
@@ -5307,6 +5593,18 @@ document.querySelectorAll(".text-menu > button").forEach((button) => {
 function runFormatMenuAction(action) {
     if (!selectedCell || isEditing) return;
 
+    if (action === "text-color" || action === "fill-color") {
+        hideContextMenu();
+        hideBorderMenu();
+        hideNumberFormatMenu();
+        showColorPaletteMenu(
+            action === "text-color" ? textColorPaletteMenu : fillColorPaletteMenu,
+            action === "text-color" ? menuTextColorBtn : menuFillColorBtn
+        );
+        hideFormatMenu();
+        return;
+    }
+
     hideFormatMenu();
     hideContextMenu();
     hideBorderMenu();
@@ -5318,8 +5616,6 @@ function runFormatMenuAction(action) {
     if (action === "strikethrough") toggleStyleProperty("strikeThrough");
     if (action === "font-size-increase") changeFontSize(1);
     if (action === "font-size-decrease") changeFontSize(-1);
-    if (action === "text-color") textColorInput?.click();
-    if (action === "fill-color") fillColorInput?.click();
     if (action === "align-left") setHorizontalAlignment("left");
     if (action === "align-center") setHorizontalAlignment("center");
     if (action === "align-right") setHorizontalAlignment("right");
@@ -5435,16 +5731,30 @@ fontSizeIncreaseBtn?.addEventListener("click", () => {
     changeFontSize(1);
 });
 
-textColorBtn?.addEventListener("click", () => {
+textColorBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
     hideContextMenu();
     hideBorderMenu();
-    textColorInput?.click();
+    hideFileMenu();
+    hideEditMenu();
+    hideViewMenu();
+    hideInsertMenu();
+    hideDataMenu();
+    hideFormatMenu();
+    showColorPaletteMenu(textColorPaletteMenu, textColorBtn);
 });
 
-fillColorBtn?.addEventListener("click", () => {
+fillColorBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
     hideContextMenu();
     hideBorderMenu();
-    fillColorInput?.click();
+    hideFileMenu();
+    hideEditMenu();
+    hideViewMenu();
+    hideInsertMenu();
+    hideDataMenu();
+    hideFormatMenu();
+    showColorPaletteMenu(fillColorPaletteMenu, fillColorBtn);
 });
 
 currencyFormatBtn?.addEventListener("click", () => {
@@ -5740,11 +6050,21 @@ function getCellNumericValue(row, col) {
     const cell = tableData[row][col];
 
     if (cell.formula) {
-        return evaluateFormula(cell.formula, row, col);
+        const formulaValue = evaluateFormula(cell.formula, row, col);
+        const num = parseFloat(formulaValue);
+        return isNaN(num) ? 0 : num;
     }
 
     const num = parseFloat(cell.value);
     return isNaN(num) ? 0 : num;
+}
+
+function getCellReferenceValue(row, col, currentRow, currentCol) {
+    if (!isCellWithinBounds(row, col)) return 0;
+    if (row === currentRow && col === currentCol) return 0;
+
+    const cell = tableData[row][col];
+    return cell?.value ?? "";
 }
 
 function getRangeValues(range) {
@@ -5851,7 +6171,15 @@ function calculateMAX(range) {
 }
 
 function evaluateFormula(formula, currentRow, currentCol) {
-    let expr = formula.slice(1); // '=' çıkar
+    let expr = formula.slice(1).trim(); // '=' çıkar
+    const singleReference = expr.match(/^\$?[A-Z]+\$?\d+$/i);
+
+    if (singleReference) {
+        const index = cellRefToIndex(singleReference[0].toUpperCase());
+        if (!index) return 0;
+
+        return getCellReferenceValue(index.row, index.col, currentRow, currentCol);
+    }
 
     // SUM
     expr = expr.replace(/SUM\(\s*(\$?[A-Z]+\$?\d+:\$?[A-Z]+\$?\d+)\s*\)/gi, (_, range) => {
@@ -5907,6 +6235,8 @@ function evaluateFormula(formula, currentRow, currentCol) {
 }
 
 function recalculateAll() {
+    const chartSignaturesBefore = captureChartDependencySignatures();
+
     for (let r = 0; r < rowCount; r++) {
         for (let c = 0; c < colCount; c++) {
             const cell = tableData[r][c];
@@ -5920,6 +6250,8 @@ function recalculateAll() {
             }
         }
     }
+
+    refreshChartsWithChangedCalculatedValues(chartSignaturesBefore);
 }
 
 function enterEditMode(row, col, initialChar = null) {
@@ -6158,6 +6490,15 @@ window.addEventListener("click", (e) => {
     if (borderMenu && !borderMenu.contains(e.target) && !borderBtn?.contains(e.target)) {
         hideBorderMenu();
     }
+    if (
+        !e.target.closest(".color-palette-menu") &&
+        !textColorBtn?.contains(e.target) &&
+        !fillColorBtn?.contains(e.target) &&
+        !menuTextColorBtn?.contains(e.target) &&
+        !menuFillColorBtn?.contains(e.target)
+    ) {
+        hideColorPaletteMenus();
+    }
     if (zoomMenu && !zoomMenu.contains(e.target) && !zoomValueBtn?.contains(e.target)) {
         hideZoomMenu();
     }
@@ -6221,6 +6562,7 @@ window.addEventListener("contextmenu", (e) => {
 
 window.addEventListener("scroll", hideContextMenu, true);
 window.addEventListener("scroll", hideBorderMenu, true);
+window.addEventListener("scroll", hideColorPaletteMenus, true);
 window.addEventListener("scroll", hideFilterPopup, true);
 window.addEventListener("scroll", hideZoomMenu, true);
 window.addEventListener("scroll", hideNumberFormatMenu, true);
@@ -6300,6 +6642,9 @@ window.addEventListener("mousemove", (e) => {
 });
 
 window.addEventListener("mouseup", () => {
+    if (chartDragState || chartResizeState) {
+        scheduleAutoSave();
+    }
     chartDragState = null;
     chartResizeState = null;
     finishMoveSelection();
@@ -6657,6 +7002,32 @@ function getTwoRowChartSelection(range) {
     };
 }
 
+function getSingleRowLabelValueChartSelection(range) {
+    if (!range || range.minRow !== range.maxRow || range.maxCol - range.minCol !== 1) return null;
+
+    const labelText = String(tableData[range.minRow]?.[range.minCol]?.value ?? "").trim();
+    if (labelText === "" || !Number.isNaN(Number(labelText))) return null;
+
+    const valueText = String(tableData[range.minRow]?.[range.maxCol]?.value ?? "").trim();
+    const value = valueText === "" ? 0 : Number(valueText);
+    if (Number.isNaN(value)) return null;
+
+    return {
+        data: { labels: [labelText], values: [value] },
+        config: {
+            xRange: {
+                start: { row: range.minRow, col: range.minCol },
+                end: { row: range.minRow, col: range.minCol }
+            },
+            yRange: {
+                start: { row: range.minRow, col: range.maxCol },
+                end: { row: range.minRow, col: range.maxCol }
+            },
+            type: "bar"
+        }
+    };
+}
+
 function getChartDataFromSelection() {
     const range = getActiveRange();
     if (!range) return null;
@@ -6664,6 +7035,8 @@ function getChartDataFromSelection() {
     const { minRow, maxRow, minCol, maxCol } = range;
     const twoRowSelection = getTwoRowChartSelection(range);
     if (twoRowSelection) return twoRowSelection.data;
+    const singleRowLabelValueSelection = getSingleRowLabelValueChartSelection(range);
+    if (singleRowLabelValueSelection) return singleRowLabelValueSelection.data;
 
     const labels = [];
     const values = [];
@@ -6695,32 +7068,38 @@ function getChartDataFromSelection() {
     return { labels, values };
 }
 
-function createChartWindow(config = null, data = null) {
+function createChartWindow(config = null, data = null, savedState = null, shouldActivate = true) {
     if (!chartWindows) return null;
 
-    const chartNumber = nextChartNumber++;
+    const chartNumber = savedState?.id ?? nextChartNumber++;
+    nextChartNumber = Math.max(nextChartNumber, chartNumber + 1);
+    const settings = {
+        title: savedState?.settings?.title ?? savedState?.title ?? `Grafik ${chartNumber}`,
+        titleText: savedState?.settings?.titleText ?? savedState?.title ?? `Grafik ${chartNumber}`,
+        type: savedState?.settings?.type ?? config?.type ?? "bar",
+        labelRangeText: savedState?.settings?.labelRangeText ?? formatChartRange(config?.xRange),
+        valueRangeText: savedState?.settings?.valueRangeText ?? formatChartRange(config?.yRange),
+        showGridlines: savedState?.settings?.showGridlines ?? config?.showGridlines ?? true
+    };
     const chart = {
         id: chartNumber,
-        title: `Grafik ${chartNumber}`,
+        title: savedState?.title ?? settings.title ?? `Grafik ${chartNumber}`,
         config,
-        color: createChartColor(),
-        dataColors: [],
-        settings: {
-            title: `Grafik ${chartNumber}`,
-            titleText: `Grafik ${chartNumber}`,
-            type: config?.type ?? "bar",
-            labelRangeText: formatChartRange(config?.xRange),
-            valueRangeText: formatChartRange(config?.yRange)
-        },
+        color: savedState?.color ? { ...savedState.color } : createChartColor(),
+        dataColors: Array.isArray(savedState?.dataColors) ? savedState.dataColors.map((color) => ({ ...color })) : [],
+        settings,
         element: document.createElement("section"),
         canvas: document.createElement("canvas"),
         instance: null,
-        restoreState: null
+        restoreState: savedState?.restoreState ? { ...savedState.restoreState } : null
     };
+    chart.titleReference = savedState?.titleReference ? { ...savedState.titleReference } : null;
 
     chart.element.className = "chart-panel";
-    chart.element.style.left = `${96 + ((chartNumber - 1) % 6) * 28}px`;
-    chart.element.style.top = `${64 + ((chartNumber - 1) % 6) * 28}px`;
+    chart.element.style.left = `${savedState?.left ?? 96 + ((chartNumber - 1) % 6) * 28}px`;
+    chart.element.style.top = `${savedState?.top ?? 64 + ((chartNumber - 1) % 6) * 28}px`;
+    if (savedState?.width) chart.element.style.width = `${savedState.width}px`;
+    if (savedState?.height) chart.element.style.height = `${savedState.height}px`;
     chart.element.innerHTML = `
         <div class="chart-titlebar">
             <span class="chart-window-title"></span>
@@ -6747,14 +7126,32 @@ function createChartWindow(config = null, data = null) {
     chartWindows.appendChild(chart.element);
     charts.push(chart);
     bindChartWindowEvents(chart);
-    setActiveChart(chart, false);
+    if (shouldActivate) {
+        setActiveChart(chart, false);
+    }
 
     if (data) {
         drawChart(chart, data.labels, data.values, config.type);
     } else {
         showEmptyChartPanel(chart);
     }
+    if (savedState?.minimized) {
+        chart.restoreState = savedState.restoreState ?? {
+            left: savedState.left ?? chart.element.offsetLeft,
+            top: savedState.top ?? chart.element.offsetTop,
+            width: savedState.width ?? chart.element.offsetWidth,
+            height: savedState.height ?? chart.element.offsetHeight
+        };
+        chart.element.classList.add("minimized");
+        chart.element.style.width = "220px";
+        chart.element.style.height = "32px";
+        updateChartMinimizeButton(chart, true);
+        positionMinimizedChartWindow(chart);
+    }
 
+    if (shouldActivate) {
+        scheduleAutoSave();
+    }
     return chart;
 }
 
@@ -6901,6 +7298,9 @@ function updateChartSettingsPanel() {
     if (chartSettingsValueRangeInput) {
         chartSettingsValueRangeInput.value = activeChart.settings?.valueRangeText ?? formatChartRange(activeChart.config?.yRange);
     }
+    if (chartSettingsGridlinesInput) {
+        chartSettingsGridlinesInput.checked = activeChart.settings?.showGridlines ?? activeChart.config?.showGridlines ?? true;
+    }
     positionMinimizedChartWindows();
 }
 
@@ -6909,7 +7309,7 @@ function getChartSettingsType() {
 }
 
 function setChartSettingsType(type) {
-    const safeType = ["bar", "line", "pie", "horizontalBar", "area", "doughnut", "radar"].includes(type) ? type : "bar";
+    const safeType = CHART_TYPES.includes(type) ? type : "bar";
     const selectedOption = chartSettingsTypeMenu?.querySelector(`[data-chart-type="${safeType}"]`);
 
     if (chartSettingsTypeInput) chartSettingsTypeInput.dataset.value = safeType;
@@ -6921,6 +7321,13 @@ function setChartSettingsType(type) {
         button.classList.toggle("active", isActive);
         button.setAttribute("aria-selected", String(isActive));
     });
+    updateChartGridlinesVisibility(safeType);
+}
+
+function updateChartGridlinesVisibility(type = getChartSettingsType()) {
+    if (!chartSettingsGridlinesField) return;
+
+    chartSettingsGridlinesField.hidden = ["pie", "doughnut"].includes(type);
 }
 
 function closeChartSettingsPanel() {
@@ -6928,6 +7335,44 @@ function closeChartSettingsPanel() {
 
     chartSettingsPanel.hidden = true;
     positionMinimizedChartWindows();
+}
+
+function clearChartWorkspace() {
+    charts.forEach((chart) => {
+        chart.instance?.destroy();
+    });
+    charts = [];
+    activeChart = null;
+    chartDragState = null;
+    chartResizeState = null;
+    nextChartNumber = 1;
+    chartWindows?.replaceChildren();
+    closeChartSettingsPanel();
+}
+
+function restoreChartWorkspace(savedCharts = [], savedActiveChartId = null) {
+    if (!Array.isArray(savedCharts) || savedCharts.length === 0) return;
+
+    const restoredCharts = savedCharts
+        .map(cloneSavedChartState)
+        .filter(Boolean)
+        .map((savedChart) => {
+            const data = savedChart.config ? buildChartDataFromConfig(savedChart.config) : null;
+            return createChartWindow(savedChart.config, data, savedChart, false);
+        })
+        .filter(Boolean);
+
+    restoredCharts
+        .filter((chart) => chart.element.classList.contains("minimized"))
+        .forEach(positionMinimizedChartWindow);
+
+    const activeSavedChartId = Number(savedActiveChartId);
+    const activeSavedChart = restoredCharts.find((chart) => chart.id === activeSavedChartId);
+    if (activeSavedChart && !activeSavedChart.element.classList.contains("minimized")) {
+        setActiveChart(activeSavedChart, false);
+    } else {
+        closeChartSettingsPanel();
+    }
 }
 
 function clearActiveChart(chart, shouldRenderTable = true) {
@@ -6951,6 +7396,7 @@ function drawChart(chart, labels, values, type) {
     const maxValue = Math.max(...values);
     const chartType = type === "horizontalBar" ? "bar" : (type === "area" ? "line" : type);
     const hasCartesianScale = !["pie", "doughnut", "radar"].includes(chartType);
+    const showGridlines = chart.config?.showGridlines ?? chart.settings?.showGridlines ?? true;
     ensureChartDataColors(chart, values.length);
     const pointColors = chart.dataColors.map((color) => color.fill);
     const pointBorderColors = chart.dataColors.map((color) => color.base);
@@ -7062,6 +7508,12 @@ function drawChart(chart, labels, values, type) {
                 r: {
                     min: minValue - 1,
                     max: maxValue + 1,
+                    grid: {
+                        display: showGridlines
+                    },
+                    angleLines: {
+                        display: showGridlines
+                    },
                     pointLabels: {
                         display: hasVisibleLabels
                     }
@@ -7070,6 +7522,9 @@ function drawChart(chart, labels, values, type) {
                 x: {
                     min: type === "horizontalBar" ? minValue - 1 : undefined,
                     max: type === "horizontalBar" ? maxValue + 1 : undefined,
+                    grid: {
+                        display: showGridlines
+                    },
                     ticks: {
                         display: type === "horizontalBar" ? true : hasVisibleLabels
                     }
@@ -7077,6 +7532,9 @@ function drawChart(chart, labels, values, type) {
                 y: {
                     min: type === "horizontalBar" ? undefined : minValue - 1,
                     max: type === "horizontalBar" ? undefined : maxValue + 1,
+                    grid: {
+                        display: showGridlines
+                    },
                     ticks: {
                         display: type === "horizontalBar" ? hasVisibleLabels : true
                     }
@@ -7116,6 +7574,41 @@ function refreshChartFromConfig(chart) {
 
 function refreshChartsFromConfigs() {
     charts.forEach(refreshChartFromConfig);
+}
+
+function getChartDependencySignature(chart) {
+    if (!chart?.config) return null;
+
+    const titleValue = chart.titleReference
+        ? tableData[chart.titleReference.row]?.[chart.titleReference.col]?.value ?? ""
+        : "";
+    const labels = chart.config.xRange ? getChartRangeValues(chart.config.xRange) : null;
+    const values = chart.config.yRange ? getChartRangeValues(chart.config.yRange, true) : null;
+
+    return JSON.stringify({ titleValue, labels, values });
+}
+
+function captureChartDependencySignatures() {
+    if (!charts.length) return null;
+
+    return new Map(charts.map((chart) => [chart, getChartDependencySignature(chart)]));
+}
+
+function refreshChartsWithChangedCalculatedValues(previousSignatures) {
+    if (!previousSignatures) return;
+
+    charts.forEach((chart) => {
+        if (!previousSignatures.has(chart)) return;
+
+        const previousSignature = previousSignatures.get(chart);
+        const nextSignature = getChartDependencySignature(chart);
+        if (previousSignature === nextSignature) return;
+
+        if (chart.titleReference) {
+            applyChartTitle(chart, chart.settings?.titleText ?? chart.title);
+        }
+        refreshChartFromConfig(chart);
+    });
 }
 
 function chartUsesCell(chart, row, col) {
@@ -7196,28 +7689,32 @@ function applyChartSettingsFromPanel() {
     const title = chartSettingsTitleInput?.value ?? activeChart.title;
     const labelRangeText = chartSettingsLabelRangeInput?.value ?? "";
     const valueRangeText = chartSettingsValueRangeInput?.value ?? "";
+    const showGridlines = chartSettingsGridlinesInput?.checked ?? true;
     const xRange = labelRangeText.trim() ? parseChartRangeInput(labelRangeText) : null;
     const yRange = parseChartRangeInput(valueRangeText);
 
     applyChartTitle(activeChart, title);
-    activeChart.settings = { ...(activeChart.settings ?? {}), type, labelRangeText, valueRangeText };
+    activeChart.settings = { ...(activeChart.settings ?? {}), type, labelRangeText, valueRangeText, showGridlines };
 
     if ((labelRangeText.trim() && !xRange) || !yRange) {
         activeChart.config = null;
         showEmptyChartPanel(activeChart);
         renderTable();
+        scheduleAutoSave();
         return;
     }
 
-    activeChart.config = { xRange, yRange, type };
+    activeChart.config = { xRange, yRange, type, showGridlines };
     refreshChartFromConfig(activeChart);
     renderTable();
+    scheduleAutoSave();
 }
 
 function updateChartTitleFromPanel() {
     if (!activeChart) return;
 
     applyChartTitle(activeChart, chartSettingsTitleInput?.value ?? activeChart.title);
+    scheduleAutoSave();
 }
 
 function clearSelectionRangeAfterChartInsert() {
@@ -7239,6 +7736,13 @@ function insertChartFromSelection() {
     const twoRowSelection = getTwoRowChartSelection(range);
     if (twoRowSelection) {
         createChartWindow(twoRowSelection.config, twoRowSelection.data);
+        clearSelectionRangeAfterChartInsert();
+        renderTable();
+        return;
+    }
+    const singleRowLabelValueSelection = getSingleRowLabelValueChartSelection(range);
+    if (singleRowLabelValueSelection) {
+        createChartWindow(singleRowLabelValueSelection.config, singleRowLabelValueSelection.data);
         clearSelectionRangeAfterChartInsert();
         renderTable();
         return;
@@ -7281,6 +7785,7 @@ function closeChartWindow(chart) {
         .filter((item) => item.element.classList.contains("minimized"))
         .forEach(positionMinimizedChartWindow);
     renderTable();
+    scheduleAutoSave();
 }
 
 function updateChartMinimizeButton(chart, isMinimized) {
@@ -7314,6 +7819,7 @@ function toggleChartMinimize(chart) {
         refreshChartFromConfig(chart);
         chart.instance?.resize();
         setActiveChart(chart);
+        scheduleAutoSave();
         return;
     }
 
@@ -7329,6 +7835,7 @@ function toggleChartMinimize(chart) {
     updateChartMinimizeButton(chart, true);
     clearActiveChart(chart);
     positionMinimizedChartWindows();
+    scheduleAutoSave();
 }
 
 function clampChartWindowPosition(chart, left, top) {

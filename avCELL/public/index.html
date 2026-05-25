@@ -116,13 +116,20 @@
                                 <span>Kılavuz çizgileri</span>
                             </button>
                             <hr>
-                            <button type="button" data-zoom-value="50"><span class="menu-check" aria-hidden="true"></span><span>50%</span></button>
-                            <button type="button" data-zoom-value="75"><span class="menu-check" aria-hidden="true"></span><span>75%</span></button>
-                            <button type="button" data-zoom-value="90"><span class="menu-check" aria-hidden="true"></span><span>90%</span></button>
-                            <button type="button" data-zoom-value="100"><span class="menu-check" aria-hidden="true"></span><span>100%</span></button>
-                            <button type="button" data-zoom-value="125"><span class="menu-check" aria-hidden="true"></span><span>125%</span></button>
-                            <button type="button" data-zoom-value="150"><span class="menu-check" aria-hidden="true"></span><span>150%</span></button>
-                            <button type="button" data-zoom-value="200"><span class="menu-check" aria-hidden="true"></span><span>200%</span></button>
+                            <button type="button" data-zoom-value="50"><span class="menu-check"
+                                    aria-hidden="true"></span><span>50%</span></button>
+                            <button type="button" data-zoom-value="75"><span class="menu-check"
+                                    aria-hidden="true"></span><span>75%</span></button>
+                            <button type="button" data-zoom-value="90"><span class="menu-check"
+                                    aria-hidden="true"></span><span>90%</span></button>
+                            <button type="button" data-zoom-value="100"><span class="menu-check"
+                                    aria-hidden="true"></span><span>100%</span></button>
+                            <button type="button" data-zoom-value="125"><span class="menu-check"
+                                    aria-hidden="true"></span><span>125%</span></button>
+                            <button type="button" data-zoom-value="150"><span class="menu-check"
+                                    aria-hidden="true"></span><span>150%</span></button>
+                            <button type="button" data-zoom-value="200"><span class="menu-check"
+                                    aria-hidden="true"></span><span>200%</span></button>
                         </div>
                     </div>
                     <div class="menu-shell">
@@ -221,11 +228,18 @@
                                 <span>Yazı boyutunu azalt</span>
                             </button>
                             <button id="menu-text-color-btn" type="button">
-                                <img src="icons/text-color.svg" alt="" />
+                                <span class="text-color-icon-shell menu-color-icon">
+                                    <span class="text-color-letter-back"></span>
+                                    <span class="text-color-indicator-line"></span>
+                                </span>
                                 <span>Yazı rengi</span>
                             </button>
                             <button id="menu-fill-color-btn" type="button">
-                                <img src="icons/fill-color.svg" alt="" />
+                                <span class="fill-color-icon-shell menu-color-icon">
+                                    <span class="fill-color-paint-back"></span>
+                                    <img src="icons/fill-color.svg" alt="" />
+                                    <span class="fill-color-indicator-line"></span>
+                                </span>
                                 <span>Dolgu rengi</span>
                             </button>
                             <hr>
@@ -446,10 +460,17 @@
                             <img src="icons/text-size-increase.svg" alt="" />
                         </button>
                         <button id="text-color-btn" class="icon-btn" title="Yazı rengi">
-                            <img src="icons/text-color.svg" alt="" />
+                            <span class="text-color-icon-shell">
+                                <span class="text-color-letter-back"></span>
+                                <span class="text-color-indicator-line"></span>
+                            </span>
                         </button>
                         <button id="fill-color-btn" class="icon-btn" title="Dolgu rengi">
-                            <img src="icons/fill-color.svg" alt="" />
+                            <span class="fill-color-icon-shell">
+                                <span class="fill-color-paint-back"></span>
+                                <img src="icons/fill-color.svg" alt="" />
+                                <span class="fill-color-indicator-line"></span>
+                            </span>
                         </button>
                         <input id="text-color-input" class="hidden-color-input" type="color" value="#202124"
                             aria-label="Yazı rengi" />
@@ -514,7 +535,8 @@
                     <div class="chart-settings-field">
                         <span>Grafik Türü</span>
                         <div id="chart-settings-type" class="chart-type-combobox">
-                            <button id="chart-settings-type-btn" class="chart-type-selected" type="button" aria-haspopup="listbox" aria-expanded="false">
+                            <button id="chart-settings-type-btn" class="chart-type-selected" type="button"
+                                aria-haspopup="listbox" aria-expanded="false">
                                 <img src="icons/addgraph.svg" alt="" />
                                 <span>Sütun</span>
                             </button>
@@ -557,6 +579,10 @@
                     <label class="chart-settings-field">
                         <span>Veri Alanı</span>
                         <input id="chart-settings-value-range" type="text" placeholder="B1:B5" />
+                    </label>
+                    <label class="chart-settings-check">
+                        <input id="chart-settings-gridlines" type="checkbox" checked />
+                        <span>Kılavuz çizgilerini göster</span>
                     </label>
                 </div>
             </aside>
