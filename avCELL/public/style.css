@@ -430,22 +430,6 @@ body.toolbar-hidden #control-panel {
   background: transparent;
 }
 
-.text-color-icon-shell::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: #202124;
-  opacity: 0;
-  transform: scale(1.14);
-  transform-origin: center;
-  -webkit-mask: url("icons/text-color.svg") center / 100% 100% no-repeat;
-  mask: url("icons/text-color.svg") center / 100% 100% no-repeat;
-}
-
-.text-color-icon-shell.light-color::before {
-  opacity: 1;
-}
-
 .text-menu-popover .text-color-icon-shell {
   width: 16px;
   height: 16px;
@@ -459,25 +443,12 @@ body.toolbar-hidden #control-panel {
   height: 100%;
 }
 
-.text-color-letter-back {
-  position: absolute;
-  inset: 0;
-  background: var(--text-color-indicator, #202124);
-  z-index: 1;
-  -webkit-mask: url("icons/text-color.svg") center / 100% 100% no-repeat;
-  mask: url("icons/text-color.svg") center / 100% 100% no-repeat;
-}
-
-.text-menu-popover .text-color-letter-back {
-  inset: 0;
-}
-
 .text-color-indicator-line {
   position: absolute;
-  left: 3px;
-  right: 3px;
-  bottom: 2px;
-  height: 2.4px;
+  left: 1.5px;
+  right: 1.5px;
+  bottom: 1px;
+  height: 3.4px;
   border: 0;
   border-radius: 999px;
   background: var(--text-color-indicator, #202124);
@@ -486,10 +457,10 @@ body.toolbar-hidden #control-panel {
 }
 
 .text-menu-popover .text-color-indicator-line {
-  left: 2px;
-  right: 2px;
-  bottom: 1px;
-  height: 1.8px;
+  left: 1px;
+  right: 1px;
+  bottom: 0.8px;
+  height: 2.5px;
   box-shadow: 0 0 0 0.45px #202124;
 }
 
@@ -515,19 +486,12 @@ body.toolbar-hidden #control-panel {
   height: 100%;
 }
 
-.fill-color-paint-back {
-  position: absolute;
-  inset: 0;
-  background: var(--fill-color-indicator, #fff2cc);
-  clip-path: polygon(22% 55%, 82% 55%, 78% 66%, 63% 82%, 54% 90%, 47% 90%, 24% 61%);
-}
-
 .fill-color-indicator-line {
   position: absolute;
-  left: 3px;
-  right: 3px;
-  bottom: 2px;
-  height: 2.4px;
+  left: 1.5px;
+  right: 1.5px;
+  bottom: 1px;
+  height: 3.4px;
   border: 0;
   border-radius: 999px;
   background: var(--fill-color-indicator, #fff2cc);
@@ -535,10 +499,10 @@ body.toolbar-hidden #control-panel {
 }
 
 .text-menu-popover .fill-color-indicator-line {
-  left: 2px;
-  right: 2px;
-  bottom: 1px;
-  height: 1.8px;
+  left: 1px;
+  right: 1px;
+  bottom: 0.8px;
+  height: 2.5px;
   border-width: 0.5px;
 }
 

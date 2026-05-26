@@ -1,5 +1,3 @@
-// Yazı rengi beyazda sorun var.
-// Hücre seçilince renk paletleri kapansın.
 const table = document.getElementById("data-table");
 const addRowBtn = document.getElementById("add-row-btn");
 const addRowDownBtn = document.getElementById("add-row-down-btn");
@@ -542,22 +540,9 @@ function updateToolbarState() {
 
 function updateTextColorIndicator(color) {
     const normalizedColor = normalizeColorValue(color, "#202124");
-    const isLightColor = isLightHexColor(normalizedColor);
     [textColorBtn, menuTextColorBtn].forEach((button) => {
         button?.style.setProperty("--text-color-indicator", normalizedColor);
-        button?.querySelector(".text-color-icon-shell")?.classList.toggle("light-color", isLightColor);
     });
-}
-
-function isLightHexColor(color) {
-    const match = String(color || "").match(/^#([0-9a-f]{6})$/i);
-    if (!match) return false;
-
-    const value = match[1];
-    const r = parseInt(value.slice(0, 2), 16);
-    const g = parseInt(value.slice(2, 4), 16);
-    const b = parseInt(value.slice(4, 6), 16);
-    return ((r * 299 + g * 587 + b * 114) / 1000) > 210;
 }
 
 function updateFillColorIndicator(color) {
@@ -982,14 +967,6 @@ function createColorPaletteMenu(id, applyColor, resetLabel) {
     });
 
     menu.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const button = e.target.closest("[data-color], [data-color-reset]");
-        if (!button) return;
-
-        applyColor(button.dataset.colorReset ? "" : button.dataset.color);
-    });
-
-    menu.addEventListener("dblclick", (e) => {
         e.stopPropagation();
         const button = e.target.closest("[data-color], [data-color-reset]");
         if (!button) return;
@@ -3809,6 +3786,15 @@ function loadAutoSavedWorkbook() {
     }
 }
 
+function isPageReload() {
+    const navigationEntry = performance.getEntriesByType?.("navigation")?.[0];
+    if (navigationEntry?.type) {
+        return navigationEntry.type === "reload";
+    }
+
+    return performance.navigation?.type === performance.navigation?.TYPE_RELOAD;
+}
+
 function normalizeImportedCell(cell) {
     return {
         value: cell?.value ?? "",
@@ -6550,6 +6536,10 @@ window.addEventListener("mousedown", (e) => {
     }
 });
 
+table?.addEventListener("mousedown", () => {
+    hideColorPaletteMenus();
+}, true);
+
 window.addEventListener("contextmenu", (e) => {
     const isSpreadsheetTarget = e.target.closest(
         "#data-table td, #data-table th, #sheet-tabs .sheet-tab"
@@ -6836,7 +6826,10 @@ window.addEventListener("keydown", (e) => {
 });
 // INIT
 applyViewSettings();
-if (!loadAutoSavedWorkbook()) {
+if (!isPageReload()) {
+    localStorage.removeItem(AUTOSAVE_KEY);
+}
+if (!(isPageReload() && loadAutoSavedWorkbook())) {
     initData();
     sheets = [createSheetState("Sayfa1")];
     renderSheetTabs();

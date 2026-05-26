@@ -1,5 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
   <g transform="translate(1.7 1) scale(0.86)">
+    <path d="M5.3 14.1h14.8c-.1.9-.5 1.7-1.2 2.3l-5 4.6c-.9.8-2.2.7-3-.2L5.4 14.3z" fill="#9aa0a6"/>
     <path d="M8.1 1.8 19.2 12.9c1.1 1.1 1.1 2.9 0 4l-4 4c-1.1 1.1-2.9 1.1-4 0L4.8 14.5c-1.1-1.1-1.1-2.9 0-4l6-6L7 0.7z" fill="none" stroke="#202124" stroke-width="2" stroke-linejoin="round"/>
   </g>
 </svg>
