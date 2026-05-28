@@ -962,6 +962,13 @@ th.move-target-header {
   box-shadow: inset 0 0 0 2px var(--sheet-blue);
 }
 
+.frozen-pane-header,
+.frozen-pane-cell {
+  box-shadow:
+    inset -1px 0 0 #c1c7cd,
+    inset 0 -1px 0 #c1c7cd;
+}
+
 .column-header.hidden-col-after::after,
 .column-header.hidden-col-before::before {
   content: "";
@@ -1730,6 +1737,10 @@ td.editing::after {
 }
 
 #context-menu[hidden] {
+  display: none !important;
+}
+
+#context-menu [hidden] {
   display: none !important;
 }
 

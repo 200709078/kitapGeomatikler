@@ -407,11 +407,14 @@
                         </button>
                     </div>
                     <div class="toolbar-cluster">
-                        <button id="hide-axis-btn" class="icon-btn" title="Seçili satır/sütunu gizle">
+                        <button id="hide-axis-btn" class="icon-btn" title="Seçili satırı/sütunu gizle">
                             <img src="icons/eye-off.svg" alt="" />
                         </button>
-                        <button id="show-axis-btn" class="icon-btn" title="Gizli satır/sütunları göster">
+                        <button id="show-axis-btn" class="icon-btn" title="Gizli satırları/sütunları göster">
                             <img src="icons/eye.svg" alt="" />
+                        </button>
+                        <button id="freeze-axis-btn" class="icon-btn" title="Seçili satırı/sütunu dondur">
+                            <img src="icons/freeze-panes.svg" alt="" />
                         </button>
                     </div>
                     <div class="toolbar-cluster">
@@ -615,33 +618,33 @@
             <img src="icons/addrowup.svg" alt="" />
             <span>Üste satır ekle</span>
         </button>
+        <button type="button" data-action="insert-row-below">
+            <img src="icons/addrowdown.svg" alt="" />
+            <span>Alta satır ekle</span>
+        </button>
         <button type="button" data-action="delete-row">
             <img src="icons/delrow.svg" alt="" />
             <span>Satır sil</span>
         </button>
-        <button type="button" data-action="hide-row">
+        <button type="button" data-action="hide-axis">
             <img src="icons/eye-off.svg" alt="" />
-            <span>Satırı gizle</span>
+            <span>Seçili satırları/sütunları gizle</span>
         </button>
-        <button type="button" data-action="show-rows">
+        <button type="button" data-action="show-axes">
             <img src="icons/eye.svg" alt="" />
-            <span>Gizli satırları göster</span>
+            <span>Gizli satırları/sütunları göster</span>
         </button>
         <button type="button" data-action="insert-col-left">
             <img src="icons/addcolleft.svg" alt="" />
             <span>Sola sütun ekle</span>
         </button>
+        <button type="button" data-action="insert-col-right">
+            <img src="icons/addcolright.svg" alt="" />
+            <span>Sağa sütun ekle</span>
+        </button>
         <button type="button" data-action="delete-col">
             <img src="icons/delcol.svg" alt="" />
             <span>Sütun sil</span>
-        </button>
-        <button type="button" data-action="hide-col">
-            <img src="icons/eye-off.svg" alt="" />
-            <span>Sütunu gizle</span>
-        </button>
-        <button type="button" data-action="show-cols">
-            <img src="icons/eye.svg" alt="" />
-            <span>Gizli sütunları göster</span>
         </button>
         <hr>
         <button type="button" data-action="add-sheet">

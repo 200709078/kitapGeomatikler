@@ -1,3 +1,9 @@
+//satır seçildiğinde ikonun ilk satır mavi diğerleri beyaz sütun seçildiğinde ikonun ilk sütun mavi değerleri beyaz olacak şekilde iki farklı ikon olsun
+// butonun titlesinde seçilen satır donmuş ise Seçilen satırı çöz, seçilen sütun donmuş ise Seçilen sütunu çöz yazsın.
+// Donmuş hücrelerin tümüne kenarlık vermeyelim. Donmuş satırın altına biraz kalınca gri bir hr ekleyip bu hr yi mouse ile tutup yerini değiştirebileyim. Sütun dondurma da aynı şekilde olsun.
+// PopUp menüde de bunları ekleyelim popup elemanlarının gizleme/gösterme mantığını bozmadan.
+// görünüm menüsündeki yakınlaştırma seçeneklerini(%100,%50 gibi) büyüteçli (içinde + olsa iyi olur.) simgesi olan bir sağa açılır Yakınlaştır menüsü altına toplayalım.
+// görünüm menüsüne de bu satır/sütun dondurma özelliğini simgesi 1. satırı ve 1. sütunu mavi olan bir sağa açılır Dondur menüsü altına ekleyelim. 
 const table = document.getElementById("data-table");
 const addRowBtn = document.getElementById("add-row-btn");
 const addRowDownBtn = document.getElementById("add-row-down-btn");
@@ -55,6 +61,7 @@ const sortDescBtn = document.getElementById("sort-desc-btn");
 const filterBtn = document.getElementById("filter-btn");
 const hideAxisBtn = document.getElementById("hide-axis-btn");
 const showAxisBtn = document.getElementById("show-axis-btn");
+const freezeAxisBtn = document.getElementById("freeze-axis-btn");
 const formatMenuBtn = document.getElementById("format-menu-btn");
 const formatMenu = document.getElementById("format-menu");
 const menuBoldBtn = document.getElementById("menu-bold-btn");
@@ -185,6 +192,8 @@ let colWidths = [];
 let rowHeights = [];
 let hiddenRows = new Set();
 let hiddenCols = new Set();
+let frozenRows = 0;
+let frozenCols = 0;
 let isMouseSelecting = false;
 let mouseSelectionMoved = false;
 let headerSelectionState = null;
@@ -755,6 +764,16 @@ function updateDataMenuState() {
     if (showAxisBtn) {
         showAxisBtn.disabled = (hiddenRows.size === 0 && hiddenCols.size === 0) || isEditing;
     }
+    if (freezeAxisBtn) {
+        const canFreezeAxis = isRowSelection || isColumnSelection;
+        freezeAxisBtn.disabled = !canFreezeAxis || isEditing;
+        freezeAxisBtn.classList.toggle("active", Boolean(frozenRows || frozenCols));
+        freezeAxisBtn.title = isRowSelection
+            ? "Seçili satırı dondur"
+            : isColumnSelection
+                ? "Seçili sütunu dondur"
+                : "Satır veya sütun seç";
+    }
 }
 
 function hideContextMenu() {
@@ -1024,23 +1043,45 @@ function updateContextMenuState() {
     const isRowContext = contextMenuTarget?.type === "row" && selectionMode === "row";
     const isColumnContext = contextMenuTarget?.type === "column" && selectionMode === "column";
     const isSheetContext = contextMenuTarget?.type === "sheet";
+    const isCellContext = contextMenuTarget?.type === "cell" || contextMenuTarget?.type === "all";
+    const isSelectionContext = isCellContext || isRowContext || isColumnContext;
+    const hasHiddenAxes = hiddenRows.size > 0 || hiddenCols.size > 0;
     const hasSelection = Boolean(selectedCell);
     const selectedRowCount = getSelectedRowIndexes().length || 1;
     const selectedColCount = getSelectedColumnIndexes().length || 1;
     const rowDeleteCount = Math.min(selectedRowCount, Math.max(0, rowCount - MIN_ROW_SIZE));
     const colDeleteCount = Math.min(selectedColCount, Math.max(0, colCount - MIN_COL_SIZE));
+    const visibleByAction = {
+        cut: isSelectionContext,
+        copy: isSelectionContext,
+        paste: isSelectionContext,
+        "insert-row-above": isRowContext,
+        "insert-row-below": isRowContext,
+        "delete-row": isRowContext,
+        "hide-axis": isRowContext || isColumnContext,
+        "show-axes": (isRowContext || isColumnContext) && hasHiddenAxes,
+        "insert-col-left": isColumnContext,
+        "insert-col-right": isColumnContext,
+        "delete-col": isColumnContext,
+        "add-sheet": isSheetContext,
+        "duplicate-sheet": isSheetContext,
+        "rename-sheet": isSheetContext,
+        "delete-sheet": isSheetContext,
+        clear: isSelectionContext,
+        note: isCellContext
+    };
     const stateByAction = {
         cut: hasSelection,
         copy: hasSelection,
         paste: hasSelection && Boolean(internalClipboard),
         "insert-row-above": isRowContext,
+        "insert-row-below": isRowContext,
         "delete-row": isRowContext && rowDeleteCount > 0,
-        "hide-row": isRowContext,
-        "show-rows": hiddenRows.size > 0,
+        "hide-axis": isRowContext || isColumnContext,
+        "show-axes": hiddenRows.size > 0 || hiddenCols.size > 0,
         "insert-col-left": isColumnContext,
+        "insert-col-right": isColumnContext,
         "delete-col": isColumnContext && colDeleteCount > 0,
-        "hide-col": isColumnContext,
-        "show-cols": hiddenCols.size > 0,
         "add-sheet": isSheetContext,
         "duplicate-sheet": isSheetContext,
         "rename-sheet": isSheetContext,
@@ -1051,15 +1092,54 @@ function updateContextMenuState() {
 
     contextMenu.querySelectorAll("[data-action]").forEach((button) => {
         const action = button.dataset.action;
+        button.hidden = !visibleByAction[action];
         button.disabled = !stateByAction[action];
     });
+    updateContextMenuSeparators();
 
     setContextMenuLabel("insert-row-above", `Üste ${selectedRowCount} satır ekle`);
+    setContextMenuLabel("insert-row-below", `Alta ${selectedRowCount} satır ekle`);
     setContextMenuLabel("delete-row", `${selectedRowCount} satır sil`);
-    setContextMenuLabel("hide-row", `${selectedRowCount} satır gizle`);
+    setContextMenuLabel(
+        "hide-axis",
+        isRowContext
+            ? `${selectedRowCount} satır gizle`
+            : isColumnContext
+                ? `${selectedColCount} sütun gizle`
+                : "Seçili satır/sütunları gizle"
+    );
     setContextMenuLabel("insert-col-left", `Sola ${selectedColCount} sütun ekle`);
+    setContextMenuLabel("insert-col-right", `Sağa ${selectedColCount} sütun ekle`);
     setContextMenuLabel("delete-col", `${selectedColCount} sütun sil`);
-    setContextMenuLabel("hide-col", `${selectedColCount} sütun gizle`);
+}
+
+function updateContextMenuSeparators() {
+    if (!contextMenu) return;
+
+    const items = [...contextMenu.children];
+    items.forEach((item, index) => {
+        if (item.tagName !== "HR") return;
+
+        const previousSeparatorIndex = items
+            .slice(0, index)
+            .map((sibling, siblingIndex) => sibling.tagName === "HR" ? siblingIndex : -1)
+            .filter((siblingIndex) => siblingIndex >= 0)
+            .pop() ?? -1;
+        const nextSeparatorOffset = items
+            .slice(index + 1)
+            .findIndex((sibling) => sibling.tagName === "HR");
+        const nextSeparatorIndex = nextSeparatorOffset >= 0
+            ? index + 1 + nextSeparatorOffset
+            : items.length;
+        const hasVisibleBefore = items
+            .slice(previousSeparatorIndex + 1, index)
+            .some((sibling) => !sibling.hidden);
+        const hasVisibleAfter = items
+            .slice(index + 1, nextSeparatorIndex)
+            .some((sibling) => !sibling.hidden);
+
+        item.hidden = !(hasVisibleBefore && hasVisibleAfter);
+    });
 }
 
 function setContextMenuLabel(action, label) {
@@ -1623,13 +1703,13 @@ function handleContextMenuAction(action) {
     if (action === "copy") copySelection();
     if (action === "paste") pasteClipboard();
     if (action === "insert-row-above" && contextMenuTarget?.type === "row") insertRowsAboveSelection();
+    if (action === "insert-row-below" && contextMenuTarget?.type === "row") insertRowsBelowSelection();
     if (action === "delete-row" && contextMenuTarget?.type === "row") deleteSelectedRows();
-    if (action === "hide-row" && contextMenuTarget?.type === "row") hideSelectedRowsOrColumns();
-    if (action === "show-rows") showHiddenRows();
+    if (action === "hide-axis") hideSelectedRowsOrColumns();
+    if (action === "show-axes") showHiddenRowsAndColumns();
     if (action === "insert-col-left" && contextMenuTarget?.type === "column") insertColsLeftOfSelection();
+    if (action === "insert-col-right" && contextMenuTarget?.type === "column") insertColsRightOfSelection();
     if (action === "delete-col" && contextMenuTarget?.type === "column") deleteSelectedColumns();
-    if (action === "hide-col" && contextMenuTarget?.type === "column") hideSelectedRowsOrColumns();
-    if (action === "show-cols") showHiddenColumns();
     if (action === "add-sheet") addSheet();
     if (action === "duplicate-sheet") duplicateSheet();
     if (action === "rename-sheet") renameActiveSheet();
@@ -2333,6 +2413,7 @@ function insertRowsAt(index, count) {
     rowCount += count;
     rowHeights.splice(targetIndex, 0, ...Array.from({ length: count }, () => DEFAULT_ROW_HEIGHT));
     hiddenRows = new Set([...hiddenRows].map((row) => row >= targetIndex ? row + count : row));
+    if (targetIndex < frozenRows) frozenRows += count;
     tableData.splice(
         targetIndex,
         0,
@@ -2370,6 +2451,7 @@ function insertColsAt(index, count) {
     colCount += count;
     colWidths.splice(targetIndex, 0, ...Array.from({ length: count }, () => DEFAULT_COL_WIDTH));
     hiddenCols = new Set([...hiddenCols].map((col) => col >= targetIndex ? col + count : col));
+    if (targetIndex < frozenCols) frozenCols += count;
     tableData.forEach((row) => {
         row.splice(targetIndex, 0, ...Array.from({ length: count }, createEmptyCell));
     });
@@ -2415,6 +2497,7 @@ function deleteRowsAt(indexes) {
     hiddenRows = new Set([...hiddenRows]
         .map((row) => mapDeletedAxisPosition(row, deletedRowsAscending))
         .filter((row) => row !== null && row >= 0 && row < rowCount));
+    frozenRows = Math.max(0, frozenRows - deletedRowsAscending.filter((row) => row < frozenRows).length);
     adjustAllFormulasForGridChange({
         mode: "delete",
         axis: "row",
@@ -2462,6 +2545,7 @@ function deleteColsAt(indexes) {
     hiddenCols = new Set([...hiddenCols]
         .map((col) => mapDeletedAxisPosition(col, deletedColsAscending))
         .filter((col) => col !== null && col >= 0 && col < colCount));
+    frozenCols = Math.max(0, frozenCols - deletedColsAscending.filter((col) => col < frozenCols).length);
     adjustAllFormulasForGridChange({
         mode: "delete",
         axis: "column",
@@ -2692,6 +2776,42 @@ function showHiddenRowsAndColumns() {
     updateToolbarState();
     scheduleAutoSave();
     return true;
+}
+
+function clampFrozenPanes() {
+    frozenRows = Math.max(0, Math.min(rowCount, Number(frozenRows) || 0));
+    frozenCols = Math.max(0, Math.min(colCount, Number(frozenCols) || 0));
+}
+
+function toggleFreezeSelectedAxis() {
+    const rows = getSelectedRowIndexes();
+    const cols = getSelectedColumnIndexes();
+
+    if (selectionMode === "row" && rows.length) {
+        const nextFrozenRows = Math.max(...rows) + 1;
+        pushHistory();
+        frozenRows = frozenRows === nextFrozenRows ? 0 : nextFrozenRows;
+        clampFrozenPanes();
+        renderTable();
+        focusSelectedCell();
+        updateToolbarState();
+        scheduleAutoSave();
+        return true;
+    }
+
+    if (selectionMode === "column" && cols.length) {
+        const nextFrozenCols = Math.max(...cols) + 1;
+        pushHistory();
+        frozenCols = frozenCols === nextFrozenCols ? 0 : nextFrozenCols;
+        clampFrozenPanes();
+        renderTable();
+        focusSelectedCell();
+        updateToolbarState();
+        scheduleAutoSave();
+        return true;
+    }
+
+    return false;
 }
 
 function hasHiddenRowAfter(row) {
@@ -3294,6 +3414,8 @@ function createSheetState(name) {
         rowHeights: [...rowHeights],
         hiddenRows: [...hiddenRows],
         hiddenCols: [...hiddenCols],
+        frozenRows,
+        frozenCols,
         charts: charts.map(cloneChartState).filter(Boolean),
         nextChartNumber,
         activeChartId: activeChart?.id ?? null
@@ -3314,6 +3436,8 @@ function createBlankSheetState(name) {
         rowHeights: Array.from({ length: 100 }, () => DEFAULT_ROW_HEIGHT),
         hiddenRows: [],
         hiddenCols: [],
+        frozenRows: 0,
+        frozenCols: 0,
         charts: [],
         nextChartNumber: 1,
         activeChartId: null
@@ -3334,10 +3458,39 @@ function cloneSheetState(sheet, name) {
         rowHeights: [...sheet.rowHeights],
         hiddenRows: [...(sheet.hiddenRows ?? [])],
         hiddenCols: [...(sheet.hiddenCols ?? [])],
+        frozenRows: Math.max(0, Math.min(sheet.rowCount, Number(sheet.frozenRows) || 0)),
+        frozenCols: Math.max(0, Math.min(sheet.colCount, Number(sheet.frozenCols) || 0)),
         charts: Array.isArray(sheet.charts) ? sheet.charts.map(cloneSavedChartState).filter(Boolean) : [],
         nextChartNumber: Math.max(1, Number(sheet.nextChartNumber) || 1),
         activeChartId: sheet.activeChartId ?? null
     };
+}
+
+function hasCellContent(cell) {
+    return Boolean(
+        cell?.value ||
+        cell?.formula ||
+        hasAnyBorder(cell) ||
+        hasNonDefaultStyle(cell) ||
+        cell?.merge ||
+        cell?.mergedTo
+    );
+}
+
+function isSheetEmpty(sheet) {
+    if (!sheet) return true;
+
+    if ((Number(sheet.rowCount) || 0) !== 100 || (Number(sheet.colCount) || 0) !== 26) return false;
+    if (sheet.activeFilter) return false;
+    if ((sheet.hiddenRows?.length ?? 0) > 0 || (sheet.hiddenCols?.length ?? 0) > 0) return false;
+    if ((Number(sheet.frozenRows) || 0) > 0 || (Number(sheet.frozenCols) || 0) > 0) return false;
+    if ((sheet.charts?.length ?? 0) > 0) return false;
+    if ((sheet.rowHeights ?? []).some((height) => height !== DEFAULT_ROW_HEIGHT)) return false;
+    if ((sheet.colWidths ?? []).some((width) => width !== DEFAULT_COL_WIDTH)) return false;
+
+    return !(sheet.tableData ?? []).some((row) =>
+        row.some((cell) => hasCellContent(cell))
+    );
 }
 
 function captureCurrentSheet() {
@@ -3358,6 +3511,8 @@ function applySheetState(sheet) {
     rowHeights = [...sheet.rowHeights];
     hiddenRows = new Set(sheet.hiddenRows ?? []);
     hiddenCols = new Set(sheet.hiddenCols ?? []);
+    frozenRows = Math.max(0, Math.min(rowCount, Number(sheet.frozenRows) || 0));
+    frozenCols = Math.max(0, Math.min(colCount, Number(sheet.frozenCols) || 0));
     extraSelections = [];
     copiedRange = null;
     internalClipboard = null;
@@ -3613,7 +3768,15 @@ function reorderSheet(fromIndex, toIndex) {
 }
 
 function deleteActiveSheet() {
-    if (sheets.length <= 1) return;
+    if (sheets.length <= 1) return false;
+
+    captureCurrentSheet();
+    const sheet = sheets[activeSheetIndex];
+    if (!isSheetEmpty(sheet)) {
+        const sheetName = sheet?.name || "Bu sayfa";
+        const shouldDelete = window.confirm(`"${sheetName}" boş değil. Yine de silmek istiyor musunuz?`);
+        if (!shouldDelete) return false;
+    }
 
     sheets.splice(activeSheetIndex, 1);
     activeSheetIndex = Math.max(0, activeSheetIndex - 1);
@@ -3623,6 +3786,7 @@ function deleteActiveSheet() {
     renderSheetTabs();
     renderTable();
     focusSelectedCell();
+    return true;
 }
 
 function getNextSaveNumber() {
@@ -3701,6 +3865,8 @@ function createNewWorkbook() {
     activeFilter = null;
     hiddenRows = new Set();
     hiddenCols = new Set();
+    frozenRows = 0;
+    frozenCols = 0;
     activeSheetIndex = 0;
     renamingSheetIndex = null;
     undoStack = [];
@@ -3956,6 +4122,8 @@ function normalizeImportedSheet(sheet, index) {
                 .map((col) => Number(col))
                 .filter((col) => Number.isInteger(col) && col >= 0 && col < safeColCount)
             : [],
+        frozenRows: Math.max(0, Math.min(safeRowCount, Number(sheet?.frozenRows) || 0)),
+        frozenCols: Math.max(0, Math.min(safeColCount, Number(sheet?.frozenCols) || 0)),
         charts: normalizedCharts,
         nextChartNumber: nextImportedChartNumber,
         activeChartId: sheet?.activeChartId ?? null
@@ -4500,7 +4668,9 @@ function createHistorySnapshot() {
         colWidths: [...colWidths],
         rowHeights: [...rowHeights],
         hiddenRows: [...hiddenRows],
-        hiddenCols: [...hiddenCols]
+        hiddenCols: [...hiddenCols],
+        frozenRows,
+        frozenCols
     };
 }
 
@@ -4518,6 +4688,8 @@ function restoreHistorySnapshot(snapshot) {
     rowHeights = [...snapshot.rowHeights];
     hiddenRows = new Set(snapshot.hiddenRows ?? []);
     hiddenCols = new Set(snapshot.hiddenCols ?? []);
+    frozenRows = Math.max(0, Math.min(rowCount, Number(snapshot.frozenRows) || 0));
+    frozenCols = Math.max(0, Math.min(colCount, Number(snapshot.frozenCols) || 0));
     extraSelections = [];
     copiedRange = null;
     internalClipboard = null;
@@ -4686,6 +4858,8 @@ function initData() {
     tableData = [];
     colWidths = Array.from({ length: colCount }, () => DEFAULT_COL_WIDTH);
     rowHeights = Array.from({ length: rowCount }, () => DEFAULT_ROW_HEIGHT);
+    frozenRows = 0;
+    frozenCols = 0;
 
     for (let r = 0; r < rowCount; r++) {
         const row = [];
@@ -4702,6 +4876,40 @@ function renderTable() {
         e.preventDefault();
         hideContextMenu();
     });
+    clampFrozenPanes();
+
+    const zoomScale = getZoomScale();
+    const headerHeight = DEFAULT_ROW_HEIGHT;
+    const rowHeaderWidth = 46;
+    const frozenRowTops = new Map();
+    const frozenColLefts = new Map();
+    let frozenTop = headerHeight;
+    let frozenLeft = rowHeaderWidth;
+
+    for (let r = 0; r < frozenRows; r++) {
+        if (hiddenRows.has(r) || isRowHiddenByFilter(r)) continue;
+        frozenRowTops.set(r, frozenTop);
+        frozenTop += Math.round((rowHeights[r] ?? DEFAULT_ROW_HEIGHT) * zoomScale);
+    }
+
+    for (let c = 0; c < frozenCols; c++) {
+        if (hiddenCols.has(c)) continue;
+        frozenColLefts.set(c, frozenLeft);
+        frozenLeft += Math.round((colWidths[c] ?? DEFAULT_COL_WIDTH) * zoomScale);
+    }
+
+    const applyFrozenPosition = (element, row, col) => {
+        const hasFrozenRow = frozenRowTops.has(row);
+        const hasFrozenCol = frozenColLefts.has(col);
+        if (!hasFrozenRow && !hasFrozenCol) return;
+
+        element.classList.add("frozen-pane-cell");
+        element.style.position = "sticky";
+        element.style.backgroundColor = element.style.backgroundColor || "#ffffff";
+        if (hasFrozenRow) element.style.top = `${frozenRowTops.get(row)}px`;
+        if (hasFrozenCol) element.style.left = `${frozenColLefts.get(col)}px`;
+        element.style.zIndex = hasFrozenRow && hasFrozenCol ? "7" : hasFrozenRow ? "5" : "3";
+    };
 
     // HEADER
     const headerRow = document.createElement("tr");
@@ -4758,6 +4966,11 @@ function renderTable() {
         }
         if (hasHiddenColBefore(c)) {
             th.classList.add("hidden-col-before");
+        }
+        if (frozenColLefts.has(c)) {
+            th.classList.add("frozen-pane-header");
+            th.style.left = `${frozenColLefts.get(c)}px`;
+            th.style.zIndex = "6";
         }
         th.addEventListener("mousedown", (e) => {
             if (e.button !== 0 || resizeState || e.shiftKey || e.ctrlKey || e.metaKey) return;
@@ -4841,6 +5054,11 @@ function renderTable() {
         }
         if (hasHiddenRowBefore(r)) {
             rowHeader.classList.add("hidden-row-before");
+        }
+        if (frozenRowTops.has(r)) {
+            rowHeader.classList.add("frozen-pane-header");
+            rowHeader.style.top = `${frozenRowTops.get(r)}px`;
+            rowHeader.style.zIndex = "7";
         }
         rowHeader.addEventListener("mousedown", (e) => {
             if (e.button !== 0 || resizeState || e.shiftKey || e.ctrlKey || e.metaKey) return;
@@ -4932,6 +5150,7 @@ function renderTable() {
             if (cellStyle.backgroundColor) {
                 td.style.backgroundColor = normalizeColorValue(cellStyle.backgroundColor, "#fff2cc");
             }
+            applyFrozenPosition(td, r, c);
             if (
                 activeFilter &&
                 r === activeFilter.range.minRow &&
@@ -5502,6 +5721,14 @@ showAxisBtn?.addEventListener("click", () => {
     hideBorderMenu();
     hideFilterPopup();
     showHiddenRowsAndColumns();
+});
+
+freezeAxisBtn?.addEventListener("click", () => {
+    if (freezeAxisBtn.disabled) return;
+    hideContextMenu();
+    hideBorderMenu();
+    hideFilterPopup();
+    toggleFreezeSelectedAxis();
 });
 
 insertChartBtn?.addEventListener("click", () => {
