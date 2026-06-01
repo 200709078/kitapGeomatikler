@@ -1,9 +1,5 @@
-//satır seçildiğinde ikonun ilk satır mavi diğerleri beyaz sütun seçildiğinde ikonun ilk sütun mavi değerleri beyaz olacak şekilde iki farklı ikon olsun
-// butonun titlesinde seçilen satır donmuş ise Seçilen satırı çöz, seçilen sütun donmuş ise Seçilen sütunu çöz yazsın.
-// Donmuş hücrelerin tümüne kenarlık vermeyelim. Donmuş satırın altına biraz kalınca gri bir hr ekleyip bu hr yi mouse ile tutup yerini değiştirebileyim. Sütun dondurma da aynı şekilde olsun.
-// PopUp menüde de bunları ekleyelim popup elemanlarının gizleme/gösterme mantığını bozmadan.
-// görünüm menüsündeki yakınlaştırma seçeneklerini(%100,%50 gibi) büyüteçli (içinde + olsa iyi olur.) simgesi olan bir sağa açılır Yakınlaştır menüsü altına toplayalım.
-// görünüm menüsüne de bu satır/sütun dondurma özelliğini simgesi 1. satırı ve 1. sütunu mavi olan bir sağa açılır Dondur menüsü altına ekleyelim. 
+// görünüm menüsündeki yakınlaştırma seçeneklerini (%100,%50 gibi) büyüteçli (içinde + olsa iyi olur.) simgesi olan bir sağa açılır Yakınlaştır menüsü altına toplayalım.
+// görünüm menüsüne de bu satır/sütun dondurma özelliğini aynı icon ile sağa açılır bir Dondur menüsü altına ekleyelim.
 const table = document.getElementById("data-table");
 const addRowBtn = document.getElementById("add-row-btn");
 const addRowDownBtn = document.getElementById("add-row-down-btn");
@@ -200,6 +196,7 @@ let headerSelectionState = null;
 let moveSelectionState = null;
 let suppressClickAfterMove = false;
 let resizeState = null;
+let freezeDragState = null;
 let undoStack = [];
 let redoStack = [];
 let isRestoringHistory = false;
@@ -768,11 +765,26 @@ function updateDataMenuState() {
         const canFreezeAxis = isRowSelection || isColumnSelection;
         freezeAxisBtn.disabled = !canFreezeAxis || isEditing;
         freezeAxisBtn.classList.toggle("active", Boolean(frozenRows || frozenCols));
-        freezeAxisBtn.title = isRowSelection
-            ? "Seçili satırı dondur"
-            : isColumnSelection
-                ? "Seçili sütunu dondur"
-                : "Satır veya sütun seç";
+
+        if (isRowSelection) {
+            const rows = getSelectedRowIndexes();
+            const selectedFreezeLine = Math.max(...rows) + 1;
+
+            freezeAxisBtn.title =
+                frozenRows === selectedFreezeLine
+                    ? "Seçilen satırı çöz"
+                    : "Seçilen satırı dondur";
+        } else if (isColumnSelection) {
+            const cols = getSelectedColumnIndexes();
+            const selectedFreezeLine = Math.max(...cols) + 1;
+
+            freezeAxisBtn.title =
+                frozenCols === selectedFreezeLine
+                    ? "Seçilen sütunu çöz"
+                    : "Seçilen sütunu dondur";
+        } else {
+            freezeAxisBtn.title = "Satır veya sütun seç";
+        }
     }
 }
 
@@ -1059,6 +1071,7 @@ function updateContextMenuState() {
         "insert-row-below": isRowContext,
         "delete-row": isRowContext,
         "hide-axis": isRowContext || isColumnContext,
+        "freeze-axis": isRowContext || isColumnContext,
         "show-axes": (isRowContext || isColumnContext) && hasHiddenAxes,
         "insert-col-left": isColumnContext,
         "insert-col-right": isColumnContext,
@@ -1078,6 +1091,7 @@ function updateContextMenuState() {
         "insert-row-below": isRowContext,
         "delete-row": isRowContext && rowDeleteCount > 0,
         "hide-axis": isRowContext || isColumnContext,
+        "freeze-axis": isRowContext || isColumnContext,
         "show-axes": hiddenRows.size > 0 || hiddenCols.size > 0,
         "insert-col-left": isColumnContext,
         "insert-col-right": isColumnContext,
@@ -1107,6 +1121,10 @@ function updateContextMenuState() {
             : isColumnContext
                 ? `${selectedColCount} sütun gizle`
                 : "Seçili satır/sütunları gizle"
+    );
+    setContextMenuLabel(
+        "freeze-axis",
+        getFreezeAxisLabel(isRowContext, isColumnContext)
     );
     setContextMenuLabel("insert-col-left", `Sola ${selectedColCount} sütun ekle`);
     setContextMenuLabel("insert-col-right", `Sağa ${selectedColCount} sütun ekle`);
@@ -1140,6 +1158,26 @@ function updateContextMenuSeparators() {
 
         item.hidden = !(hasVisibleBefore && hasVisibleAfter);
     });
+}
+
+function getFreezeAxisLabel(isRowContext, isColumnContext) {
+    if (isRowContext) {
+        const rows = getSelectedRowIndexes();
+        const selectedFreezeLine = rows.length ? Math.max(...rows) + 1 : 0;
+        return frozenRows === selectedFreezeLine
+            ? "Seçilen satırı çöz"
+            : "Seçilen satırı dondur";
+    }
+
+    if (isColumnContext) {
+        const cols = getSelectedColumnIndexes();
+        const selectedFreezeLine = cols.length ? Math.max(...cols) + 1 : 0;
+        return frozenCols === selectedFreezeLine
+            ? "Seçilen sütunu çöz"
+            : "Seçilen sütunu dondur";
+    }
+
+    return "Seçili satır/sütunu dondur";
 }
 
 function setContextMenuLabel(action, label) {
@@ -1706,6 +1744,7 @@ function handleContextMenuAction(action) {
     if (action === "insert-row-below" && contextMenuTarget?.type === "row") insertRowsBelowSelection();
     if (action === "delete-row" && contextMenuTarget?.type === "row") deleteSelectedRows();
     if (action === "hide-axis") hideSelectedRowsOrColumns();
+    if (action === "freeze-axis") toggleFreezeSelectedAxis();
     if (action === "show-axes") showHiddenRowsAndColumns();
     if (action === "insert-col-left" && contextMenuTarget?.type === "column") insertColsLeftOfSelection();
     if (action === "insert-col-right" && contextMenuTarget?.type === "column") insertColsRightOfSelection();
@@ -2812,6 +2851,155 @@ function toggleFreezeSelectedAxis() {
     }
 
     return false;
+}
+
+function removeFreezeDividers() {
+    tableArea?.querySelectorAll(".freeze-divider").forEach((divider) => divider.remove());
+}
+
+function updateFreezeDividerPositions() {
+    if (!tableArea) return;
+
+    const rowDivider = tableArea.querySelector(".freeze-row-divider");
+    if (rowDivider) {
+        const top = Number(rowDivider.dataset.freezeTop) || 0;
+        rowDivider.style.top = `${tableArea.scrollTop + top - 2}px`;
+        rowDivider.style.left = `${tableArea.scrollLeft}px`;
+        rowDivider.style.width = `${tableArea.clientWidth}px`;
+    }
+
+    const colDivider = tableArea.querySelector(".freeze-col-divider");
+    if (colDivider) {
+        const left = Number(colDivider.dataset.freezeLeft) || 0;
+        colDivider.style.left = `${tableArea.scrollLeft + left - 2}px`;
+        colDivider.style.top = `${tableArea.scrollTop}px`;
+        colDivider.style.height = `${tableArea.clientHeight}px`;
+    }
+}
+
+function getFreezeDividerMetrics() {
+    const zoomScale = getZoomScale();
+    let frozenTop = DEFAULT_ROW_HEIGHT;
+    let frozenLeft = 46;
+
+    for (let row = 0; row < frozenRows; row++) {
+        if (hiddenRows.has(row) || isRowHiddenByFilter(row)) continue;
+        frozenTop += Math.round((rowHeights[row] ?? DEFAULT_ROW_HEIGHT) * zoomScale);
+    }
+
+    for (let col = 0; col < frozenCols; col++) {
+        if (hiddenCols.has(col)) continue;
+        frozenLeft += Math.round((colWidths[col] ?? DEFAULT_COL_WIDTH) * zoomScale);
+    }
+
+    return { frozenTop, frozenLeft };
+}
+
+function refreshFreezeDividers() {
+    const { frozenTop, frozenLeft } = getFreezeDividerMetrics();
+    renderFreezeDividers(frozenTop, frozenLeft);
+}
+
+function renderFreezeDividers(frozenTop, frozenLeft) {
+    if (!tableArea) return;
+
+    removeFreezeDividers();
+
+    if (frozenRows > 0) {
+        const rowDivider = document.createElement("div");
+        rowDivider.className = "freeze-divider freeze-row-divider";
+        rowDivider.dataset.freezeTop = String(frozenTop);
+        rowDivider.title = "Donmuş satır sınırını taşı";
+        rowDivider.addEventListener("mousedown", (e) => startFreezeDividerDrag(e, "row"));
+        tableArea.appendChild(rowDivider);
+    }
+
+    if (frozenCols > 0) {
+        const colDivider = document.createElement("div");
+        colDivider.className = "freeze-divider freeze-col-divider";
+        colDivider.dataset.freezeLeft = String(frozenLeft);
+        colDivider.title = "Donmuş sütun sınırını taşı";
+        colDivider.addEventListener("mousedown", (e) => startFreezeDividerDrag(e, "column"));
+        tableArea.appendChild(colDivider);
+    }
+
+    updateFreezeDividerPositions();
+}
+
+function startFreezeDividerDrag(e, type) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    pushHistory();
+    freezeDragState = {
+        type,
+        startRows: frozenRows,
+        startCols: frozenCols
+    };
+    tableArea?.querySelector(`.freeze-${type === "row" ? "row" : "col"}-divider`)?.classList.add("dragging");
+}
+
+function getFreezeRowFromPointer(clientY) {
+    const tableRect = table.getBoundingClientRect();
+    const contentY = clientY - tableRect.top;
+    const headerHeight = DEFAULT_ROW_HEIGHT;
+    if (contentY <= headerHeight) return 0;
+
+    let bottom = headerHeight;
+    for (let row = 0; row < rowCount; row++) {
+        if (hiddenRows.has(row) || isRowHiddenByFilter(row)) continue;
+        bottom += Math.round((rowHeights[row] ?? DEFAULT_ROW_HEIGHT) * getZoomScale());
+        if (contentY < bottom) return row + 1;
+    }
+
+    return rowCount;
+}
+
+function getFreezeColFromPointer(clientX) {
+    const tableRect = table.getBoundingClientRect();
+    const contentX = clientX - tableRect.left;
+    const rowHeaderWidth = 46;
+    if (contentX <= rowHeaderWidth) return 0;
+
+    let right = rowHeaderWidth;
+    for (let col = 0; col < colCount; col++) {
+        if (hiddenCols.has(col)) continue;
+        right += Math.round((colWidths[col] ?? DEFAULT_COL_WIDTH) * getZoomScale());
+        if (contentX < right) return col + 1;
+    }
+
+    return colCount;
+}
+
+function updateFreezeDividerDrag(e) {
+    if (!freezeDragState) return false;
+
+    if (freezeDragState.type === "row") {
+        const nextFrozenRows = getFreezeRowFromPointer(e.clientY);
+        if (nextFrozenRows !== frozenRows) {
+            frozenRows = nextFrozenRows;
+            renderTable();
+        }
+        return true;
+    }
+
+    const nextFrozenCols = getFreezeColFromPointer(e.clientX);
+    if (nextFrozenCols !== frozenCols) {
+        frozenCols = nextFrozenCols;
+        renderTable();
+    }
+    return true;
+}
+
+function finishFreezeDividerDrag() {
+    if (!freezeDragState) return false;
+
+    const changed = frozenRows !== freezeDragState.startRows || frozenCols !== freezeDragState.startCols;
+    freezeDragState = null;
+    tableArea?.querySelectorAll(".freeze-divider.dragging").forEach((divider) => divider.classList.remove("dragging"));
+    updateToolbarState();
+    if (changed) scheduleAutoSave();
+    return true;
 }
 
 function hasHiddenRowAfter(row) {
@@ -4910,6 +5098,7 @@ function renderTable() {
         if (hasFrozenCol) element.style.left = `${frozenColLefts.get(col)}px`;
         element.style.zIndex = hasFrozenRow && hasFrozenCol ? "7" : hasFrozenRow ? "5" : "3";
     };
+    renderFreezeDividers(frozenTop, frozenLeft);
 
     // HEADER
     const headerRow = document.createElement("tr");
@@ -5721,6 +5910,12 @@ showAxisBtn?.addEventListener("click", () => {
     hideBorderMenu();
     hideFilterPopup();
     showHiddenRowsAndColumns();
+});
+
+tableArea?.addEventListener("scroll", updateFreezeDividerPositions);
+
+window.addEventListener("mouseup", () => {
+    finishFreezeDividerDrag();
 });
 
 freezeAxisBtn?.addEventListener("click", () => {
@@ -6818,6 +7013,12 @@ contextMenu?.addEventListener("click", (e) => {
 });
 
 window.addEventListener("mousemove", (e) => {
+    if (freezeDragState) {
+        e.preventDefault();
+        updateFreezeDividerDrag(e);
+        return;
+    }
+
     if (chartResizeState) {
         e.preventDefault();
         resizeChartWindow(e);
@@ -6846,6 +7047,7 @@ window.addEventListener("mousemove", (e) => {
         );
         colWidths[resizeState.index] = width;
         applyColumnWidth(resizeState.index);
+        if (resizeState.index < frozenCols) refreshFreezeDividers();
     }
 
     if (resizeState.type === "row") {
@@ -6855,6 +7057,7 @@ window.addEventListener("mousemove", (e) => {
         );
         rowHeights[resizeState.index] = height;
         applyRowHeight(resizeState.index);
+        if (resizeState.index < frozenRows) refreshFreezeDividers();
     }
 });
 

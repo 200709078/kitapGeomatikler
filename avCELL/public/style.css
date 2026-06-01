@@ -848,6 +848,33 @@ body.formula-hidden #formula-bar {
   scrollbar-color: #c1c7cd #f1f3f4;
 }
 
+.freeze-divider {
+  position: absolute;
+  z-index: 20;
+  background: #9aa0a6;
+  border-radius: 999px;
+  opacity: 0.92;
+}
+
+.freeze-divider:hover,
+.freeze-divider.dragging {
+  background: #6f7479;
+}
+
+.freeze-row-divider {
+  height: 5px;
+  cursor: grab;
+}
+
+.freeze-col-divider {
+  width: 5px;
+  cursor: grab;
+}
+
+.freeze-divider.dragging {
+  cursor: grabbing;
+}
+
 #data-table {
   border-collapse: separate;
   border-spacing: 0;
@@ -960,13 +987,6 @@ th.active-header {
 th.move-target-header {
   background: #d2e3fc;
   box-shadow: inset 0 0 0 2px var(--sheet-blue);
-}
-
-.frozen-pane-header,
-.frozen-pane-cell {
-  box-shadow:
-    inset -1px 0 0 #c1c7cd,
-    inset 0 -1px 0 #c1c7cd;
 }
 
 .column-header.hidden-col-after::after,
