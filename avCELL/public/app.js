@@ -5645,15 +5645,7 @@ function setupToolbarCarousel() {
     toolbarGroup.appendChild(rightButton);
     toolbarGroup.dataset.carouselReady = "true";
 
-    let isPointerDown = false;
-    let isDragging = false;
-    let suppressNextClick = false;
-    let pointerId = null;
-    let startX = 0;
-    let lastX = 0;
     let offsetX = 0;
-
-    const dragThreshold = 6;
 
     const setTrackOffset = () => {
         track.style.transform = `translateX(${offsetX}px)`;
@@ -5707,55 +5699,6 @@ function setupToolbarCarousel() {
         normalizeTrack();
     };
 
-    const finishDrag = () => {
-        if (!isPointerDown) return;
-
-        isPointerDown = false;
-        pointerId = null;
-        toolbarGroup.classList.remove("toolbar-dragging");
-
-        if (isDragging) {
-            suppressNextClick = true;
-            window.setTimeout(() => {
-                suppressNextClick = false;
-            }, 0);
-        }
-
-        isDragging = false;
-    };
-
-    toolbarGroup.addEventListener("pointerdown", (e) => {
-        if (e.button !== 0) return;
-        if (e.target.closest(".toolbar-edge-btn")) return;
-        if (!e.target.closest("button")) return;
-
-        isPointerDown = true;
-        isDragging = false;
-        pointerId = e.pointerId;
-        startX = e.clientX;
-        lastX = e.clientX;
-        toolbarGroup.setPointerCapture?.(e.pointerId);
-    });
-
-    toolbarGroup.addEventListener("pointermove", (e) => {
-        if (!isPointerDown || e.pointerId !== pointerId) return;
-
-        const totalDelta = e.clientX - startX;
-        if (!isDragging && Math.abs(totalDelta) < dragThreshold) return;
-
-        isDragging = true;
-        toolbarGroup.classList.add("toolbar-dragging");
-        e.preventDefault();
-
-        offsetX += e.clientX - lastX;
-        lastX = e.clientX;
-        normalizeTrack();
-    });
-
-    toolbarGroup.addEventListener("pointerup", finishDrag);
-    toolbarGroup.addEventListener("pointercancel", finishDrag);
-    toolbarGroup.addEventListener("lostpointercapture", finishDrag);
-
     leftButton.addEventListener("click", (e) => {
         e.stopPropagation();
         shiftToolbar("left");
@@ -5765,17 +5708,6 @@ function setupToolbarCarousel() {
         e.stopPropagation();
         shiftToolbar("right");
     });
-
-    toolbarGroup.addEventListener(
-        "click",
-        (e) => {
-            if (!suppressNextClick) return;
-            e.preventDefault();
-            e.stopPropagation();
-            suppressNextClick = false;
-        },
-        true
-    );
 
     updateOverflowControls();
     window.addEventListener("resize", updateOverflowControls);

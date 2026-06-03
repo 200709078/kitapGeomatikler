@@ -364,7 +364,6 @@ body.toolbar-hidden #control-panel {
   min-width: 0;
   overflow: hidden;
   position: relative;
-  touch-action: pan-y;
 }
 
 .toolbar-track {
@@ -408,12 +407,6 @@ body.toolbar-hidden #control-panel {
 
 .toolbar-group.toolbar-has-overflow .toolbar-edge-btn {
   display: inline-flex;
-}
-
-.toolbar-group.toolbar-dragging,
-.toolbar-group.toolbar-dragging .icon-btn,
-.toolbar-group.toolbar-dragging .zoom-value-btn {
-  cursor: grabbing;
 }
 
 .toolbar-cluster {
