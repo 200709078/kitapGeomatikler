@@ -116,20 +116,34 @@
                                 <span>Kılavuz çizgileri</span>
                             </button>
                             <hr>
-                            <button type="button" data-zoom-value="50"><span class="menu-check"
-                                    aria-hidden="true"></span><span>50%</span></button>
-                            <button type="button" data-zoom-value="75"><span class="menu-check"
-                                    aria-hidden="true"></span><span>75%</span></button>
-                            <button type="button" data-zoom-value="90"><span class="menu-check"
-                                    aria-hidden="true"></span><span>90%</span></button>
-                            <button type="button" data-zoom-value="100"><span class="menu-check"
-                                    aria-hidden="true"></span><span>100%</span></button>
-                            <button type="button" data-zoom-value="125"><span class="menu-check"
-                                    aria-hidden="true"></span><span>125%</span></button>
-                            <button type="button" data-zoom-value="150"><span class="menu-check"
-                                    aria-hidden="true"></span><span>150%</span></button>
-                            <button type="button" data-zoom-value="200"><span class="menu-check"
-                                    aria-hidden="true"></span><span>200%</span></button>
+                            <button id="menu-freeze-axis-btn" type="button">
+                                <img src="icons/freeze-pane.svg" alt="" />
+                                <span>Seçili satır/sütunu dondur</span>
+                            </button>
+                            <hr>
+                            <div class="format-submenu-shell">
+                                <button id="menu-zoom-btn" type="button">
+                                    <img src="icons/zoom-in.svg" alt="" />
+                                    <span>Yakınlaştır</span>
+                                    <span class="submenu-arrow" aria-hidden="true">›</span>
+                                </button>
+                                <div class="text-menu-popover format-submenu">
+                                    <button type="button" data-zoom-value="50"><span class="menu-check"
+                                            aria-hidden="true"></span><span>50%</span></button>
+                                    <button type="button" data-zoom-value="75"><span class="menu-check"
+                                            aria-hidden="true"></span><span>75%</span></button>
+                                    <button type="button" data-zoom-value="90"><span class="menu-check"
+                                            aria-hidden="true"></span><span>90%</span></button>
+                                    <button type="button" data-zoom-value="100"><span class="menu-check"
+                                            aria-hidden="true"></span><span>100%</span></button>
+                                    <button type="button" data-zoom-value="125"><span class="menu-check"
+                                            aria-hidden="true"></span><span>125%</span></button>
+                                    <button type="button" data-zoom-value="150"><span class="menu-check"
+                                            aria-hidden="true"></span><span>150%</span></button>
+                                    <button type="button" data-zoom-value="200"><span class="menu-check"
+                                            aria-hidden="true"></span><span>200%</span></button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="menu-shell">
@@ -626,18 +640,6 @@
             <img src="icons/delrow.svg" alt="" />
             <span>Satır sil</span>
         </button>
-        <button type="button" data-action="hide-axis">
-            <img src="icons/eye-off.svg" alt="" />
-            <span>Seçili satırları/sütunları gizle</span>
-        </button>
-        <button type="button" data-action="freeze-axis">
-            <img src="icons/freeze-pane.svg" alt="" />
-            <span>Seçili satırı/sütunu dondur</span>
-        </button>
-        <button type="button" data-action="show-axes">
-            <img src="icons/eye.svg" alt="" />
-            <span>Gizli satırları/sütunları göster</span>
-        </button>
         <button type="button" data-action="insert-col-left">
             <img src="icons/addcolleft.svg" alt="" />
             <span>Sola sütun ekle</span>
@@ -649,6 +651,18 @@
         <button type="button" data-action="delete-col">
             <img src="icons/delcol.svg" alt="" />
             <span>Sütun sil</span>
+        </button>
+        <button type="button" data-action="hide-axis">
+            <img src="icons/eye-off.svg" alt="" />
+            <span>Seçili satırları/sütunları gizle</span>
+        </button>
+        <button type="button" data-action="show-axes">
+            <img src="icons/eye.svg" alt="" />
+            <span>Gizli satırları/sütunları göster</span>
+        </button>
+        <button type="button" data-action="freeze-axis">
+            <img src="icons/freeze-pane.svg" alt="" />
+            <span>Seçili satırı/sütunu dondur</span>
         </button>
         <hr>
         <button type="button" data-action="add-sheet">

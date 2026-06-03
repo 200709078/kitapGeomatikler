@@ -56,6 +56,12 @@
       <file href="public/icons/border-outer.svg" />
       <file href="public/icons/border-right.svg" />
       <file href="public/icons/border-top.svg" />
+      <file href="public/icons/chart-area.svg" />
+      <file href="public/icons/chart-bar-horizontal.svg" />
+      <file href="public/icons/chart-doughnut.svg" />
+      <file href="public/icons/chart-line.svg" />
+      <file href="public/icons/chart-pie.svg" />
+      <file href="public/icons/chart-radar.svg" />
       <file href="public/icons/clear.svg" />
       <file href="public/icons/copy.svg" />
       <file href="public/icons/cols.svg" />
@@ -72,6 +78,7 @@
       <file href="public/icons/format-currency.svg" />
       <file href="public/icons/format-more.svg" />
       <file href="public/icons/format-percent.svg" />
+      <file href="public/icons/freeze-pane.svg" />
       <file href="public/icons/logo.svg" />
       <file href="public/icons/merge-cells.svg" />
       <file href="public/icons/new.svg" />
@@ -98,6 +105,7 @@
       <file href="public/icons/text-underline.svg" />
       <file href="public/icons/trash.svg" />
       <file href="public/icons/undo.svg" />
+      <file href="public/icons/zoom-in.svg" />
     </resource>
   </resources>
 </manifest>

@@ -1,5 +1,3 @@
-// görünüm menüsündeki yakınlaştırma seçeneklerini (%100,%50 gibi) büyüteçli (içinde + olsa iyi olur.) simgesi olan bir sağa açılır Yakınlaştır menüsü altına toplayalım.
-// görünüm menüsüne de bu satır/sütun dondurma özelliğini aynı icon ile sağa açılır bir Dondur menüsü altına ekleyelim.
 const table = document.getElementById("data-table");
 const addRowBtn = document.getElementById("add-row-btn");
 const addRowDownBtn = document.getElementById("add-row-down-btn");
@@ -42,6 +40,7 @@ const viewMenu = document.getElementById("view-menu");
 const menuViewToolbarBtn = document.getElementById("menu-view-toolbar-btn");
 const menuViewFormulaBtn = document.getElementById("menu-view-formula-btn");
 const menuViewGridlinesBtn = document.getElementById("menu-view-gridlines-btn");
+const menuFreezeAxisBtn = document.getElementById("menu-freeze-axis-btn");
 const insertMenuBtn = document.getElementById("insert-menu-btn");
 const insertMenu = document.getElementById("insert-menu");
 const menuInsertRowsBtn = document.getElementById("menu-insert-rows-btn");
@@ -761,29 +760,40 @@ function updateDataMenuState() {
     if (showAxisBtn) {
         showAxisBtn.disabled = (hiddenRows.size === 0 && hiddenCols.size === 0) || isEditing;
     }
-    if (freezeAxisBtn) {
-        const canFreezeAxis = isRowSelection || isColumnSelection;
-        freezeAxisBtn.disabled = !canFreezeAxis || isEditing;
-        freezeAxisBtn.classList.toggle("active", Boolean(frozenRows || frozenCols));
+    const canFreezeAxis = isRowSelection || isColumnSelection;
+    const freezeAxisButtons = [freezeAxisBtn, menuFreezeAxisBtn].filter(Boolean);
+    if (freezeAxisButtons.length) {
+        const isSelectedAxisFrozen = getSelectedFreezeAxisState(isRowSelection, isColumnSelection).isFrozen;
+
+        freezeAxisButtons.forEach((button) => {
+            button.disabled = !canFreezeAxis || isEditing;
+            button.classList.toggle("active", isSelectedAxisFrozen);
+        });
 
         if (isRowSelection) {
-            const rows = getSelectedRowIndexes();
-            const selectedFreezeLine = Math.max(...rows) + 1;
-
-            freezeAxisBtn.title =
-                frozenRows === selectedFreezeLine
-                    ? "Seçilen satırı çöz"
-                    : "Seçilen satırı dondur";
+            const label = isSelectedAxisFrozen
+                ? "Seçilen satırı çöz"
+                : "Seçilen satırı dondur";
+            freezeAxisButtons.forEach((button) => {
+                button.title = label;
+                const text = button.querySelector("span");
+                if (text) text.textContent = label;
+            });
         } else if (isColumnSelection) {
-            const cols = getSelectedColumnIndexes();
-            const selectedFreezeLine = Math.max(...cols) + 1;
-
-            freezeAxisBtn.title =
-                frozenCols === selectedFreezeLine
-                    ? "Seçilen sütunu çöz"
-                    : "Seçilen sütunu dondur";
+            const label = isSelectedAxisFrozen
+                ? "Seçilen sütunu çöz"
+                : "Seçilen sütunu dondur";
+            freezeAxisButtons.forEach((button) => {
+                button.title = label;
+                const text = button.querySelector("span");
+                if (text) text.textContent = label;
+            });
         } else {
-            freezeAxisBtn.title = "Satır veya sütun seç";
+            freezeAxisButtons.forEach((button) => {
+                button.title = "Satır veya sütun seç";
+                const text = button.querySelector("span");
+                if (text) text.textContent = "Seçili satır/sütunu dondur";
+            });
         }
     }
 }
@@ -1126,6 +1136,7 @@ function updateContextMenuState() {
         "freeze-axis",
         getFreezeAxisLabel(isRowContext, isColumnContext)
     );
+    setContextMenuActive("freeze-axis", getSelectedFreezeAxisState(isRowContext, isColumnContext).isFrozen);
     setContextMenuLabel("insert-col-left", `Sola ${selectedColCount} sütun ekle`);
     setContextMenuLabel("insert-col-right", `Sağa ${selectedColCount} sütun ekle`);
     setContextMenuLabel("delete-col", `${selectedColCount} sütun sil`);
@@ -1161,18 +1172,16 @@ function updateContextMenuSeparators() {
 }
 
 function getFreezeAxisLabel(isRowContext, isColumnContext) {
+    const { isFrozen } = getSelectedFreezeAxisState(isRowContext, isColumnContext);
+
     if (isRowContext) {
-        const rows = getSelectedRowIndexes();
-        const selectedFreezeLine = rows.length ? Math.max(...rows) + 1 : 0;
-        return frozenRows === selectedFreezeLine
+        return isFrozen
             ? "Seçilen satırı çöz"
             : "Seçilen satırı dondur";
     }
 
     if (isColumnContext) {
-        const cols = getSelectedColumnIndexes();
-        const selectedFreezeLine = cols.length ? Math.max(...cols) + 1 : 0;
-        return frozenCols === selectedFreezeLine
+        return isFrozen
             ? "Seçilen sütunu çöz"
             : "Seçilen sütunu dondur";
     }
@@ -1180,9 +1189,41 @@ function getFreezeAxisLabel(isRowContext, isColumnContext) {
     return "Seçili satır/sütunu dondur";
 }
 
+function getSelectedFreezeAxisState(isRowContext, isColumnContext) {
+    if (isRowContext) {
+        const rows = getSelectedRowIndexes();
+        const selectedFreezeLine = rows.length ? Math.max(...rows) + 1 : 0;
+
+        return {
+            selectedFreezeLine,
+            isFrozen: selectedFreezeLine > 0 && frozenRows === selectedFreezeLine
+        };
+    }
+
+    if (isColumnContext) {
+        const cols = getSelectedColumnIndexes();
+        const selectedFreezeLine = cols.length ? Math.max(...cols) + 1 : 0;
+
+        return {
+            selectedFreezeLine,
+            isFrozen: selectedFreezeLine > 0 && frozenCols === selectedFreezeLine
+        };
+    }
+
+    return {
+        selectedFreezeLine: 0,
+        isFrozen: false
+    };
+}
+
 function setContextMenuLabel(action, label) {
     const button = contextMenu?.querySelector(`[data-action="${action}"] span`);
     if (button) button.textContent = label;
+}
+
+function setContextMenuActive(action, isActive) {
+    const button = contextMenu?.querySelector(`[data-action="${action}"]`);
+    if (button) button.classList.toggle("active", isActive);
 }
 
 function showContextMenu(e, target = null) {
@@ -5093,7 +5134,6 @@ function renderTable() {
 
         element.classList.add("frozen-pane-cell");
         element.style.position = "sticky";
-        element.style.backgroundColor = element.style.backgroundColor || "#ffffff";
         if (hasFrozenRow) element.style.top = `${frozenRowTops.get(row)}px`;
         if (hasFrozenCol) element.style.left = `${frozenColLefts.get(col)}px`;
         element.style.zIndex = hasFrozenRow && hasFrozenCol ? "7" : hasFrozenRow ? "5" : "3";
@@ -5920,6 +5960,15 @@ window.addEventListener("mouseup", () => {
 
 freezeAxisBtn?.addEventListener("click", () => {
     if (freezeAxisBtn.disabled) return;
+    hideContextMenu();
+    hideBorderMenu();
+    hideFilterPopup();
+    toggleFreezeSelectedAxis();
+});
+
+menuFreezeAxisBtn?.addEventListener("click", () => {
+    if (menuFreezeAxisBtn.disabled) return;
+    hideViewMenu();
     hideContextMenu();
     hideBorderMenu();
     hideFilterPopup();
