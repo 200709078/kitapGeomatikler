@@ -106,6 +106,7 @@ const alignJustifyBtn = document.getElementById("align-justify-btn");
 const alignTopBtn = document.getElementById("align-top-btn");
 const alignMiddleBtn = document.getElementById("align-middle-btn");
 const alignBottomBtn = document.getElementById("align-bottom-btn");
+const toolbarGroup = document.querySelector(".toolbar-group");
 const sheetTabs = document.getElementById("sheet-tabs");
 const tableArea = document.getElementById("sheet-scroll");
 const chartWindows = document.getElementById("chart-windows");
@@ -5614,6 +5615,179 @@ function renderTable() {
     updateStatusSummary();
     scheduleAutoSave();
 }
+
+function setupToolbarCarousel() {
+    if (!toolbarGroup || toolbarGroup.dataset.carouselReady === "true") return;
+
+    const track = document.createElement("div");
+    track.className = "toolbar-track";
+    const leftButton = document.createElement("button");
+    const rightButton = document.createElement("button");
+
+    leftButton.type = "button";
+    leftButton.className = "toolbar-edge-btn toolbar-edge-btn-left";
+    leftButton.title = "Araçları sola kaydır";
+    leftButton.setAttribute("aria-label", "Araçları sola kaydır");
+    leftButton.textContent = "‹";
+
+    rightButton.type = "button";
+    rightButton.className = "toolbar-edge-btn toolbar-edge-btn-right";
+    rightButton.title = "Araçları sağa kaydır";
+    rightButton.setAttribute("aria-label", "Araçları sağa kaydır");
+    rightButton.textContent = "›";
+
+    while (toolbarGroup.firstChild) {
+        track.appendChild(toolbarGroup.firstChild);
+    }
+
+    toolbarGroup.appendChild(track);
+    toolbarGroup.appendChild(leftButton);
+    toolbarGroup.appendChild(rightButton);
+    toolbarGroup.dataset.carouselReady = "true";
+
+    let isPointerDown = false;
+    let isDragging = false;
+    let suppressNextClick = false;
+    let pointerId = null;
+    let startX = 0;
+    let lastX = 0;
+    let offsetX = 0;
+
+    const dragThreshold = 6;
+
+    const setTrackOffset = () => {
+        track.style.transform = `translateX(${offsetX}px)`;
+    };
+
+    const getVisibleItems = () => Array.from(track.children).filter((child) => child.offsetWidth > 0);
+
+    const hasOverflow = () => track.scrollWidth > toolbarGroup.clientWidth + 1;
+
+    const updateOverflowControls = () => {
+        const shouldShow = hasOverflow();
+        toolbarGroup.classList.toggle("toolbar-has-overflow", shouldShow);
+
+        if (!shouldShow && offsetX !== 0) {
+            offsetX = 0;
+            setTrackOffset();
+        }
+    };
+
+    const normalizeTrack = () => {
+        let items = getVisibleItems();
+        let guard = 0;
+
+        while (items.length > 1 && offsetX <= -items[0].offsetWidth && guard < items.length + 2) {
+            offsetX += items[0].offsetWidth;
+            track.appendChild(items[0]);
+            items = getVisibleItems();
+            guard += 1;
+        }
+
+        guard = 0;
+        while (items.length > 1 && offsetX > 0 && guard < items.length + 2) {
+            const lastItem = items[items.length - 1];
+            offsetX -= lastItem.offsetWidth;
+            track.insertBefore(lastItem, track.firstChild);
+            items = getVisibleItems();
+            guard += 1;
+        }
+
+        setTrackOffset();
+        updateOverflowControls();
+    };
+
+    const shiftToolbar = (direction) => {
+        const items = getVisibleItems();
+        if (items.length <= 1 || !hasOverflow()) return;
+
+        const firstWidth = items[0].offsetWidth || 32;
+        const lastWidth = items[items.length - 1].offsetWidth || firstWidth;
+        offsetX += direction === "right" ? -firstWidth : lastWidth;
+        normalizeTrack();
+    };
+
+    const finishDrag = () => {
+        if (!isPointerDown) return;
+
+        isPointerDown = false;
+        pointerId = null;
+        toolbarGroup.classList.remove("toolbar-dragging");
+
+        if (isDragging) {
+            suppressNextClick = true;
+            window.setTimeout(() => {
+                suppressNextClick = false;
+            }, 0);
+        }
+
+        isDragging = false;
+    };
+
+    toolbarGroup.addEventListener("pointerdown", (e) => {
+        if (e.button !== 0) return;
+        if (e.target.closest(".toolbar-edge-btn")) return;
+        if (!e.target.closest("button")) return;
+
+        isPointerDown = true;
+        isDragging = false;
+        pointerId = e.pointerId;
+        startX = e.clientX;
+        lastX = e.clientX;
+        toolbarGroup.setPointerCapture?.(e.pointerId);
+    });
+
+    toolbarGroup.addEventListener("pointermove", (e) => {
+        if (!isPointerDown || e.pointerId !== pointerId) return;
+
+        const totalDelta = e.clientX - startX;
+        if (!isDragging && Math.abs(totalDelta) < dragThreshold) return;
+
+        isDragging = true;
+        toolbarGroup.classList.add("toolbar-dragging");
+        e.preventDefault();
+
+        offsetX += e.clientX - lastX;
+        lastX = e.clientX;
+        normalizeTrack();
+    });
+
+    toolbarGroup.addEventListener("pointerup", finishDrag);
+    toolbarGroup.addEventListener("pointercancel", finishDrag);
+    toolbarGroup.addEventListener("lostpointercapture", finishDrag);
+
+    leftButton.addEventListener("click", (e) => {
+        e.stopPropagation();
+        shiftToolbar("left");
+    });
+
+    rightButton.addEventListener("click", (e) => {
+        e.stopPropagation();
+        shiftToolbar("right");
+    });
+
+    toolbarGroup.addEventListener(
+        "click",
+        (e) => {
+            if (!suppressNextClick) return;
+            e.preventDefault();
+            e.stopPropagation();
+            suppressNextClick = false;
+        },
+        true
+    );
+
+    updateOverflowControls();
+    window.addEventListener("resize", updateOverflowControls);
+
+    if (window.ResizeObserver) {
+        const toolbarResizeObserver = new ResizeObserver(updateOverflowControls);
+        toolbarResizeObserver.observe(toolbarGroup);
+        toolbarResizeObserver.observe(track);
+    }
+}
+
+setupToolbarCarousel();
 // === EVENTS ===
 undoBtn.addEventListener("click", undo);
 redoBtn.addEventListener("click", redo);

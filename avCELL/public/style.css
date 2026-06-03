@@ -361,11 +361,65 @@ body.toolbar-hidden #control-panel {
   align-items: center;
   gap: 0;
   width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  position: relative;
+  touch-action: pan-y;
+}
+
+.toolbar-track {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex: 0 0 auto;
+  will-change: transform;
+}
+
+.toolbar-edge-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  z-index: 2;
+  width: 18px;
+  padding: 0;
+  color: #5f6368;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #dadce0;
+  cursor: pointer;
+}
+
+.toolbar-edge-btn:hover {
+  color: #202124;
+  background: #f1f3f4;
+}
+
+.toolbar-edge-btn-left {
+  left: 0;
+  border-radius: 0 4px 4px 0;
+}
+
+.toolbar-edge-btn-right {
+  right: 0;
+  border-radius: 4px 0 0 4px;
+}
+
+.toolbar-group.toolbar-has-overflow .toolbar-edge-btn {
+  display: inline-flex;
+}
+
+.toolbar-group.toolbar-dragging,
+.toolbar-group.toolbar-dragging .icon-btn,
+.toolbar-group.toolbar-dragging .zoom-value-btn {
+  cursor: grabbing;
 }
 
 .toolbar-cluster {
   display: flex;
   align-items: center;
+  flex: 0 0 auto;
   gap: 2px;
   min-height: 30px;
   padding: 0 8px;
