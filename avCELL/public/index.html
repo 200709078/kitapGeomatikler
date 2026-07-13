@@ -568,6 +568,10 @@
                                     <img src="icons/chart-pie.svg" alt="" />
                                     <span>Pasta</span>
                                 </button>
+                                <button type="button" role="option" data-chart-type="scatter">
+                                    <img src="icons/chart-scatter.svg" alt="" />
+                                    <span>Saçılım</span>
+                                </button>
                                 <button type="button" role="option" data-chart-type="horizontalBar">
                                     <img src="icons/chart-bar-horizontal.svg" alt="" />
                                     <span>Yatay Çubuk</span>
@@ -599,6 +603,30 @@
                         <input id="chart-settings-gridlines" type="checkbox" checked />
                         <span>Kılavuz çizgilerini göster</span>
                     </label>
+                    <label class="chart-settings-check">
+                        <input id="chart-settings-trendline" type="checkbox" checked />
+                        <span>Eğilim çizgisini göster</span>
+                    </label>
+                    <div id="chart-settings-axis-bounds" class="chart-settings-axis-bounds" hidden>
+                        <div class="chart-settings-axis-grid">
+                            <label class="chart-settings-field">
+                                <span>Yatay Alt Sınır</span>
+                                <input id="chart-settings-x-min" type="text" inputmode="decimal" placeholder="Otomatik" />
+                            </label>
+                            <label class="chart-settings-field">
+                                <span>Yatay Üst Sınır</span>
+                                <input id="chart-settings-x-max" type="text" inputmode="decimal" placeholder="Otomatik" />
+                            </label>
+                            <label class="chart-settings-field">
+                                <span>Dikey Alt Sınır</span>
+                                <input id="chart-settings-y-min" type="text" inputmode="decimal" placeholder="Otomatik" />
+                            </label>
+                            <label class="chart-settings-field">
+                                <span>Dikey Üst Sınır</span>
+                                <input id="chart-settings-y-max" type="text" inputmode="decimal" placeholder="Otomatik" />
+                            </label>
+                        </div>
+                    </div>
                 </div>
             </aside>
         </section>

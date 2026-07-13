@@ -1,3 +1,4 @@
+//SU EKLENECEK...
 import './style.css'
 import * as THREE from 'three'
 import { createScene } from './core/Scene'

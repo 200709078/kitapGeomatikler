@@ -1,3 +1,10 @@
+//Oklar ile düzenleme modundan çıkılarak ok yönündeki hücreye geçilsin.
+//Çoklu satır/sütun seçildiğinde bir satır/sütun genişliği değişirse bütün seçimin genişliği değişsin.
+//Binlik ayraç butonu eklenecek.
+//Hücre düzenleme modunda çift tıklama ile hücre metnininin tümü seçilebilsin.
+// Hücre düzenleme modunda tek tık ile hücre metninin arasına girebileyim.
+//Hücrenin köşesinden tutarak diğer hücrelere çoğaltabileyim.
+
 const table = document.getElementById("data-table");
 const addRowBtn = document.getElementById("add-row-btn");
 const addRowDownBtn = document.getElementById("add-row-down-btn");
@@ -121,6 +128,13 @@ const chartSettingsLabelRangeInput = document.getElementById("chart-settings-lab
 const chartSettingsValueRangeInput = document.getElementById("chart-settings-value-range");
 const chartSettingsGridlinesInput = document.getElementById("chart-settings-gridlines");
 const chartSettingsGridlinesField = chartSettingsGridlinesInput?.closest(".chart-settings-check");
+const chartSettingsTrendlineInput = document.getElementById("chart-settings-trendline");
+const chartSettingsTrendlineField = chartSettingsTrendlineInput?.closest(".chart-settings-check");
+const chartSettingsAxisBounds = document.getElementById("chart-settings-axis-bounds");
+const chartSettingsXMinInput = document.getElementById("chart-settings-x-min");
+const chartSettingsXMaxInput = document.getElementById("chart-settings-x-max");
+const chartSettingsYMinInput = document.getElementById("chart-settings-y-min");
+const chartSettingsYMaxInput = document.getElementById("chart-settings-y-max");
 const filterPopup = document.getElementById("filter-popup");
 const filterPopupTitle = document.getElementById("filter-popup-title");
 const filterPopupInput = document.getElementById("filter-popup-input");
@@ -215,7 +229,7 @@ let chartZIndex = 20;
 let chartDragState = null;
 let chartResizeState = null;
 const MAX_HISTORY_SIZE = 60;
-const CHART_TYPES = ["bar", "line", "pie", "horizontalBar", "area", "doughnut", "radar"];
+const CHART_TYPES = ["bar", "line", "pie", "scatter", "horizontalBar", "area", "doughnut", "radar"];
 const COLOR_PALETTE = [
     "#000000", "#434343", "#666666", "#999999", "#cccccc", "#ffffff",
     "#d93025", "#f4511e", "#fbbc04", "#34a853", "#0f9d58", "#00acc1",
@@ -3578,13 +3592,30 @@ function cloneChartConfig(config) {
         xRange: cloneChartRange(config.xRange),
         yRange: cloneChartRange(config.yRange),
         type: CHART_TYPES.includes(config.type) ? config.type : "bar",
-        showGridlines: config.showGridlines ?? true
+        showGridlines: config.showGridlines ?? true,
+        showTrendline: config.showTrendline ?? true,
+        xAxisMin: getOptionalFiniteNumber(config.xAxisMin),
+        xAxisMax: getOptionalFiniteNumber(config.xAxisMax),
+        yAxisMin: getOptionalFiniteNumber(config.yAxisMin),
+        yAxisMax: getOptionalFiniteNumber(config.yAxisMax)
     };
 }
 
 function getFiniteNumber(value, fallback) {
     const number = Number(value);
     return Number.isFinite(number) ? number : fallback;
+}
+
+function getOptionalFiniteNumber(value) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : null;
+}
+
+function formatChartAxisBoundText(value) {
+    const number = getOptionalFiniteNumber(value);
+    return number === null
+        ? ""
+        : number.toLocaleString("tr-TR", { maximumFractionDigits: 8 });
 }
 
 function cloneChartState(chart) {
@@ -4250,7 +4281,12 @@ function normalizeImportedChartState(chart, rowCountValue, colCountValue, index)
     const settings = {
         ...(chart.settings ?? {}),
         type: CHART_TYPES.includes(chart.settings?.type) ? chart.settings.type : type,
-        showGridlines: chart.settings?.showGridlines ?? chart.config?.showGridlines ?? true
+        showGridlines: chart.settings?.showGridlines ?? chart.config?.showGridlines ?? true,
+        showTrendline: chart.settings?.showTrendline ?? chart.config?.showTrendline ?? true,
+        xAxisMin: getOptionalFiniteNumber(chart.settings?.xAxisMin ?? chart.config?.xAxisMin),
+        xAxisMax: getOptionalFiniteNumber(chart.settings?.xAxisMax ?? chart.config?.xAxisMax),
+        yAxisMin: getOptionalFiniteNumber(chart.settings?.yAxisMin ?? chart.config?.yAxisMin),
+        yAxisMax: getOptionalFiniteNumber(chart.settings?.yAxisMax ?? chart.config?.yAxisMax)
     };
 
     return {
@@ -4260,7 +4296,12 @@ function normalizeImportedChartState(chart, rowCountValue, colCountValue, index)
             xRange,
             yRange,
             type,
-            showGridlines: chart.config?.showGridlines ?? settings.showGridlines
+            showGridlines: chart.config?.showGridlines ?? settings.showGridlines,
+            showTrendline: chart.config?.showTrendline ?? settings.showTrendline,
+            xAxisMin: getOptionalFiniteNumber(chart.config?.xAxisMin ?? settings.xAxisMin),
+            xAxisMax: getOptionalFiniteNumber(chart.config?.xAxisMax ?? settings.xAxisMax),
+            yAxisMin: getOptionalFiniteNumber(chart.config?.yAxisMin ?? settings.yAxisMin),
+            yAxisMax: getOptionalFiniteNumber(chart.config?.yAxisMax ?? settings.yAxisMax)
         } : null,
         settings,
         color: chart.color ? { ...chart.color } : null,
@@ -6115,6 +6156,11 @@ chartSettingsTypeMenu?.addEventListener("click", (e) => {
 chartSettingsLabelRangeInput?.addEventListener("change", applyChartSettingsFromPanel);
 chartSettingsValueRangeInput?.addEventListener("change", applyChartSettingsFromPanel);
 chartSettingsGridlinesInput?.addEventListener("change", applyChartSettingsFromPanel);
+chartSettingsTrendlineInput?.addEventListener("change", applyChartSettingsFromPanel);
+chartSettingsXMinInput?.addEventListener("change", applyChartSettingsFromPanel);
+chartSettingsXMaxInput?.addEventListener("change", applyChartSettingsFromPanel);
+chartSettingsYMinInput?.addEventListener("change", applyChartSettingsFromPanel);
+chartSettingsYMaxInput?.addEventListener("change", applyChartSettingsFromPanel);
 
 filterPopupApplyBtn?.addEventListener("click", () => {
     if (filterPopupColumn === null) return;
@@ -7657,7 +7703,16 @@ function createChartWindow(config = null, data = null, savedState = null, should
         type: savedState?.settings?.type ?? config?.type ?? "bar",
         labelRangeText: savedState?.settings?.labelRangeText ?? formatChartRange(config?.xRange),
         valueRangeText: savedState?.settings?.valueRangeText ?? formatChartRange(config?.yRange),
-        showGridlines: savedState?.settings?.showGridlines ?? config?.showGridlines ?? true
+        showGridlines: savedState?.settings?.showGridlines ?? config?.showGridlines ?? true,
+        showTrendline: savedState?.settings?.showTrendline ?? config?.showTrendline ?? true,
+        xAxisMin: getOptionalFiniteNumber(savedState?.settings?.xAxisMin ?? config?.xAxisMin),
+        xAxisMax: getOptionalFiniteNumber(savedState?.settings?.xAxisMax ?? config?.xAxisMax),
+        yAxisMin: getOptionalFiniteNumber(savedState?.settings?.yAxisMin ?? config?.yAxisMin),
+        yAxisMax: getOptionalFiniteNumber(savedState?.settings?.yAxisMax ?? config?.yAxisMax),
+        xAxisMinText: savedState?.settings?.xAxisMinText ?? formatChartAxisBoundText(savedState?.settings?.xAxisMin ?? config?.xAxisMin),
+        xAxisMaxText: savedState?.settings?.xAxisMaxText ?? formatChartAxisBoundText(savedState?.settings?.xAxisMax ?? config?.xAxisMax),
+        yAxisMinText: savedState?.settings?.yAxisMinText ?? formatChartAxisBoundText(savedState?.settings?.yAxisMin ?? config?.yAxisMin),
+        yAxisMaxText: savedState?.settings?.yAxisMaxText ?? formatChartAxisBoundText(savedState?.settings?.yAxisMax ?? config?.yAxisMax)
     };
     const chart = {
         id: chartNumber,
@@ -7879,6 +7934,13 @@ function updateChartSettingsPanel() {
     if (chartSettingsGridlinesInput) {
         chartSettingsGridlinesInput.checked = activeChart.settings?.showGridlines ?? activeChart.config?.showGridlines ?? true;
     }
+    if (chartSettingsTrendlineInput) {
+        chartSettingsTrendlineInput.checked = activeChart.settings?.showTrendline ?? activeChart.config?.showTrendline ?? true;
+    }
+    if (chartSettingsXMinInput) chartSettingsXMinInput.value = activeChart.settings?.xAxisMinText ?? "";
+    if (chartSettingsXMaxInput) chartSettingsXMaxInput.value = activeChart.settings?.xAxisMaxText ?? "";
+    if (chartSettingsYMinInput) chartSettingsYMinInput.value = activeChart.settings?.yAxisMinText ?? "";
+    if (chartSettingsYMaxInput) chartSettingsYMaxInput.value = activeChart.settings?.yAxisMaxText ?? "";
     positionMinimizedChartWindows();
 }
 
@@ -7906,6 +7968,12 @@ function updateChartGridlinesVisibility(type = getChartSettingsType()) {
     if (!chartSettingsGridlinesField) return;
 
     chartSettingsGridlinesField.hidden = ["pie", "doughnut"].includes(type);
+    if (chartSettingsTrendlineField) {
+        chartSettingsTrendlineField.hidden = type !== "scatter";
+    }
+    if (chartSettingsAxisBounds) {
+        chartSettingsAxisBounds.hidden = type !== "scatter";
+    }
 }
 
 function closeChartSettingsPanel() {
@@ -7966,6 +8034,111 @@ function clearActiveChart(chart, shouldRenderTable = true) {
     }
 }
 
+function getScatterTrendlineData(points) {
+    if (!Array.isArray(points) || points.length < 2) return null;
+
+    const validPoints = points.filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
+    if (validPoints.length < 2) return null;
+
+    const n = validPoints.length;
+    const sumX = validPoints.reduce((sum, point) => sum + point.x, 0);
+    const sumY = validPoints.reduce((sum, point) => sum + point.y, 0);
+    const sumXY = validPoints.reduce((sum, point) => sum + point.x * point.y, 0);
+    const sumXX = validPoints.reduce((sum, point) => sum + point.x * point.x, 0);
+    const denominator = n * sumXX - sumX * sumX;
+    if (denominator === 0) return null;
+
+    const slope = (n * sumXY - sumX * sumY) / denominator;
+    const intercept = (sumY - slope * sumX) / n;
+    const minX = Math.min(...validPoints.map((point) => point.x));
+    const maxX = Math.max(...validPoints.map((point) => point.x));
+
+    return [
+        { x: minX, y: slope * minX + intercept },
+        { x: maxX, y: slope * maxX + intercept }
+    ];
+}
+
+function getNiceChartStep(value, shouldRound) {
+    if (!Number.isFinite(value) || value <= 0) return 1;
+
+    const exponent = Math.floor(Math.log10(value));
+    const fraction = value / (10 ** exponent);
+    let niceFraction;
+
+    if (shouldRound) {
+        if (fraction < 1.5) niceFraction = 1;
+        else if (fraction < 3) niceFraction = 2;
+        else if (fraction < 7) niceFraction = 5;
+        else niceFraction = 10;
+    } else if (fraction <= 1) {
+        niceFraction = 1;
+    } else if (fraction <= 2) {
+        niceFraction = 2;
+    } else if (fraction <= 5) {
+        niceFraction = 5;
+    } else {
+        niceFraction = 10;
+    }
+
+    return niceFraction * (10 ** exponent);
+}
+
+function getNiceChartAxisBounds(min, max, targetTickCount = 6) {
+    if (!Number.isFinite(min) || !Number.isFinite(max)) {
+        return { min, max, stepSize: undefined, precision: undefined };
+    }
+
+    const paddingBase = max - min;
+    const padding = paddingBase === 0
+        ? Math.max(Math.abs(min), Math.abs(max), 1) * 0.08
+        : Math.abs(paddingBase) * 0.08;
+    const paddedMin = min - padding;
+    const paddedMax = max + padding;
+    const niceRange = getNiceChartStep(paddedMax - paddedMin, false);
+    const stepSize = getNiceChartStep(niceRange / Math.max(targetTickCount - 1, 1), true);
+    const niceMin = Math.floor(paddedMin / stepSize) * stepSize;
+    const niceMax = Math.ceil(paddedMax / stepSize) * stepSize;
+
+    return {
+        min: niceMin,
+        max: niceMax,
+        stepSize,
+        precision: stepSize >= 1 ? 0 : undefined
+    };
+}
+
+function parseChartAxisBoundInput(value) {
+    const text = String(value ?? "").trim();
+    if (!text) return null;
+
+    const compactText = text.replace(/\s+/g, "");
+    let normalizedText = compactText;
+
+    if (compactText.includes(",")) {
+        normalizedText = compactText.replace(/\./g, "").replace(",", ".");
+    } else if ((compactText.match(/\./g) ?? []).length > 1 || /^\d{1,3}(\.\d{3})+$/.test(compactText)) {
+        normalizedText = compactText.replace(/\./g, "");
+    }
+
+    const number = Number(normalizedText);
+    return Number.isFinite(number) ? number : null;
+}
+
+function getManualAxisBounds(config) {
+    const xMin = getOptionalFiniteNumber(config?.xAxisMin);
+    const xMax = getOptionalFiniteNumber(config?.xAxisMax);
+    const yMin = getOptionalFiniteNumber(config?.yAxisMin);
+    const yMax = getOptionalFiniteNumber(config?.yAxisMax);
+
+    return {
+        xMin: xMin !== null && (xMax === null || xMin < xMax) ? xMin : null,
+        xMax: xMax !== null && (xMin === null || xMax > xMin) ? xMax : null,
+        yMin: yMin !== null && (yMax === null || yMin < yMax) ? yMin : null,
+        yMax: yMax !== null && (yMin === null || yMax > yMin) ? yMax : null
+    };
+}
+
 function drawChart(chart, labels, values, type) {
     chart.element.classList.remove("empty", "minimized");
     updateChartMinimizeButton(chart, false);
@@ -7975,6 +8148,37 @@ function drawChart(chart, labels, values, type) {
     const chartType = type === "horizontalBar" ? "bar" : (type === "area" ? "line" : type);
     const hasCartesianScale = !["pie", "doughnut", "radar"].includes(chartType);
     const showGridlines = chart.config?.showGridlines ?? chart.settings?.showGridlines ?? true;
+    const showTrendline = chart.config?.showTrendline ?? chart.settings?.showTrendline ?? true;
+    const numericLabels = labels.map((label) => Number(label));
+    const hasNumericScatterLabels = type === "scatter" && numericLabels.every((value) => Number.isFinite(value));
+    const scatterXValues = values.map((_, index) => hasNumericScatterLabels ? numericLabels[index] : index + 1);
+    const scatterData = values.map((value, index) => ({
+        x: scatterXValues[index],
+        y: value
+    }));
+    const scatterTrendlineData = type === "scatter" && showTrendline ? getScatterTrendlineData(scatterData) : null;
+    const trendlineYValues = scatterTrendlineData?.map((point) => point.y) ?? [];
+    const chartMinValue = type === "scatter" && trendlineYValues.length
+        ? Math.min(minValue, ...trendlineYValues)
+        : minValue;
+    const chartMaxValue = type === "scatter" && trendlineYValues.length
+        ? Math.max(maxValue, ...trendlineYValues)
+        : maxValue;
+    const minScatterX = Math.min(...scatterXValues);
+    const maxScatterX = Math.max(...scatterXValues);
+    const manualAxisBounds = getManualAxisBounds(chart.config);
+    const autoScatterXBounds = getNiceChartAxisBounds(minScatterX, maxScatterX);
+    const autoScatterYBounds = getNiceChartAxisBounds(chartMinValue, chartMaxValue);
+    const scatterXBounds = {
+        ...autoScatterXBounds,
+        min: manualAxisBounds.xMin ?? autoScatterXBounds.min,
+        max: manualAxisBounds.xMax ?? autoScatterXBounds.max
+    };
+    const scatterYBounds = {
+        ...autoScatterYBounds,
+        min: manualAxisBounds.yMin ?? autoScatterYBounds.min,
+        max: manualAxisBounds.yMax ?? autoScatterYBounds.max
+    };
     ensureChartDataColors(chart, values.length);
     const pointColors = chart.dataColors.map((color) => color.fill);
     const pointBorderColors = chart.dataColors.map((color) => color.base);
@@ -8021,7 +8225,7 @@ function drawChart(chart, labels, values, type) {
             labels,
             datasets: [{
                 label: chart.title,
-                data: values,
+                data: type === "scatter" ? scatterData : values,
                 backgroundColor: type === "area" ? chart.color?.fill : pointColors,
                 borderColor: blackStrokeTypes.includes(type) ? "#000000" : pointBorderColors,
                 borderWidth: type === "line" || type === "area" ? 2 : 1,
@@ -8030,7 +8234,19 @@ function drawChart(chart, labels, values, type) {
                 tension: 0,
                 pointBackgroundColor: pointBorderColors,
                 pointBorderColor: type === "line" || type === "area" ? "#000000" : pointBorderColors
-            }]
+            }, ...(scatterTrendlineData ? [{
+                label: "Eğilim çizgisi",
+                data: scatterTrendlineData,
+                type: "line",
+                borderColor: "#000000",
+                borderWidth: 2,
+                borderDash: [6, 4],
+                backgroundColor: "transparent",
+                fill: false,
+                pointRadius: 0,
+                pointHitRadius: 0,
+                tension: 0
+            }] : [])]
         },
         options: {
             responsive: true,
@@ -8098,23 +8314,27 @@ function drawChart(chart, labels, values, type) {
                 }
             } : (!hasCartesianScale ? {} : {
                 x: {
-                    min: type === "horizontalBar" ? minValue - 1 : undefined,
-                    max: type === "horizontalBar" ? maxValue + 1 : undefined,
+                    min: type === "horizontalBar" ? minValue - 1 : (type === "scatter" ? scatterXBounds.min : undefined),
+                    max: type === "horizontalBar" ? maxValue + 1 : (type === "scatter" ? scatterXBounds.max : undefined),
                     grid: {
                         display: showGridlines
                     },
                     ticks: {
-                        display: type === "horizontalBar" ? true : hasVisibleLabels
+                        display: type === "horizontalBar" || type === "scatter" ? true : hasVisibleLabels,
+                        stepSize: type === "scatter" ? scatterXBounds.stepSize : undefined,
+                        precision: type === "scatter" ? scatterXBounds.precision : undefined
                     }
                 },
                 y: {
-                    min: type === "horizontalBar" ? undefined : minValue - 1,
-                    max: type === "horizontalBar" ? undefined : maxValue + 1,
+                    min: type === "horizontalBar" ? undefined : (type === "scatter" ? scatterYBounds.min : chartMinValue - 1),
+                    max: type === "horizontalBar" ? undefined : (type === "scatter" ? scatterYBounds.max : chartMaxValue + 1),
                     grid: {
                         display: showGridlines
                     },
                     ticks: {
-                        display: type === "horizontalBar" ? hasVisibleLabels : true
+                        display: type === "horizontalBar" ? hasVisibleLabels : true,
+                        stepSize: type === "scatter" ? scatterYBounds.stepSize : undefined,
+                        precision: type === "scatter" ? scatterYBounds.precision : undefined
                     }
                 }
             })
@@ -8268,11 +8488,35 @@ function applyChartSettingsFromPanel() {
     const labelRangeText = chartSettingsLabelRangeInput?.value ?? "";
     const valueRangeText = chartSettingsValueRangeInput?.value ?? "";
     const showGridlines = chartSettingsGridlinesInput?.checked ?? true;
+    const showTrendline = chartSettingsTrendlineInput?.checked ?? true;
+    const xAxisMinText = chartSettingsXMinInput?.value ?? "";
+    const xAxisMaxText = chartSettingsXMaxInput?.value ?? "";
+    const yAxisMinText = chartSettingsYMinInput?.value ?? "";
+    const yAxisMaxText = chartSettingsYMaxInput?.value ?? "";
+    const xAxisMin = parseChartAxisBoundInput(xAxisMinText);
+    const xAxisMax = parseChartAxisBoundInput(xAxisMaxText);
+    const yAxisMin = parseChartAxisBoundInput(yAxisMinText);
+    const yAxisMax = parseChartAxisBoundInput(yAxisMaxText);
     const xRange = labelRangeText.trim() ? parseChartRangeInput(labelRangeText) : null;
     const yRange = parseChartRangeInput(valueRangeText);
 
     applyChartTitle(activeChart, title);
-    activeChart.settings = { ...(activeChart.settings ?? {}), type, labelRangeText, valueRangeText, showGridlines };
+    activeChart.settings = {
+        ...(activeChart.settings ?? {}),
+        type,
+        labelRangeText,
+        valueRangeText,
+        showGridlines,
+        showTrendline,
+        xAxisMin,
+        xAxisMax,
+        yAxisMin,
+        yAxisMax,
+        xAxisMinText,
+        xAxisMaxText,
+        yAxisMinText,
+        yAxisMaxText
+    };
 
     if ((labelRangeText.trim() && !xRange) || !yRange) {
         activeChart.config = null;
@@ -8282,7 +8526,7 @@ function applyChartSettingsFromPanel() {
         return;
     }
 
-    activeChart.config = { xRange, yRange, type, showGridlines };
+    activeChart.config = { xRange, yRange, type, showGridlines, showTrendline, xAxisMin, xAxisMax, yAxisMin, yAxisMax };
     refreshChartFromConfig(activeChart);
     renderTable();
     scheduleAutoSave();

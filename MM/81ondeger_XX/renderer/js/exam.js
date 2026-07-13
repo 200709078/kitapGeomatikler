@@ -1,43 +1,97 @@
 const sorularSirali_T = [
     {
-        soru: '\\( SORU EKLENECEK. \\)',
+        soru: 'Aşağıdakilerden hangisi kategorik veridir?',
         tipi: 'cs',
-        puan: 30,
+        puan: 10,
         secenekler: [
-            { text: '1', correct: false },
-            { text: '2', correct: false },
-            { text: 'SORU EKLENECEK. <span style="color: #ff0008ff;">*</style>', correct: true },
-            { text: '4', correct: false },
-            { text: '5', correct: false }
+            { text: 'Yaş', correct: false },
+            { text: 'Gelir', correct: false },
+            { text: 'Cinsiyet <span style="color: #ff0008ff;">*</style>', correct: true },
+            { text: 'Boy', correct: false },
+            { text: 'Rakım', correct: false }
         ],
-        aciklama: ['SORU EKLENECEK.', '\\( SORU EKLENECEK. \\)']
+        aciklama: ['KATEGORİK VERİ', 'Yaş, gelir, boy ve rakım sayısal veridir. Cinsiyet ise kategorik veridir. Bu nedenle doğru cevap <b>Cinsiyet</b> olmalıdır.']
     },
     {
-        soru: '\\( SORU EKLENECEK. \\)',
+        soru: 'Ortalama, hangi durumda yanıltıcı olabilir?',
         tipi: 'cs',
-        puan: 30,
+        puan: 10,
         secenekler: [
-            { text: '1', correct: false },
-            { text: '2', correct: false },
-            { text: 'SORU EKLENECEK. <span style="color: #ff0008ff;">*</style>', correct: true },
-            { text: '4', correct: false },
-            { text: '5', correct: false }
+            { text: 'Tüm veriler eşitse', correct: false },
+            { text: 'Uç değerler varsa <span style="color: #ff0008ff;">*</style>', correct: true },
+            { text: 'Veri azsa', correct: false },
+            { text: 'Grafik varsa', correct: false },
+            { text: 'Tepe değer yoksa', correct: false }
         ],
-        aciklama: ['SORU EKLENECEK.', '\\( SORU EKLENECEK. \\)']
+        aciklama: ['UÇ DEĞERLER', 'Ortalama, uç değerler varsa yanıltıcı olabilir. Bu nedenle doğru cevap <b>Uç değerler varsa</b> olmalıdır.']
     },
     {
-        soru: '\\( SORU EKLENECEK. \\)',
+        soru: 'Aşağıdakilerden hangisi nicel veridir?',
         tipi: 'cs',
-        puan: 40,
+        puan: 10,
         secenekler: [
-            { text: '1', correct: false },
-            { text: '2', correct: false },
-            { text: 'SORU EKLENECEK. <span style="color: #ff0008ff;">*</style>', correct: true },
-            { text: '4', correct: false },
-            { text: '5', correct: false }
+            { text: 'Göz rengi', correct: false },
+            { text: 'Meslek', correct: false },
+            { text: 'Boy uzunluğu <span style="color: #ff0008ff;">*</style>', correct: true },
+            { text: 'Şehir', correct: false },
+            { text: 'Cinsiyet', correct: false }
         ],
-        aciklama: ['SORU EKLENECEK.', '\\( SORU EKLENECEK. \\)']
-    }
+        aciklama: ['NICEL VERİ', 'Boy uzunluğu, sayısal bir veri olduğu için nicel veridir. Bu nedenle doğru cevap <b>Boy uzunluğu</b> olmalıdır.']
+    },
+    {
+        soru: '"İki değişken arasında ilişki varsa mutlaka neden-sonuç vardır." ifadesine göre seçim yapınız.',
+        tipi: "dy",
+        puan: 15,
+        secenekler: [
+            { text: 'Doğrudur.', correct: false },
+            { text: 'Yanlıştır. <span style="color: #ff0008ff;">*</style>', correct: true },
+        ],
+        aciklama: ['NEDEN-SONUÇ İLİŞKİSİ', 'İki değişken arasında ilişki varsa, bu ilişki neden-sonuç ilişkisi olmak zorunda değildir. Bu nedenle doğru cevap <b>"Yanlıştır."</b> olmalıdır.']
+    },
+    {
+        soru: '"Serpme grafiği iki nicel değişken için kullanılır." ifadesine göre seçim yapınız.',
+        tipi: "dy",
+        puan: 15,
+        secenekler: [
+            { text: 'Doğrudur. <span style="color: #ff0008ff;">*</style>', correct: true },
+            { text: 'Yanlıştır.', correct: false },
+        ],
+        aciklama: ['SERPİLME GRAFİĞİ', 'Serpme grafiği, iki nicel değişken arasındaki ilişkiyi göstermek için kullanılır. Bu nedenle doğru cevap <b>"Doğrudur."</b> olmalıdır.']
+    },
+    {
+        yonerge: 'Aşağıda verilen boşlukları doldurunuz.',
+        sorular: [
+            { text: 'Bir veri setindeki en büyük ve en küçük değer arasındaki farka *** denir. <span style="color: #ff0008ff;">açıklık</style>' },
+            { text: 'Aynı nesneye ait iki değişkenin birlikte incelenmesine *** veri denir <span style="color: #ff0008ff;">iki değişkenli</style>' }
+        ],
+        tipi: "bd",
+        puan: 20,
+        dogrular: ['açıklık', 'iki değişkenli'],
+        secimler: ['tepe değer', 'tek değişkenli', 'ortanca'],
+        aciklama: [
+            ['AÇIKLIK', 'Bir veri setindeki en büyük ve en küçük değer arasındaki farka <b>açıklık</b> denir. Bu nedenle doğru cevap <b>açıklık</b> olmalıdır.'],
+            ['İKİ DEĞİŞKENLİ VERİ', 'Aynı nesneye ait iki değişkenin birlikte incelenmesine <b>iki değişkenli</b> veri denir. Bu nedenle doğru cevap <b>iki değişkenli</b> olmalıdır.']
+        ]
+    },
+    {
+        yonerge: 'Aşağıda verilen kavramları uygun açıklamalar ile eşleştiriniz.',
+        sorular: [
+            { text: 'Ortalama &#8658; *** <span style="color: #ff0008ff;">Tüm Değerlerin Toplamı / Sayı</style>' },
+            { text: 'Medyan&#8658; *** <span style="color: #ff0008ff;">Ortadaki Değer</style>' },
+            { text: 'Açıklık &#8658; *** <span style="color: #ff0008ff;">En Büyük Değer - En Küçük Değer</style>' },
+            { text: 'Grafik &#8658; *** <span style="color: #ff0008ff;">Veri Görselleştirme</style>' }
+        ],
+        tipi: "es",
+        puan: 20,
+        dogrular: ['Tüm Değerlerin Toplamı / Sayı', 'Ortadaki Değer', 'En Büyük Değer - En Küçük Değer', 'Veri Görselleştirme'],
+        secimler: ['Veri Analizi', 'Tepe Değer'],
+        aciklama: [
+            ['ORTALAMA', 'Bir veri setinin ortalaması, tüm değerlerin toplamının veri sayısına bölünmesiyle elde edilir. Bu nedenle doğru cevap <b>Tüm Değerlerin Toplamı / Sayı</b> olmalıdır.'],
+            ['MEDYAN', 'Bir veri setinin medyanı, verilerin küçükten büyüğe sıralandıktan sonra ortadaki değeridir. Bu nedenle doğru cevap <b>Ortadaki Değer</b> olmalıdır.'],
+            ['AÇIKLIK', 'Bir veri setinin açıklığı, en büyük ve en küçük değerleri arasındaki farktır. Bu nedenle doğru cevap <b>En Büyük Değer - En Küçük Değer</b> olmalıdır.'],
+            ['GRAFİK', 'Bir veri setini görselleştirme araçları olarak grafikler kullanılır. Bu nedenle doğru cevap <b>Veri Görselleştirme</b> olmalıdır.'],
+        ]
+    },
 ]
 
 const closeModalButtons = document.querySelectorAll('[data-close-button]')
@@ -119,6 +173,7 @@ function soruGoster() {
         })
 
         soru.innerHTML = "<b>" + (soruNo + 1) + ")</b> " + aktifSoru.yonerge + "<br>(" + aktifSoru.puan + " puan)"
+        
         let say = 97
         let idSay = 0
         let max_blank = 0
@@ -154,8 +209,10 @@ function soruGoster() {
     }
 
     // ÇOKTAN SEÇMELİ - DOĞRU YANLIŞ
-    if (aktifSoru.tipi == 'cs' || aktifSoru.tipi == 'dy') {
+    if (aktifSoru.tipi == 'cs' || aktifSoru.tipi == 'dy') {      
+        
         soru.innerHTML = "<b>" + (soruNo + 1) + ")</b> " + aktifSoru.soru + "<br>(" + aktifSoru.puan + " puan)"
+        
         let say = 65
         arrayKaristir(aktifSoru.secenekler).forEach(secenek => {
             const button = document.createElement("button")

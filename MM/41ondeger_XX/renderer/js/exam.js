@@ -2,7 +2,7 @@ const sorularSirali_T = [
     {
         soru: '\\( SORU EKLENECEK. \\)',
         tipi: 'cs',
-        puan: 30,
+        puan: 380,
         secenekler: [
             { text: '1', correct: false },
             { text: '2', correct: false },
