@@ -1,9 +1,9 @@
-//Oklar ile düzenleme modundan çıkılarak ok yönündeki hücreye geçilsin.
 //Çoklu satır/sütun seçildiğinde bir satır/sütun genişliği değişirse bütün seçimin genişliği değişsin.
 //Binlik ayraç butonu eklenecek.
 //Hücre düzenleme modunda çift tıklama ile hücre metnininin tümü seçilebilsin.
-// Hücre düzenleme modunda tek tık ile hücre metninin arasına girebileyim.
+//Hücre düzenleme modunda tek tık ile hücre metninin arasına girebileyim.
 //Hücrenin köşesinden tutarak diğer hücrelere çoğaltabileyim.
+// Butonlar sığmazsa alt satıra geçilsin.
 
 const table = document.getElementById("data-table");
 const addRowBtn = document.getElementById("add-row-btn");
@@ -6607,12 +6607,46 @@ function syncEditingCellFromFormulaBar() {
     cell.textContent = formulaInput.value;
 }
 
+function getCellPositionAfterArrowKey(row, col, key) {
+    switch (key) {
+        case "ArrowUp":
+            return { row: Math.max(0, row - 1), col };
+        case "ArrowDown":
+            return { row: Math.min(rowCount - 1, row + 1), col };
+        case "ArrowLeft":
+            return { row, col: Math.max(0, col - 1) };
+        case "ArrowRight":
+            return { row, col: Math.min(colCount - 1, col + 1) };
+        default:
+            return { row, col };
+    }
+}
+
 function handleEditingCellKeydown(e) {
     if (e.altKey && e.key === "Enter") {
         e.preventDefault();
         e.stopPropagation();
         insertLineBreakAtCursor(e.currentTarget);
         syncFormulaBarFromEditingCell();
+        return;
+    }
+
+    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+        if (!selectedCell) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const { row, col } = selectedCell;
+        const targetCell = getCellPositionAfterArrowKey(row, col, e.key);
+
+        exitEditMode(true);
+        selectedCell = targetCell;
+        selectionRange = null;
+        selectionMode = "cell";
+        extraSelections = [];
+        renderTable();
+        focusSelectedCell();
     }
 }
 
